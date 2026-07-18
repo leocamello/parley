@@ -1,0 +1,5 @@
+# Parley loop harness — active sprint scope for the pre-commit sentinel.
+# 'sprint:' selects which scope regex is enforced. Only the HUMAN operator
+# advances this file between sprints.
+sprint: 0
+scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT0-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)

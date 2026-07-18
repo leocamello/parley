@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Parley loop harness — scope sentinel (pre-commit hook).
+#
+# Versioned in .githooks/ and activated via: git config core.hooksPath .githooks
+#
+# Rejects any commit that stages files outside the active sprint's scope.
+# The active scope is defined in .parley_sprint_scope (one regex per sprint,
+# selected by the 'sprint:' line) so advancing sprints never edits this hook.
+set -Eeuo pipefail
+
+SCOPE_FILE=".parley_sprint_scope"
+
+if [[ ! -f "$SCOPE_FILE" ]]; then
+  echo "🛑 SCOPE SENTINEL: $SCOPE_FILE missing; cannot determine active sprint scope." >&2
+  exit 1
+fi
+
+SPRINT=$(sed -n 's/^sprint: *//p' "$SCOPE_FILE" | head -1)
+ALLOWED=$(sed -n "s/^scope-${SPRINT}: *//p" "$SCOPE_FILE" | head -1)
+
+if [[ -z "$SPRINT" || -z "$ALLOWED" ]]; then
+  echo "🛑 SCOPE SENTINEL: no scope regex found for sprint '$SPRINT' in $SCOPE_FILE." >&2
+  exit 1
+fi
+
+BREACH=0
+while IFS= read -r FILE; do
+  [[ -z "$FILE" ]] && continue
+  if [[ ! "$FILE" =~ $ALLOWED ]]; then
+    echo "🛑 SCOPE SENTINEL BREACH: out-of-scope file staged: $FILE" >&2
+    BREACH=1
+  fi
+done < <(git diff --cached --name-only)
+
+if [[ $BREACH -ne 0 ]]; then
+  echo "Sprint $SPRINT limits commits to paths matching: $ALLOWED" >&2
+  echo "Unstage the offending files and revert out-of-scope changes." >&2
+  exit 1
+fi
+
+exit 0
