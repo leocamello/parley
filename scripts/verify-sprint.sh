@@ -17,6 +17,9 @@
 # so verdicts are based on the PARLEY-VERIFY sentinel, never exit codes alone.
 #
 # Circuit breaker: consecutive failures are counted in .parley_loop_state.
+# The counter is PROGRESS-AWARE: a failing run whose passed= count is higher
+# than the previous run's resets the streak to 1 (honest incremental progress
+# never trips the breaker). An identical failure twice in a row fast-trips.
 # At MAX_SPINS the harness refuses to run (exit 100) until a HUMAN runs:
 #   ./scripts/verify-sprint.sh --reset
 #
@@ -64,15 +67,18 @@ read_state() {
   if [[ -f "$STATE_FILE" ]]; then
     SPIN_COUNT=$(sed -n '1p' "$STATE_FILE")
     LAST_HASH=$(sed -n '2p' "$STATE_FILE")
+    LAST_PASSED=$(sed -n '3p' "$STATE_FILE")
   else
     SPIN_COUNT=0
     LAST_HASH=""
+    LAST_PASSED=""
   fi
   [[ "$SPIN_COUNT" =~ ^[0-9]+$ ]] || SPIN_COUNT=0
+  [[ "$LAST_PASSED" =~ ^[0-9]+$ ]] || LAST_PASSED=""
 }
 
-write_state() { # $1 = count, $2 = failure hash
-  printf '%s\n%s\n' "$1" "$2" > "$STATE_FILE"
+write_state() { # $1 = count, $2 = failure hash, $3 = passed count (may be empty)
+  printf '%s\n%s\n%s\n' "$1" "$2" "${3:-}" > "$STATE_FILE"
 }
 
 fail_hard_ban() { # $1 = exit code, $2.. = message lines
@@ -82,7 +88,7 @@ fail_hard_ban() { # $1 = exit code, $2.. = message lines
     printf '%s\n' "$@"
     echo "</hard_ban_violation>"
   } >&2
-  write_state $((SPIN_COUNT + 1)) "hard-ban-$code"
+  write_state $((SPIN_COUNT + 1)) "hard-ban-$code" "$LAST_PASSED"
   exit "$code"
 }
 
@@ -186,13 +192,21 @@ if $verdict_pass; then
 fi
 
 FAILURE_HASH=$(sha1sum <<< "$TEST_OUTPUT" | cut -d' ' -f1)
+PASSED_NOW=$(sed -n 's/.* passed=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
+PROGRESS_NOTE=""
 if [[ -n "$LAST_HASH" && "$FAILURE_HASH" == "$LAST_HASH" ]]; then
   # Identical failure twice in a row: the last fix changed nothing. Fast-trip.
   NEW_SPIN=$MAX_SPINS
+elif [[ "$PHASE" == "green" && -n "$PASSED_NOW" && -n "$LAST_PASSED" \
+        && "$PASSED_NOW" -gt "$LAST_PASSED" ]]; then
+  # Progress-aware: more tests pass than last run — honest incremental work.
+  # Reset the streak so stepwise implementation never trips the breaker.
+  NEW_SPIN=1
+  PROGRESS_NOTE=" (progress detected: passed $LAST_PASSED -> $PASSED_NOW; spin streak reset)"
 else
   NEW_SPIN=$((SPIN_COUNT + 1))
 fi
-write_state "$NEW_SPIN" "$FAILURE_HASH"
+write_state "$NEW_SPIN" "$FAILURE_HASH" "${PASSED_NOW:-$LAST_PASSED}"
 
 {
   echo "<execution_feedback status=\"FAILED\" phase=\"$PHASE\" exit_code=\"$TEST_EXIT_CODE\" spin=\"$NEW_SPIN\" max_spins=\"$MAX_SPINS\" seed=\"$SEED\">"
@@ -205,7 +219,7 @@ write_state "$NEW_SPIN" "$FAILURE_HASH"
     flag { print; if (++lines >= 15) { print "--- [trace truncated] ---"; exit } }
   ' <<< "$TEST_OUTPUT"
   echo "</execution_feedback>"
-  echo "⚠️  Verification failed. Spin counter: $NEW_SPIN/$MAX_SPINS."
+  echo "⚠️  Verification failed. Spin counter: $NEW_SPIN/$MAX_SPINS.$PROGRESS_NOTE"
 } >&2
 
 exit $(( TEST_EXIT_CODE == 0 ? 1 : TEST_EXIT_CODE ))
