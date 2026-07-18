@@ -1,25 +1,36 @@
 #!/usr/bin/env bash
-# Parley loop harness — unified verification gate.
+# Parley loop harness — unified verification gate (phase-aware).
 #
 # Phase 1: deterministic hard-ban linters (AGENTS.md §2). Exit 101-104.
 # Phase 2: axiomatic SUnit suite via scripts/run-tests.st on gst 3.2.5.
 #
+# TDD phases (read from the 'phase:' line of .parley_sprint_scope; the
+# human operator flips red -> green after reviewing the tests):
+#   green (default): the suite must PASS ('PARLEY-VERIFY: PASS' + exit 0).
+#   red:  the suite must FAIL for the right reasons — every test file loads
+#         (PARLEY-TESTFILE per file), no parse errors anywhere, tests actually
+#         ran (run>0) and failed. MNU on a not-yet-implemented class counts
+#         as a valid red; a passing suite in red phase is a defect (the new
+#         tests test nothing).
+#
 # gst 3.2.5 exits 0 even on parse errors and unhandled fileIn exceptions,
-# so passing requires BOTH exit code 0 AND the 'PARLEY-VERIFY: PASS' sentinel.
+# so verdicts are based on the PARLEY-VERIFY sentinel, never exit codes alone.
 #
 # Circuit breaker: consecutive failures are counted in .parley_loop_state.
 # At MAX_SPINS the harness refuses to run (exit 100) until a HUMAN runs:
 #   ./scripts/verify-sprint.sh --reset
 #
 # Usage:
-#   ./scripts/verify-sprint.sh            # lint + test with default seed
-#   ./scripts/verify-sprint.sh --seed N   # lint + test with explicit seed
-#   ./scripts/verify-sprint.sh --reset    # HUMAN ONLY: reset circuit breaker
+#   ./scripts/verify-sprint.sh                 # phase from .parley_sprint_scope
+#   ./scripts/verify-sprint.sh --phase red     # explicit phase override
+#   ./scripts/verify-sprint.sh --seed N        # explicit seed
+#   ./scripts/verify-sprint.sh --reset         # HUMAN ONLY: reset breaker
 set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
 
 STATE_FILE=".parley_loop_state"
+SCOPE_FILE=".parley_sprint_scope"
 MAX_SPINS=3
 SEED="${PARLEY_SEED:-20260718}"
 
@@ -27,14 +38,26 @@ SEED="${PARLEY_SEED:-20260718}"
 # contains the literal it is banning.
 BANNED_NAME="g""pm"
 
-if [[ "${1:-}" == "--reset" ]]; then
-  rm -f "$STATE_FILE"
-  echo "🔓 Circuit breaker reset by human operator."
-  exit 0
-fi
+PHASE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --reset)
+      rm -f "$STATE_FILE"
+      echo "🔓 Circuit breaker reset by human operator."
+      exit 0 ;;
+    --seed)  SEED="${2:?--seed requires a value}"; shift 2 ;;
+    --phase) PHASE="${2:?--phase requires red|green}"; shift 2 ;;
+    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
 
-if [[ "${1:-}" == "--seed" ]]; then
-  SEED="${2:?--seed requires a value}"
+if [[ -z "$PHASE" && -f "$SCOPE_FILE" ]]; then
+  PHASE=$(sed -n 's/^phase: *//p' "$SCOPE_FILE" | head -1)
+fi
+PHASE="${PHASE:-green}"
+if [[ "$PHASE" != "red" && "$PHASE" != "green" ]]; then
+  echo "Invalid phase '$PHASE' (expected red or green)." >&2
+  exit 2
 fi
 
 read_state() {
@@ -112,17 +135,52 @@ if MATCHES=$(grep -rPzl '\b(\w+):\s*(\w+)\s*\[\s*\1\s*:=\s*\2\s*\.?\s*\]' src/do
 fi
 
 echo "✅ Phase 1 passed: hard bans clear."
-echo "🧪 Phase 2: Axiomatic SUnit suite on gst 3.2.5 (seed=$SEED)..."
+echo "🧪 Phase 2: Axiomatic SUnit suite on gst 3.2.5 (phase=$PHASE seed=$SEED)..."
 
 set +e
 TEST_OUTPUT=$(PARLEY_SEED="$SEED" gst -q scripts/run-tests.st 2>&1)
 TEST_EXIT_CODE=$?
 set -e
 
-# gst exit codes are unreliable on fileIn errors; require the PASS sentinel too.
-if [[ $TEST_EXIT_CODE -eq 0 ]] && grep -q '^PARLEY-VERIFY: PASS' <<< "$TEST_OUTPUT"; then
+VERIFY_LINE=$(grep '^PARLEY-VERIFY:' <<< "$TEST_OUTPUT" | head -1 || true)
+PARSE_ERRORS=$(grep -c 'parse error' <<< "$TEST_OUTPUT" || true)
+
+verdict_pass=false
+red_reason=""
+if [[ "$PHASE" == "green" ]]; then
+  # Green: exit 0 AND the PASS sentinel.
+  if [[ $TEST_EXIT_CODE -eq 0 ]] && grep -q '^PARLEY-VERIFY: PASS' <<< "$TEST_OUTPUT"; then
+    verdict_pass=true
+  fi
+else
+  # Red: the suite must fail for the RIGHT reasons.
+  RUN=$(sed -n 's/.* run=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
+  FAILED=$(sed -n 's/.* failed=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
+  ERRORS=$(sed -n 's/.* errors=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
+  # Every .st under tests trees must have produced a PARLEY-TESTFILE marker.
+  EXPECTED_TESTFILES=$(find tests -name '*.st' 2>/dev/null | wc -l)
+  LOADED_TESTFILES=$(grep -c '^PARLEY-TESTFILE:' <<< "$TEST_OUTPUT" || true)
+  if [[ "$PARSE_ERRORS" -gt 0 ]]; then
+    red_reason="parse errors present — red must fail on missing behavior, not broken syntax"
+  elif [[ "$LOADED_TESTFILES" -lt "$EXPECTED_TESTFILES" ]]; then
+    red_reason="only $LOADED_TESTFILES of $EXPECTED_TESTFILES test files loaded cleanly"
+  elif [[ -z "$RUN" || "$RUN" -eq 0 ]]; then
+    red_reason="no tests ran — red requires runnable failing tests"
+  elif [[ "$((FAILED + ERRORS))" -eq 0 ]]; then
+    red_reason="suite PASSED — new tests must fail before implementation (they currently test nothing)"
+  else
+    verdict_pass=true
+  fi
+fi
+
+if $verdict_pass; then
   echo "$TEST_OUTPUT"
-  echo "🎉 Verification passed."
+  if [[ "$PHASE" == "red" ]]; then
+    echo "🔴 Red gate satisfied: tests load cleanly and fail on missing behavior."
+    echo "   Awaiting HUMAN review of the tests; the operator flips 'phase:' to green in $SCOPE_FILE."
+  else
+    echo "🎉 Verification passed."
+  fi
   rm -f "$STATE_FILE"
   exit 0
 fi
@@ -137,10 +195,11 @@ fi
 write_state "$NEW_SPIN" "$FAILURE_HASH"
 
 {
-  echo "<execution_feedback status=\"FAILED\" exit_code=\"$TEST_EXIT_CODE\" spin=\"$NEW_SPIN\" max_spins=\"$MAX_SPINS\" seed=\"$SEED\">"
+  echo "<execution_feedback status=\"FAILED\" phase=\"$PHASE\" exit_code=\"$TEST_EXIT_CODE\" spin=\"$NEW_SPIN\" max_spins=\"$MAX_SPINS\" seed=\"$SEED\">"
+  [[ -n "$red_reason" ]] && echo "<red_gate_violation>$red_reason</red_gate_violation>"
   # Reduce output: sentinel lines, per-test verdicts, and the first error
   # region (parse errors / MNU backtraces), truncated to protect attention.
-  grep -E '^PARLEY-(VERIFY|SEED|LOAD|FAILURE|ERROR):' <<< "$TEST_OUTPUT" || true
+  grep -E '^PARLEY-(VERIFY|SEED|LOAD|TESTFILE|FAILURE|ERROR):' <<< "$TEST_OUTPUT" || true
   awk '
     /parse error|did not understand|error:/ { flag=1 }
     flag { print; if (++lines >= 15) { print "--- [trace truncated] ---"; exit } }

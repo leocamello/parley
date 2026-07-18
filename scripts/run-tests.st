@@ -3,7 +3,11 @@
  Executed ONLY via scripts/verify-sprint.sh (never run gst directly).
 
  Contract with verify-sprint.sh:
-   - Loads src/compat, src/domain, tests (in that order; sorted within each dir).
+   - Loads src/compat, src/domain, tests/support, tests/laws, tests/acceptance
+     (in that order; sorted within each dir). A flat tests/ dir is also loaded
+     for backward compatibility.
+   - Emits 'PARLEY-TESTFILE: <path>' after each test file loads cleanly, so
+     the red-phase gate can verify test code itself is parse-clean.
    - Discovers every TestCase subclass defined by those file-ins.
    - Prints exactly one 'PARLEY-VERIFY: PASS|FAIL ...' sentinel line.
      gst 3.2.5 exits 0 even on parse errors and unhandled fileIn exceptions,
@@ -23,16 +27,25 @@ Transcript showCr: 'PARLEY-SEED: ', seed.
 
 knownCases := TestCase allSubclasses asSet.
 
-"Load order is semantic: compat polyfills first, domain second, tests last.
- Within a directory, files load in sorted-path order for determinism."
-#('src/compat' 'src/domain' 'tests') do: [:dirName |
-    | dir |
-    dir := File name: dirName.
-    (dir exists and: [dir isDirectory]) ifTrue: [
-        (dir files collect: [:f | f name]) asSortedCollection do: [:path |
-            (path endsWith: '.st') ifTrue: [
-                Transcript showCr: 'PARLEY-LOAD: ', path.
-                FileStream fileIn: path]]]].
+"Ensure the Parley namespace exists even before any src/ file creates it
+ (red phase starts with tests only)."
+(Smalltalk includesKey: #Parley) ifFalse: [Smalltalk addSubspace: #Parley].
+
+"Load order is semantic: compat polyfills, domain, then test support code,
+ law suites, and acceptance scenarios. Within a directory, files load in
+ sorted-path order for determinism."
+#('src/compat' 'src/domain' 'tests' 'tests/support' 'tests/laws' 'tests/acceptance')
+    do: [:dirName |
+        | dir isTestDir |
+        isTestDir := dirName startsWith: 'tests'.
+        dir := File name: dirName.
+        (dir exists and: [dir isDirectory]) ifTrue: [
+            (dir files collect: [:f | f name]) asSortedCollection do: [:path |
+                (path endsWith: '.st') ifTrue: [
+                    Transcript showCr: 'PARLEY-LOAD: ', path.
+                    FileStream fileIn: path.
+                    isTestDir ifTrue: [
+                        Transcript showCr: 'PARLEY-TESTFILE: ', path]]]]].
 
 newCases := (TestCase allSubclasses reject: [:c | knownCases includes: c])
     asSortedCollection: [:a :b | a name <= b name].

@@ -1,5 +1,8 @@
-# Parley loop harness — active sprint scope for the pre-commit sentinel.
-# 'sprint:' selects which scope regex is enforced. Only the HUMAN operator
-# advances this file between sprints.
+# Parley loop harness — active sprint scope for the pre-commit sentinel
+# and TDD phase for the verification gate.
+# 'sprint:' selects which scope regex is enforced. 'phase:' is red (tests
+# must fail) or green (tests must pass). Only the HUMAN operator edits
+# this file — agents never advance the sprint or flip the phase.
 sprint: 0
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT0-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
