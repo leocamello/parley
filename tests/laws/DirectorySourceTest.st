@@ -24,7 +24,9 @@
    - SourceError messageText: 'Source directory has <n> problem(s): '
      with the problems joined by '; ' (the ManifestError house style);
    - fetch stub message: 'fetch:version: is install-time only - the
-     Installer does not exist yet'."
+     Installer does not exist yet' (superseded at Sprint 5 staging,
+     issue #7: fetch:version: became real per Doc D §1.1; the stub law
+     was removed by the operator)."
 
 Namespace current: Parley.
 
@@ -342,18 +344,6 @@ tearDown.'>
             version: (self version: '1.0.0')) isNil.
         self assert: (source manifestFor: 'c'
             version: (self version: '9.9.9')) isNil
-    ]
-
-    testFetchSignalsTheInstallTimeOnlyStubError [
-        | source message |
-        source := DirectorySource on: (self diamondDir: 'law-fetch').
-        message := nil.
-        [source fetch: 'a' version: (self version: '1.0.0').
-         self assert: false description: 'expected the fetch stub error']
-            on: Error
-            do: [:e | message := e messageText].
-        self assert: message
-            = 'fetch:version: is install-time only - the Installer does not exist yet'
     ]
 
     "---- empty directories and non-entry files ----"

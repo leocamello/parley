@@ -35,7 +35,7 @@ knownCases := TestCase allSubclasses asSet.
 "Load order is semantic: compat polyfills, domain, then test support code,
  law suites, and acceptance scenarios. Within a directory, files load in
  sorted-path order for determinism."
-#('src/compat' 'src/domain' 'src/manifest' 'src/resolver' 'src/source' 'tests' 'tests/support' 'tests/laws' 'tests/acceptance')
+#('src/compat' 'src/domain' 'src/manifest' 'src/resolver' 'src/source' 'src/install' 'tests' 'tests/support' 'tests/laws' 'tests/acceptance')
     do: [:dirName |
         | dir isTestDir |
         isTestDir := dirName startsWith: 'tests'.

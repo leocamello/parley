@@ -7,7 +7,12 @@
  at its one I/O moment; problems batch into one SourceError in
  sorted-filename order; fetch:version: is an install-time stub; the
  end-to-end pipeline proves directory -> resolve -> byte-stable lockfile
- on disk (the Sprint 2 S16 pinned lock string is the oracle)."
+ on disk (the Sprint 2 S16 pinned lock string is the oracle).
+
+ S9 (the fetch install-time stub) was superseded at Sprint 5 staging:
+ fetch:version: became real per Doc D §1.1, and its contract is pinned
+ by the Sprint 5 scenarios (issue #7). The selector was removed by the
+ operator; Sprint 4's wrap traceability gate had already passed."
 
 Namespace current: Parley.
 
@@ -197,18 +202,6 @@ and are removed in tearDown.'>
                 = ((direct dependencies at: i) constraint)].
         self assert: (source manifestFor: 'unknown'
             version: (self version: '1.0.0')) isNil
-    ]
-
-    testS9_fetchIsAnInstallTimeStub [
-        | source message |
-        source := DirectorySource on: (self diamondDir: 's9-fetch').
-        message := nil.
-        [source fetch: 'a' version: (self version: '1.0.0').
-         self assert: false description: 'expected the fetch stub error']
-            on: Error
-            do: [:e | message := e messageText].
-        self assert: message
-            = 'fetch:version: is install-time only - the Installer does not exist yet'
     ]
 
     testS10_endToEndResolveWritesByteStableLockfileOnDisk [
