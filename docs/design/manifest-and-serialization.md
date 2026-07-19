@@ -30,6 +30,8 @@ Parley define: [:pkg |
 
 `Parley class >> define:` creates a fresh `ManifestBuilder`, evaluates the block with it, sends `build`, and answers the immutable manifest. No compiler tricks, no global-binding gymnastics; an author can run `gst Package.st` and inspect the result live.
 
+> **Entry-point resolution on GNU Smalltalk 3.2.5 (issue #3):** the global `Parley` is the namespace object, and 3.2.5 namespaces treat unknown keyword sends as binding setters — they cannot host `define:` without a kernel extension. The entry point is therefore the class `Parley.Parley`, a thin gateway defined *inside* the Parley namespace: wherever the Parley namespace is current, the token `Parley` resolves to that class and the syntax above works verbatim. At raw Smalltalk top level the token still names the namespace, so bare `gst Package.st` is not yet supported; the author-facing evaluation path (Phase 3 CLI/publish tooling) files `Package.st` in with the Parley namespace current.
+
 ---
 
 ## 3. `ManifestBuilder`
