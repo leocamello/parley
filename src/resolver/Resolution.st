@@ -21,6 +21,25 @@ callers branch on instead of exceptions.'>
         ^self new setRoot: aString triples: aDictionary
     ]
 
+    Resolution class >> fromLockEntry: anEntry [
+        "Reconstruct a Resolution from a parsed #'parley-lock' 1
+         structure (the nested array answered by IndexEntryReader) — the
+         lock read-back path, mirroring LibraryManifest fromIndexEntry:.
+         Versions re-parse via Version fromString:, so write -> read ->
+         fromLockEntry: composes to the identity (issue #5 S8)."
+        <category: 'instance creation'>
+        | fields triples |
+        fields := Dictionary new.
+        3 to: anEntry size - 1 by: 2 do: [:i |
+            fields at: (anEntry at: i) put: (anEntry at: i + 1)].
+        triples := Dictionary new.
+        (fields at: #packages) do: [:entry |
+            triples at: (entry at: 1) put: (Array
+                with: (Version fromString: (entry at: 2))
+                with: (entry at: 4))].
+        ^self root: (fields at: #root) triples: triples
+    ]
+
     setRoot: aString triples: aDictionary [
         "Private — initialization from the class-side constructor."
         <category: 'private'>

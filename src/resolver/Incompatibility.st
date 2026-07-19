@@ -2,7 +2,8 @@
  hold, plus its cause.
  Spec: docs/design/resolver.md §3, §5; issue #4 S2-S5.
  External nodes are born on the way down (#dependency off an index edge,
- #noVersions at an empty candidate set); derived nodes are born at
+ #noVersions at an empty candidate set, #decision when a strategy
+ decides pkg -> v); derived nodes are born at
  ledger collapse and candidate exhaustion, their cause linking the
  parent incompatibilities into a walkable derivation tree.
  printOn: renders the canonical human sentence for this node only."
@@ -13,8 +14,8 @@ Object subclass: Incompatibility [
     | terms cause conclusionTerms subject matching |
 
     <comment: 'An immutable resolver clause: a term set that cannot all
-hold. cause is #dependency or #noVersions for external nodes, or the
-collection of parent Incompatibilities for derived nodes. conclusionTerms
+hold. cause is #dependency, #noVersions or #decision for external nodes,
+or the collection of parent Incompatibilities for derived nodes. conclusionTerms
 carry the terms the narrated conclusion speaks about; subject/matching
 name the starved package for #noVersions nodes.'>
 
@@ -49,6 +50,22 @@ name the starved package for #noVersions nodes.'>
             conclusionTerms: nil
             subject: aName
             matching: aConstraint
+    ]
+
+    Incompatibility class >> decisionOf: aName version: aVersion [
+        "The external #decision clause: the strategy decided
+         aName -> aVersion. The single positive exact term
+         {aName = aVersion} — the origin of that decision's pin term
+         (Doc C §3, §5 as amended; issue #5 S3)."
+        <category: 'instance creation'>
+        ^self new
+            setTerms: (Array with: (Term package: aName
+                constraint: (VersionConstraint exactly: aVersion)
+                positive: true))
+            cause: #decision
+            conclusionTerms: nil
+            subject: nil
+            matching: nil
     ]
 
     "---- derived constructors (born at collapse and exhaustion) ----"
@@ -109,8 +126,8 @@ name the starved package for #noVersions nodes.'>
     ]
 
     cause [
-        "#dependency / #noVersions for external nodes; the parent
-         Incompatibility collection for derived nodes."
+        "#dependency / #noVersions / #decision for external nodes; the
+         parent Incompatibility collection for derived nodes."
         <category: 'accessing'>
         ^cause
     ]
@@ -146,6 +163,10 @@ name the starved package for #noVersions nodes.'>
             (terms detect: [:t | t isPositive]) printOn: aStream.
             aStream nextPutAll: ' depends on '.
             (terms detect: [:t | t isPositive not]) printOn: aStream.
+            ^self].
+        cause = #decision ifTrue: [
+            terms first printOn: aStream.
+            aStream nextPutAll: ' is selected'.
             ^self].
         cause = #noVersions ifTrue: [
             aStream nextPutAll: 'no version of '.

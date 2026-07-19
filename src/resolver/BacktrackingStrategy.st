@@ -56,12 +56,23 @@ value.'>
     ]
 
     try: package version: version ledger: ledger solution: partial [
-        "Descend on one candidate: copy the ledger, record the
+        "Descend on one candidate: copy the ledger, record FIRST the
+         decision pin (origin: the external #decision node), THEN the
          candidate's dependency edges as terms with provenance, recurse.
-         A ledger collapse is answered upward immediately."
+         A late edge that contradicts an already-decided package thereby
+         empties that package's accumulation and surfaces as an ordinary
+         recordTerm: collapse whose provenance holds the pin and the
+         offending edge (Doc C §5 as amended). A ledger collapse is
+         answered upward immediately; backtracking discards the pin with
+         the ledger copy."
         <category: 'solving'>
         | child extended collapse edge |
         child := ledger copy.
+        collapse := child recordTerm: (Term package: package
+            constraint: (VersionConstraint exactly: version)
+            positive: true
+            origin: (Incompatibility decisionOf: package version: version)).
+        collapse notNil ifTrue: [^collapse].
         (snapshot dependenciesOf: package version: version) do: [:dep |
             edge := Incompatibility package: package version: version
                 dependsOn: dep name constraint: dep constraint.
