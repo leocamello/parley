@@ -5,3 +5,6 @@
 # GNU Smalltalk artifacts
 *.im
 *.star
+
+# Runtime test fixture directories (Sprint 4+; created and cleaned by tests)
+tmp/

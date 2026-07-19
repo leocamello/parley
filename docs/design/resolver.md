@@ -13,9 +13,20 @@ versionsOf: aPackageName                 "collection of Version"
 manifestFor: aPackageName version: aVersion
     "index-entry data (via IndexEntryReader) — NEVER a Package.st evaluation"
 fetch: aPackageName version: aVersion    "archive retrieval — install time ONLY"
+snapshot                                 "the immutable IndexSnapshot of §2"
 ```
 
-`versionsOf:` and `manifestFor:version:` feed resolution; `fetch:version:` is forbidden during resolution (metadata/archive split).
+`versionsOf:` and `manifestFor:version:` feed resolution; `fetch:version:` is forbidden during resolution (metadata/archive split). `snapshot` is the source's **one I/O moment**: it reads all metadata once and answers the immutable `IndexSnapshot` value that resolution consumes — after it answers, the source is out of the loop until install time.
+
+### 1.1 `DirectorySource` (the first real source)
+
+A directory of index-entry files, read entirely at `snapshot` time:
+
+- **Layout:** each `.st` file in the directory holds exactly one `#'parley-index' 1` artifact, parsed by `IndexEntryReader` — never the compiler. Package identity (name, version) comes from the **entry contents, not the filename**; the `<name>-<version>.st` naming convention is recommended layout, never load-bearing.
+- **Determinism:** files are read in sorted-filename order. Same directory contents ⇒ identical snapshot ⇒ byte-identical lockfile (§7).
+- **Hashes:** a release's `sha256` is taken from the entry's `#archive` field (`#(<file> #sha256 '<hash>')`); an empty `#archive #()` — today's `IndexEntryWriter` output — yields `''`, exactly the `IndexSnapshot` "absent" convention. Real hashing arrives with the installer/publish work.
+- **Errors:** problems are batched into one `SourceError` (the `ManifestError problems` style — a `problems` array of human-readable strings in sorted-filename order): a file that does not parse as a literal artifact (carrying the reader's positioned reason), a file whose artifact is not a `#'parley-index' 1` entry, a duplicate (name, version) across files, or a missing/unreadable directory. A directory that scans clean but empty answers an empty snapshot — resolution then fails as an ordinary `#noVersions` `ConflictReport`, a value, never a source error.
+- **Fetch:** `fetch:version:` is a stub until the `Installer` exists — it signals a clear error naming the operation as install-time-only. The metadata/archive split holds by construction: resolution consumes the snapshot value, so the fetch path cannot be touched mid-resolution.
 
 ## 2. The Snapshot & Purity Contract
 
@@ -153,3 +164,4 @@ Default invocation flow for `parley install`:
 - Derivation-tree inspection: walk a real failure via `cause` links; assert external leaves and derived internal nodes; snapshot the rendered narration.
 - Purity: resolver runs against a hand-built in-memory snapshot with no filesystem or process access.
 - **Soundness (decision pins):** a late edge constraining an already-decided package MUST collapse — the recoverable shape backtracks to a compatible candidate; the unsatisfiable shape answers a `ConflictReport` whose external leaves include the `#decision` node. **Randomized post-hoc law:** every answered `Resolution` satisfies the root manifest's constraints and every dependency edge of every selected version (seeded generated snapshots).
+- **`DirectorySource` (§1.1):** a real directory of entry files snapshots correctly (versions, parsed constraints, hashes); malformed/mis-tagged/duplicate entries batch into one `SourceError` in sorted-filename order; a snapshot is a sealed value — files added after `snapshot` answers do not change it; end-to-end: directory → resolve → lockfile bytes on disk, byte-identical across runs and equal to the hand-built-snapshot result for the same shape.
