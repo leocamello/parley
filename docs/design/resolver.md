@@ -43,6 +43,7 @@ The strategy seam: `Resolver strategy: BacktrackingStrategy new`. A future `PubG
 | --- | --- | --- |
 | external `#dependency` | the symbol | read off an index entry: `{P@v, not (Q C)}` — "P v depends on Q C" |
 | external `#noVersions` | the symbol | a package's candidate set under its accumulated constraint is empty |
+| external `#decision` | the symbol | a strategy decides `pkg → v`: the single positive exact term `{pkg = v}` — the origin of that decision's pin term (§5) |
 | **derived** | the parent `Incompatibility` pair/collection it was proved from | at ledger collapse or candidate exhaustion (§5) |
 
 Derived incompatibilities form a **derivation tree** via `cause` links.
@@ -124,7 +125,9 @@ solveFrom: ledger solution: partial [
 ]
 ```
 
-`try:version:ledger:solution:` copies the ledger, records the dependency terms of `pkg@v` from the snapshot (each via `recordTerm:`), answers the first collapse `Incompatibility` if any, and otherwise recurses with the extended partial assignment.
+`try:version:ledger:solution:` copies the ledger, records **first the decision pin, then** the dependency terms of `pkg@v` from the snapshot (each via `recordTerm:`), answers the first collapse `Incompatibility` if any, and otherwise recurses with the extended partial assignment.
+
+**Decision pins — the soundness invariant (master plan §8 decision 22; ruled on issue #4).** Deciding `pkg → v` records a positive exact-pin term (`pkg` = `v`, origin: that decision's `#decision` incompatibility, §3) into the descent ledger copy, before the candidate's dependency edges. An edge met later that contradicts an already-decided package therefore empties that package's accumulation and surfaces as an ordinary `recordTerm:` collapse whose provenance holds the pin and the offending edge. Decisions and derivations share one ledger: a `Resolution` can never violate a recorded edge, the search loop contains no soundness re-check branches, and backtracking discards pins with the ledger copy.
 
 **Conflict lifecycle:** external incompatibilities are born at collapse points and empty candidate sets *on the way down*; a **derived** incompatibility is born at each exhaustion point (all candidates for a package failed), merging the per-candidate failures. **The unwind carries finished values; it never computes explanations.**
 
@@ -149,3 +152,4 @@ Default invocation flow for `parley install`:
 - Ledger: `recordTerm:` answers `nil` then an `Incompatibility` on collapse; accumulations are fresh values (parent ledger unaffected — copy-on-descend proof).
 - Derivation-tree inspection: walk a real failure via `cause` links; assert external leaves and derived internal nodes; snapshot the rendered narration.
 - Purity: resolver runs against a hand-built in-memory snapshot with no filesystem or process access.
+- **Soundness (decision pins):** a late edge constraining an already-decided package MUST collapse — the recoverable shape backtracks to a compatible candidate; the unsatisfiable shape answers a `ConflictReport` whose external leaves include the `#decision` node. **Randomized post-hoc law:** every answered `Resolution` satisfies the root manifest's constraints and every dependency edge of every selected version (seeded generated snapshots).
