@@ -4,7 +4,7 @@
 # must fail) or green (tests must pass). Only the HUMAN operator edits
 # this file — agents never advance the sprint or flip the phase.
 sprint: 3
-phase: red
+phase: green
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT0-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT1-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT2-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
