@@ -41,6 +41,30 @@ always yields the identical byte sequence.'>
         aStream nextPut: Character nl
     ]
 
+    IndexEntryWriter class >> writeLock: aResolution on: aStream [
+        "Write the canonical lockfile for aResolution to aStream:
+         #'parley-lock' 1, the root manifest name, then the resolved
+         packages sorted by name, each with its three-component version
+         and sha256 — single-line, single trailing newline (§5.3-5.4)."
+        <category: 'writing'>
+        aStream nextPutAll: '#(#''parley-lock'' 1'.
+        self key: #root string: aResolution rootName on: aStream.
+        aStream nextPutAll: ' #packages #('.
+        aResolution packageNames
+            do: [:name |
+                aStream nextPutAll: '#('.
+                self string: name on: aStream.
+                aStream nextPut: Character space.
+                self string: (aResolution versionOf: name) printString
+                    on: aStream.
+                aStream nextPutAll: ' #sha256 '.
+                self string: (aResolution sha256Of: name) on: aStream.
+                aStream nextPut: $)]
+            separatedBy: [aStream nextPut: Character space].
+        aStream nextPutAll: '))'.
+        aStream nextPut: Character nl
+    ]
+
     IndexEntryWriter class >> key: aSymbol string: aString on: aStream [
         "Private — one ' #key ''value''' pair."
         <category: 'private'>

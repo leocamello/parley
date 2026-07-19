@@ -78,18 +78,21 @@ third-party content ever reaches a compiler pathway.'>
     ]
 
     validateTagOf: anArray [
-        "Private — accept only the #'parley-index' 1 opening."
+        "Private — accept only the #'parley-index' 1 and #'parley-lock' 1
+         openings (the pair owns both schemas; Doc B §7)."
         <category: 'private'>
+        | tag |
         (anArray size >= 2 and: [(anArray at: 1) isSymbol])
             ifFalse: [^IndexEntryFormatError new signal:
                 'artifact does not open with a format tag and version'].
-        (anArray at: 1) = #'parley-index'
+        tag := anArray at: 1.
+        (tag = #'parley-index' or: [tag = #'parley-lock'])
             ifFalse: [^IndexEntryFormatError new signal:
-                'unknown format tag ', (anArray at: 1) printString,
-                ': this Parley reads #''parley-index'' artifacts'].
+                'unknown format tag ', tag printString,
+                ': this Parley reads #''parley-index'' and #''parley-lock'' artifacts'].
         (anArray at: 2) = 1
             ifFalse: [^IndexEntryFormatError new signal:
-                'unsupported #''parley-index'' format version ',
+                'unsupported ', tag printString, ' format version ',
                 (anArray at: 2) printString,
                 ': this Parley reads format version 1']
     ]
