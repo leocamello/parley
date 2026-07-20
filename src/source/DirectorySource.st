@@ -7,8 +7,8 @@
  the entry's #archive field ('' when #archive #()). Problems batch into
  one SourceError in sorted-filename order. snapshot is the source's one
  I/O moment: it answers the sealed immutable IndexSnapshot value that
- resolution consumes; fetch:version: stays an install-time stub until
- the Installer exists (Sprint 5)."
+ resolution consumes; fetch:version: answers archive bytes at install
+ time per Doc D §1.1 (the Sprint 4 stub, superseded at Sprint 5)."
 
 Namespace current: Parley.
 
@@ -19,7 +19,7 @@ Object subclass: DirectorySource [
 #''parley-index'' 1 entry files through IndexEntryReader. Holds its
 directory path immutably; class-side construction only. Speaks the
 PackageSource protocol: snapshot, versionsOf:, manifestFor:version:,
-and the fetch:version: install-time stub.'>
+and the install-time fetch:version: of Doc D §1.1.'>
 
     DirectorySource class >> on: aPathString [
         "Answer a source over the directory at aPathString."
@@ -73,10 +73,31 @@ and the fetch:version: install-time stub.'>
     ]
 
     fetch: aPackageName version: aVersion [
-        "Archive retrieval is install-time only; the Installer arrives
-         in Sprint 5 — until then this path signals."
+        "Answer the complete raw bytes of the archive file named by
+         the matching entry's #archive field, resolved relative to the
+         source directory (Doc D §1.1). Problems — unknown (package,
+         version), #archive #(), missing archive file — each signal a
+         one-problem SourceError."
         <category: 'source protocol'>
-        ^self error: 'fetch:version: is install-time only - the Installer does not exist yet'
+        self scanEntries do: [:entry |
+            | fields archive file |
+            fields := self fieldsOf: entry.
+            ((fields at: #name) = aPackageName
+                and: [(Version fromString: (fields at: #version)) = aVersion])
+                ifTrue: [
+                    archive := fields at: #archive.
+                    archive isEmpty ifTrue: [
+                        ^SourceError signalProblems: (Array with:
+                            aPackageName, ' ', aVersion printString,
+                            ': no published archive - the entry declares #archive #()')].
+                    file := File name: path, '/', (archive at: 1).
+                    file exists ifFalse: [
+                        ^SourceError signalProblems: (Array with:
+                            (archive at: 1), ': missing or unreadable archive file')].
+                    ^file contents]].
+        ^SourceError signalProblems: (Array with:
+            aPackageName, ' ', aVersion printString,
+            ': unknown (package, version) - the source directory declares no entry for it')
     ]
 
     scanEntries [
