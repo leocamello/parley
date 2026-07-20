@@ -33,9 +33,14 @@
      NO value equality - `=` stays identity (the decision-23
      precedent); tests compare tuple fields;
    - registrationCommandsFor: aTargetDir answers an Array of Strings,
-     one per package in sorted name order, each exactly
-     'gst-package --install --target-directory <aTargetDir> <store
-     path>' - a pure value; no process is ever spawned."
+     two per package in sorted name order (pair-adjacent, staging
+     first; Doc D §4 as amended by the issue #8 ruling), each pair
+     exactly
+     'install -D -m 644 <store path>
+      <aTargetDir>/.parley-staging/<name>.star' then
+     'gst-package --target-directory <aTargetDir>
+      <aTargetDir>/.parley-staging/<name>.star'
+     - a pure value; no process is ever spawned."
 
 Namespace current: Parley.
 
@@ -294,16 +299,25 @@ tearDown.'>
         set := (Installer source: source store: store)
             install: (self resolutionAgainst: source).
         commands := set registrationCommandsFor: 'tmp/parley-target'.
-        self assert: commands size = 3.
+        self assert: commands size = 6.
         self assert: (commands at: 1)
-            = ('gst-package --install --target-directory tmp/parley-target ',
-                root, '/', InstallFixtures digestA, '.star').
+            = ('install -D -m 644 ', root, '/', InstallFixtures digestA,
+                '.star tmp/parley-target/.parley-staging/a.star').
         self assert: (commands at: 2)
-            = ('gst-package --install --target-directory tmp/parley-target ',
-                root, '/', InstallFixtures digestB, '.star').
+            = ('gst-package --target-directory tmp/parley-target ',
+                'tmp/parley-target/.parley-staging/a.star').
         self assert: (commands at: 3)
-            = ('gst-package --install --target-directory tmp/parley-target ',
-                root, '/', InstallFixtures digestC24, '.star')
+            = ('install -D -m 644 ', root, '/', InstallFixtures digestB,
+                '.star tmp/parley-target/.parley-staging/b.star').
+        self assert: (commands at: 4)
+            = ('gst-package --target-directory tmp/parley-target ',
+                'tmp/parley-target/.parley-staging/b.star').
+        self assert: (commands at: 5)
+            = ('install -D -m 644 ', root, '/', InstallFixtures digestC24,
+                '.star tmp/parley-target/.parley-staging/c.star').
+        self assert: (commands at: 6)
+            = ('gst-package --target-directory tmp/parley-target ',
+                'tmp/parley-target/.parley-staging/c.star')
     ]
 ]
 

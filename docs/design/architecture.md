@@ -135,7 +135,7 @@ Full specification: **[resolver.md](resolver.md)**. System-level summary and inv
 
 ## 5. Phase 3 — The Orchestration Bridge
 
-- **`Installer`** — strictly post-resolution: fetch each `.star` archive via its `PackageSource`, verify by **content hash** (content-addressed cache; integrity for free), register via the `gst-package --install` baseline and local `PackageLoader`. The installed set is an immutable value; switching or rolling back an environment re-points rather than mutates.
+- **`Installer`** — strictly post-resolution: fetch each `.star` archive via its `PackageSource`, verify by **content hash** (content-addressed cache; integrity for free), register via the flagless `gst-package` baseline (staged under the star's true name — Doc D §4) and local `PackageLoader`. The installed set is an immutable value; switching or rolling back an environment re-points rather than mutates.
 - **`ExecutionScope`** — the honest `bundle exec` for 3.2.5. Holds the resolved, content-hashed `.star` set; answers `run:` by composing and launching a **clean child `gst` invocation** with a curated package path, so only the exact resolved set is visible to that image's `PackageLoader`. The scope is a domain object: inspectable, composable, and the single home of invocation logic.
 
 ---

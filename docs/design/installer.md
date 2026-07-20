@@ -53,13 +53,16 @@ A flat directory whose filenames ARE the content hashes: `<sha256>.star`. Integr
 - `install: aResolution` — runs the §1 pipeline. Answers an `InstalledSet` on a clean pass; signals one `InstallError` otherwise. Re-running `install:` with the same arguments is a **no-op that answers an equal-content set** (every hash already present ⇒ zero fetches — mechanically testable with a source whose `fetch:version:` always fails).
 - `InstallError` — the `problems` array of human-readable strings in sorted package-name order; `messageText` is `'Install has <n> problem(s): '` with problems joined by `'; '` (the house style). Problem kinds: no published archive (`sha256` `''`), fetch failure (carrying the source's message), hash mismatch (naming the package, the expected and the actual digest).
 - `InstalledSet` — the immutable product: one `(package name, Version, sha256, store path)` tuple per resolved package, in sorted package-name order. Carries **no value equality** (`=`/`hash`) — the decision-23 precedent; tests compare tuple fields. Protocol: `packageNames`, `versionOf:`, `sha256For:`, `pathFor:`, and:
-- `registrationCommandsFor: aTargetDir` — the **registration plan**: one command line per tuple, in sorted package-name order, each exactly
+- `registrationCommandsFor: aTargetDir` — the **registration plan**: two command lines per tuple, in sorted package-name order (each package's pair adjacent, staging first), each pair exactly
 
   ```
-  gst-package --install --target-directory <aTargetDir> <store path>
+  install -D -m 644 <store path> <aTargetDir>/.parley-staging/<name>.star
+  gst-package --target-directory <aTargetDir> <aTargetDir>/.parley-staging/<name>.star
   ```
 
   A pure formatting value — composed here, **executed by Sprint 6's `ExecutionScope`**, which owns all child-process invocation. Nothing in this document runs a process.
+
+  Why two lines (issue #8 ruling): 3.2.5's toolchain enforces filename/internal-name equality (`Kernel.StarPackage` rejects any star whose filename basename differs from its `package.xml` name), so the content-addressed `<sha256>.star` store path can never be registered directly — the archive is first staged under its true name inside the target (`install -D` creates `.parley-staging/`; writes stay target-confined), then registered by `gst-package` (flagless: 3.2.5's parser accepts no `--install` spelling; install is the default mode). **Name-equality MVP constraint:** a Parley package's entry name IS its star's internal package name — lowercase per Doc B §3.4, which the toolchain accepts (its name check is pure string equality). Archives remain opaque bytes to Parley: the true name comes from the tuple, never from reading the archive.
 
 ## 5. SUnit Requirements for This Doc
 

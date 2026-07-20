@@ -289,16 +289,25 @@ tmp/ and are removed in tearDown.'>
         set := (Installer source: source store: store)
             install: (self resolutionAgainst: source).
         commands := set registrationCommandsFor: 'tmp/parley-s15-target'.
-        self assert: commands size = 3.
+        self assert: commands size = 6.
         self assert: (commands at: 1)
-            = ('gst-package --install --target-directory tmp/parley-s15-target ',
-                root, '/', InstallFixtures digestA, '.star').
+            = ('install -D -m 644 ', root, '/', InstallFixtures digestA,
+                '.star tmp/parley-s15-target/.parley-staging/a.star').
         self assert: (commands at: 2)
-            = ('gst-package --install --target-directory tmp/parley-s15-target ',
-                root, '/', InstallFixtures digestB, '.star').
+            = ('gst-package --target-directory tmp/parley-s15-target ',
+                'tmp/parley-s15-target/.parley-staging/a.star').
         self assert: (commands at: 3)
-            = ('gst-package --install --target-directory tmp/parley-s15-target ',
-                root, '/', InstallFixtures digestC24, '.star')
+            = ('install -D -m 644 ', root, '/', InstallFixtures digestB,
+                '.star tmp/parley-s15-target/.parley-staging/b.star').
+        self assert: (commands at: 4)
+            = ('gst-package --target-directory tmp/parley-s15-target ',
+                'tmp/parley-s15-target/.parley-staging/b.star').
+        self assert: (commands at: 5)
+            = ('install -D -m 644 ', root, '/', InstallFixtures digestC24,
+                '.star tmp/parley-s15-target/.parley-staging/c.star').
+        self assert: (commands at: 6)
+            = ('gst-package --target-directory tmp/parley-s15-target ',
+                'tmp/parley-s15-target/.parley-staging/c.star')
     ]
 
     testS16_cacheHitsSkipFetchEntirely [
