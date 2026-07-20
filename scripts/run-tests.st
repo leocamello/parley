@@ -3,7 +3,7 @@
  Executed ONLY via scripts/verify-sprint.sh (never run gst directly).
 
  Contract with verify-sprint.sh:
-   - Loads src/compat, src/domain, src/manifest, src/resolver, src/source,
+   - Loads src/compat, src/domain, src/manifest, src/resolver, src/source, src/install, src/exec, src/publish,
      tests/support, tests/laws, tests/acceptance
      (in that order; sorted within each dir). A flat tests/ dir is also loaded
      for backward compatibility.
@@ -35,7 +35,7 @@ knownCases := TestCase allSubclasses asSet.
 "Load order is semantic: compat polyfills, domain, then test support code,
  law suites, and acceptance scenarios. Within a directory, files load in
  sorted-path order for determinism."
-#('src/compat' 'src/domain' 'src/manifest' 'src/resolver' 'src/source' 'src/install' 'src/exec' 'tests' 'tests/support' 'tests/laws' 'tests/acceptance')
+#('src/compat' 'src/domain' 'src/manifest' 'src/resolver' 'src/source' 'src/install' 'src/exec' 'src/publish' 'tests' 'tests/support' 'tests/laws' 'tests/acceptance')
     do: [:dirName |
         | dir isTestDir |
         isTestDir := dirName startsWith: 'tests'.

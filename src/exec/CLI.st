@@ -236,7 +236,7 @@ construction; zero public setters.'>
         ^CliResult
             lines: (Array
                 with: 'usage: parley <verb>'
-                with: 'verbs: init | resolve | install | update | exec <script>')
+                with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>')
             exitCode: 2
     ]
 

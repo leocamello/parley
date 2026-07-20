@@ -315,7 +315,7 @@ stream close', SourceFixtures newline
         <category: 'pinned wordings'>
         ^Array
             with: 'usage: parley <verb>'
-            with: 'verbs: init | resolve | install | update | exec <script>'
+            with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>'
     ]
 
     ExecFixtures class >> initSuccessLines [

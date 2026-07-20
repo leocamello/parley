@@ -3,8 +3,8 @@
 # 'sprint:' selects which scope regex is enforced. 'phase:' is red (tests
 # must fail) or green (tests must pass). Only the HUMAN operator edits
 # this file — agents never advance the sprint or flip the phase.
-sprint: 6
-phase: green
+sprint: 7
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT0-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT1-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT2-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -12,3 +12,4 @@ scope-3: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|d
 scope-4: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT4-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-5: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT5-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-6: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|bin/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT6-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-7: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.githooks/|\.github/|\.gitignore$|\.parley_sprint_scope$|SPRINT7-NOTES\.md$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
