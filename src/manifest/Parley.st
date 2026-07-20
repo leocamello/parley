@@ -22,12 +22,16 @@ Parley namespace binding inside the namespace itself (issue #3).'>
 
     Parley class >> define: aBlock [
         "Evaluate aBlock with a fresh ManifestBuilder and answer the
-         immutable LibraryManifest built from its declarations."
+         immutable LibraryManifest built from its declarations. The
+         manifest is recorded with ManifestFile before answering — the
+         declared Sprint 6 one-send exception (Doc E §3, issue #8)."
         <category: 'manifest authoring'>
-        | builder |
+        | builder manifest |
         builder := ManifestBuilder new.
         aBlock value: builder.
-        ^builder build
+        manifest := builder build.
+        ManifestFile record: manifest.
+        ^manifest
     ]
 ]
 

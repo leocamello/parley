@@ -1,0 +1,7 @@
+#!/bin/sh
+# Parley — the executable wrapper (Doc E §4.2): glue only, no logic.
+# Finds the Parley checkout from its own location, then execs the main
+# script; the user's working directory stays current for Package.st.
+PARLEY_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export PARLEY_ROOT
+exec gst -f "$PARLEY_ROOT/bin/parley-main.st" -- "$@"
