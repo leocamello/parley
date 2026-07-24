@@ -4,11 +4,11 @@
 # Versioned in .githooks/ and activated via: git config core.hooksPath .githooks
 #
 # Rejects any commit that stages files outside the active sprint's scope.
-# The active scope is defined in .parley_sprint_scope (one regex per sprint,
+# The active scope is defined in .parley/scope (one regex per sprint,
 # selected by the 'sprint:' line) so advancing sprints never edits this hook.
 set -Eeuo pipefail
 
-SCOPE_FILE=".parley_sprint_scope"
+SCOPE_FILE=".parley/scope"
 
 if [[ ! -f "$SCOPE_FILE" ]]; then
   echo "🛑 SCOPE SENTINEL: $SCOPE_FILE missing; cannot determine active sprint scope." >&2

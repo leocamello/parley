@@ -47,13 +47,20 @@ Verification is the single gate: it runs deterministic lint guardrails first, th
 
 ## Documentation
 
+Start at [docs/design/README.md](docs/design/README.md) — it indexes the specs
+and maps the Doc A–F letters used throughout the code to their files.
+
 | Document | Contents |
 | --- | --- |
-| [docs/design/architecture.md](docs/design/architecture.md) | System blueprint and invariants |
+| [docs/design/architecture.md](docs/design/architecture.md) | System blueprint, invariants, and the decision log |
 | [docs/design/rationale.md](docs/design/rationale.md) | Why the architecture is shaped this way |
-| [docs/design/domain-model.md](docs/design/domain-model.md) | `Version`, `VersionRange`, `VersionConstraint` — the keystone set algebra |
-| [docs/design/manifest-and-serialization.md](docs/design/manifest-and-serialization.md) | `Package.st` authoring and the literal micro-format |
-| [docs/design/resolver.md](docs/design/resolver.md) | The pure resolver, constraint provenance, and conflict narration |
+| [Doc A — domain-model.md](docs/design/domain-model.md) | `Version`, `VersionRange`, `VersionConstraint` — the keystone set algebra |
+| [Doc B — manifest-and-serialization.md](docs/design/manifest-and-serialization.md) | `Package.st` authoring and the literal micro-format |
+| [Doc C — resolver.md](docs/design/resolver.md) | The pure resolver, constraint provenance, and conflict narration |
+| [Doc D — installer.md](docs/design/installer.md) | `Sha256`, the content-addressed store, and `gst-package` registration |
+| [Doc E — execution-and-cli.md](docs/design/execution-and-cli.md) | `ProcessRunner`, `ExecutionScope`, and the CLI verbs |
+| [Doc F — publish-and-sources.md](docs/design/publish-and-sources.md) | The publish pipeline and `GitIndexSource` |
+| [docs/sprints/](docs/sprints/) | The delivery record — what each sprint built, with its seed and law count |
 
 ## License
 

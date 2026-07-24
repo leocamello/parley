@@ -30,7 +30,7 @@ Repository hooks live in `.githooks/` and are activated with:
 git config core.hooksPath .githooks
 ```
 
-The pre-commit hook enforces the active milestone's file scope (see `.parley_sprint_scope`).
+The pre-commit hook enforces the active milestone's file scope (see `.parley/scope`).
 
 ## Tests
 

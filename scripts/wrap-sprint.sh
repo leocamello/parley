@@ -4,26 +4,29 @@
 # Run ONLY after ./scripts/verify-sprint.sh exits 0 in the green phase.
 # Usage: ./scripts/wrap-sprint.sh <sprint-number> [issue-number]
 #
-# 1. Requires phase green in .parley_sprint_scope (human-flipped after
+# 1. Requires phase green in .parley/scope (human-flipped after
 #    red-phase test review).
 # 2. Traceability gate: with an issue number, every numbered Given/When/Then
 #    scenario (S1..Sn) in that issue must map to an acceptance test selector
 #    containing it (testS3_...). Gaps block the wrap.
 # 3. Re-runs verification as a final audit and captures seed + case counts.
-# 4. Writes the audit record to .parley_verification_audit (for SPRINT notes).
+# 4. Writes the audit record to .parley/audit (for SPRINT notes).
 # 5. Stages the sprint's in-scope paths (the pre-commit scope sentinel
 #    provides the enforcement backstop).
 #
-# It does NOT commit: the agent writes SPRINT<N>-NOTES.md, stages it, and
-# commits with message format 'feat(domain): implement [Class] per Doc A laws'.
+# It does NOT commit: the agent writes docs/sprints/sprint-<NN>-notes.md,
+# stages it, and commits with a message in the form
+# 'feat(<area>): implement [Class] per Doc <X> laws'.
 set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
 
 SPRINT="${1:?Usage: ./scripts/wrap-sprint.sh <sprint-number> [issue-number]}"
 ISSUE="${2:-}"
-AUDIT_FILE=".parley_verification_audit"
-SCOPE_FILE=".parley_sprint_scope"
+AUDIT_FILE=".parley/audit"
+SCOPE_FILE=".parley/scope"
+# Sprint notes are zero-padded so they sort correctly past sprint 9.
+printf -v NOTES_FILE 'docs/sprints/sprint-%02d-notes.md' "$SPRINT"
 
 PHASE=$(sed -n 's/^phase: *//p' "$SCOPE_FILE" | head -1)
 if [[ "$PHASE" != "green" ]]; then
@@ -89,16 +92,16 @@ cat "$AUDIT_FILE"
 
 echo "📦 Staging Sprint $SPRINT workspace..."
 git add src/ tests/ scripts/ 2>/dev/null || true
-[[ -f "SPRINT${SPRINT}-NOTES.md" ]] && git add "SPRINT${SPRINT}-NOTES.md"
+[[ -f "$NOTES_FILE" ]] && git add "$NOTES_FILE"
 
 git status --short
 
 cat <<EOF
 
 ✅ Sprint $SPRINT wrap complete. Remaining agent steps:
-  1. Write SPRINT${SPRINT}-NOTES.md (built classes, ambiguities resolved or
+  1. Write $NOTES_FILE (built classes, ambiguities resolved or
      questions asked, the seed/verify lines from $AUDIT_FILE, and the exact
-     toolchain line above), then: git add SPRINT${SPRINT}-NOTES.md
+     toolchain line above), then: git add $NOTES_FILE
   2. Commit: feat(domain): implement [Class] per Doc A laws
   3. HALT and report completion to the human user.
 EOF

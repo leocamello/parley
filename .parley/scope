@@ -1,0 +1,26 @@
+# Parley loop harness — active sprint scope for the pre-commit sentinel
+# and TDD phase for the verification gate.
+#
+# 'sprint:' selects which scope-<N> regex is enforced. 'phase:' is red (tests
+# must fail) or green (tests must pass). Only the HUMAN operator edits this
+# file — agents never advance the sprint or flip the phase.
+#
+# Only the scope-<N> line matching the active 'sprint:' is ever read; the
+# earlier lines are kept as the template lineage each sprint is derived from.
+# They were path-normalized when the repository layout was reorganized
+# (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
+# docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
+sprint: 7
+phase: red
+scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-3: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-4: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-5: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+scope-6: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-7 additionally admits the one-off migration paths retired by the
+# layout reorganization: the old harness-state filename and the flat sprint
+# notes. Both appear only as deletions in the reorganization commit and can be
+# dropped from scope-8 onward.
+scope-7: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|\.parley_sprint_scope$|SPRINT[0-9]+-NOTES\.md$)

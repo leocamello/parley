@@ -4,7 +4,7 @@
 # Phase 1: deterministic hard-ban linters (AGENTS.md §2). Exit 101-104.
 # Phase 2: axiomatic SUnit suite via scripts/run-tests.st on gst 3.2.5.
 #
-# TDD phases (read from the 'phase:' line of .parley_sprint_scope; the
+# TDD phases (read from the 'phase:' line of .parley/scope; the
 # human operator flips red -> green after reviewing the tests):
 #   green (default): the suite must PASS ('PARLEY-VERIFY: PASS' + exit 0).
 #   red:  the suite must FAIL for the right reasons — every test file loads
@@ -16,7 +16,7 @@
 # gst 3.2.5 exits 0 even on parse errors and unhandled fileIn exceptions,
 # so verdicts are based on the PARLEY-VERIFY sentinel, never exit codes alone.
 #
-# Circuit breaker: consecutive failures are counted in .parley_loop_state.
+# Circuit breaker: consecutive failures are counted in .parley/loop-state.
 # The counter is PROGRESS-AWARE: a failing run whose passed= count is higher
 # than the previous run's resets the streak to 1 (honest incremental progress
 # never trips the breaker). An identical failure twice in a row fast-trips.
@@ -24,7 +24,7 @@
 #   ./scripts/verify-sprint.sh --reset
 #
 # Usage:
-#   ./scripts/verify-sprint.sh                 # phase from .parley_sprint_scope
+#   ./scripts/verify-sprint.sh                 # phase from .parley/scope
 #   ./scripts/verify-sprint.sh --phase red     # explicit phase override
 #   ./scripts/verify-sprint.sh --seed N        # explicit seed
 #   ./scripts/verify-sprint.sh --reset         # HUMAN ONLY: reset breaker
@@ -32,8 +32,8 @@ set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
 
-STATE_FILE=".parley_loop_state"
-SCOPE_FILE=".parley_sprint_scope"
+STATE_FILE=".parley/loop-state"
+SCOPE_FILE=".parley/scope"
 MAX_SPINS=3
 SEED="${PARLEY_SEED:-20260718}"
 
@@ -54,10 +54,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$PHASE" && -f "$SCOPE_FILE" ]]; then
+# Resolve the TDD phase. An explicit --phase always wins; otherwise the phase
+# comes from the scope file. A missing or phase-less scope file is a HARD
+# ERROR, never a default: silently falling back to green would green-gate a
+# red sprint, which is exactly the failure the red gate exists to prevent.
+if [[ -z "$PHASE" ]]; then
+  if [[ ! -f "$SCOPE_FILE" ]]; then
+    echo "🛑 $SCOPE_FILE missing; cannot determine the TDD phase." >&2
+    echo "   Restore the scope file, or state the phase explicitly: --phase red|green" >&2
+    exit 2
+  fi
   PHASE=$(sed -n 's/^phase: *//p' "$SCOPE_FILE" | head -1)
+  if [[ -z "$PHASE" ]]; then
+    echo "🛑 No 'phase:' line in $SCOPE_FILE; cannot determine the TDD phase." >&2
+    echo "   Restore the phase line, or state it explicitly: --phase red|green" >&2
+    exit 2
+  fi
 fi
-PHASE="${PHASE:-green}"
 if [[ "$PHASE" != "red" && "$PHASE" != "green" ]]; then
   echo "Invalid phase '$PHASE' (expected red or green)." >&2
   exit 2

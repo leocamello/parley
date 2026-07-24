@@ -1,6 +1,6 @@
 # Loop harness transient state (never committed)
-.parley_loop_state
-.parley_verification_audit
+.parley/loop-state
+.parley/audit
 
 # GNU Smalltalk artifacts
 *.im

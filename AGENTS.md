@@ -4,7 +4,7 @@
 >
 > **Project:** Parley — a modern, native command-line package manager for GNU Smalltalk 3.2.5, written entirely in Smalltalk. *"Smalltalk packages, resolved by conversation."*
 >
-> **Document map:** This manual states the rules. The *why* lives in `docs/design/rationale.md`. The system blueprint is `docs/design/architecture.md`. Component specs: `docs/design/domain-model.md`, `docs/design/manifest-and-serialization.md`, `docs/design/resolver.md`. Read the relevant design doc before implementing any class it covers.
+> **Document map:** This manual states the rules. The *why* lives in `docs/design/rationale.md`. The system blueprint is `docs/design/architecture.md`. The component specs (Docs A–F) are indexed by `docs/design/README.md`, which maps each letter to its file. Read the relevant design doc before implementing any class it covers. The delivery record is `docs/sprints/`.
 
 ---
 
