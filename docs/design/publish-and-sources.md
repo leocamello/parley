@@ -6,8 +6,9 @@ Publishing closes the authoring loop: the manifest an author wrote with the Doc 
 
 ## 1. `Publisher` — manifest → archive → entry
 
-- `Publisher class >> manifest: aManifest in: aWorkingDir to: aDestDir runner: aProcessRunner` — the four collaborators held immutably. `aManifest` is the already-loaded `LibraryManifest` (the CLI loads it through `ManifestFile`; `Publisher` never reads `Package.st` itself); `aWorkingDir` is where the manifest's `fileIns` live; `aDestDir` is the index directory being published into.
+- `Publisher class >> manifest: aManifest in: aWorkingDir to: aDestDir runner: aProcessRunner` — the four collaborators held immutably; construction is **pathname-passive** (no I/O, no process — a publisher can be built over paths that do not exist yet). `aManifest` is the already-loaded `LibraryManifest` (the CLI loads it through `ManifestFile`; `Publisher` never reads `Package.st` itself); `aWorkingDir` is where the manifest's `fileIns` live; `aDestDir` is the index directory being published into.
 - `publish` — the pipeline below. On success answers the archive's **sha256 hex digest**; on any problem signals **one `PublishError`**.
+- `packageXml` — the §1.1 composition as a **pure value** (no I/O, no process). It exists because a successful `publish` removes the stage, so the canonical bytes would otherwise be observable only through the failure path; step 3 writes exactly these bytes into the stage. (Operator ruling, Sprint 7 Gate A.)
 
 The pipeline, in order:
 
