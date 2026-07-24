@@ -1,12 +1,18 @@
 "Parley — CLI: the package-manager verbs over everything beneath.
  Spec: docs/design/execution-and-cli.md §4; issue #8 S10-S19.
  An orchestration answering a value: run: dispatches the MVP argv
- grammar (init | resolve | install | update | exec <script>) and
- answers an immutable CliResult. The CLI never prints, never
- terminates the image, and never touches a process except through the
- scope's runner. Its own I/O is confined to the working directory's
- Package.st (init template, ManifestFile load) and parley.lock
- (settled reader/writer).
+ grammar (init | resolve | install | update | exec <script> |
+ publish <dir>) and answers an immutable CliResult. The CLI never
+ prints, never terminates the image, and never touches a process
+ except through the scope's runner. Its own I/O is confined to the
+ working directory's Package.st (init template, ManifestFile load)
+ and parley.lock (settled reader/writer); publish's I/O belongs to
+ the Publisher, confined to its destination.
+
+ publish (Doc F §5, Sprint 7 — the declared CLI exception): load the
+ manifest, run the Publisher pipeline, answer one success line naming
+ the package and version on exit 0, or the PublishError's problems on
+ exit 1. It needs no source collaborator.
 
  install is the lockfile fast path (Doc E §4.1): a valid pin is used
  WITHOUT consuming the source's snapshot; invalid or absent resolves
@@ -65,6 +71,8 @@ construction; zero public setters.'>
             ifTrue: [^self init].
         (verb = 'exec' and: [anArgvArray size = 2])
             ifTrue: [^self exec: (anArgvArray at: 2)].
+        (verb = 'publish' and: [anArgvArray size = 2])
+            ifTrue: [^self publish: (anArgvArray at: 2)].
         (anArgvArray size = 1 and: [source notNil]) ifTrue: [
             verb = 'resolve' ifTrue: [^self resolve].
             verb = 'install' ifTrue: [^self install].
@@ -127,6 +135,29 @@ construction; zero public setters.'>
             target: target
             runner: runner) run: aScriptPath.
         ^CliResult lines: #() exitCode: code
+    ]
+
+    publish: aDestDir [
+        "Publish the working directory's own package into the
+         destination index directory (Doc F §5): load the manifest,
+         then run the Publisher pipeline. Success is one line naming
+         the package and version, exit 0; a PublishError's problems
+         become the lines, exit 1. No source collaborator is required —
+         publishing produces index entries, it does not consume them."
+        <category: 'verbs'>
+        | manifest |
+        manifest := self loadManifest.
+        [(Publisher
+            manifest: manifest
+            in: workingDir
+            to: aDestDir
+            runner: runner) publish]
+                on: PublishError
+                do: [:e | ^CliResult lines: e problems exitCode: 1].
+        ^CliResult
+            lines: (Array with: 'published ', manifest name, ' ',
+                manifest version printString)
+            exitCode: 0
     ]
 
     "---- the install pipeline ----"

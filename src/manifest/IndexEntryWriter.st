@@ -16,8 +16,37 @@ always yields the identical byte sequence.'>
 
     IndexEntryWriter class >> write: aManifest on: aStream [
         "Write the canonical index entry for aManifest to aStream,
-         applying the §5.4 rendering rules exactly."
+         applying the §5.4 rendering rules exactly. The unpublished
+         form: #archive #() — nothing has been built yet."
         <category: 'writing'>
+        self writeHeadOf: aManifest on: aStream.
+        aStream nextPutAll: ') #archive #())'.
+        aStream nextPut: Character nl
+    ]
+
+    IndexEntryWriter class >> write: aManifest archive: aFileName sha256: aHexDigest on: aStream [
+        "Write the PUBLISHED index entry for aManifest to aStream
+         (Doc F §2): identical §5.2 canonical rendering to write:on:,
+         except #archive names the landed archive and carries its
+         digest. The digest is opaque here — the Publisher computes it
+         through the settled Sha256 over the archive's real bytes."
+        <category: 'writing'>
+        self writeHeadOf: aManifest on: aStream.
+        aStream nextPutAll: ') #archive #('.
+        self string: aFileName on: aStream.
+        aStream nextPutAll: ' #sha256 '.
+        self string: aHexDigest on: aStream.
+        aStream nextPutAll: '))'.
+        aStream nextPut: Character nl
+    ]
+
+    IndexEntryWriter class >> writeHeadOf: aManifest on: aStream [
+        "Private — the format tag through the last dependency element:
+         everything the two index renderings share, byte for byte. The
+         caller appends its #archive field and closes the artifact.
+         Extracted so the published and unpublished forms cannot drift
+         apart — byte-identity of write:on: is the invariant."
+        <category: 'private'>
         aStream nextPutAll: '#(#''parley-index'' 1'.
         self key: #name string: aManifest name on: aStream.
         self key: #version string: aManifest version printString on: aStream.
@@ -36,9 +65,7 @@ always yields the identical byte sequence.'>
                 aStream nextPut: Character space.
                 self string: dep constraint printString on: aStream.
                 aStream nextPut: $)]
-            separatedBy: [aStream nextPut: Character space].
-        aStream nextPutAll: ') #archive #())'.
-        aStream nextPut: Character nl
+            separatedBy: [aStream nextPut: Character space]
     ]
 
     IndexEntryWriter class >> writeLock: aResolution on: aStream [
