@@ -8,9 +8,9 @@ The language is called Smalltalk — casual conversation. A **parley** is the fo
 
 ## Status
 
-**Pre-alpha.** Parley is under active development toward its first milestone: the algebraic domain model (`Version`, `VersionRange`, `VersionConstraint`) with a fully axiomatic test suite. Nothing is installable yet.
+**Pre-alpha, and the core loop works end to end.** An author can publish a package into an index; a consumer can resolve it, install it, and execute code against it in a curated child image — every step driven through the shipped `bin/parley` binary, and proven that way by the test suite. What is *not* here yet: registry hosting, prerelease versions, yank/retire, and index signing. Interfaces may still move.
 
-## Planned commands
+## Commands
 
 ```
 parley init        Create a new package with a Package.st manifest
@@ -18,8 +18,23 @@ parley install     Resolve, fetch, and register dependencies
 parley resolve     Resolve dependencies and write the lockfile
 parley update      Re-resolve, ignoring the existing lockfile
 parley exec        Run a program inside a curated, resolved environment
-parley publish     Serialize the manifest into a static index entry
+parley publish     Build the archive and land a release in an index
 ```
+
+`--source <dir>` selects a directory index for the verbs that need one. Parley's state for a project lives beside that project, under `<working-dir>/.parley/`.
+
+### Exit codes
+
+Parley never answers a backtrace, and no failing command ever exits `0`:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | success |
+| `1` | a diagnosis — Parley understood what is wrong with your project and is telling you |
+| `2` | usage — the command was not well formed |
+| `70` | a defect in **Parley**, not in your project. One line, never a dump. Please report it. |
+
+The split between `1` and `70` is deliberate and law-enforced: a script checking `$?` can tell "your input is wrong" from "the tool is broken".
 
 ## Design highlights
 
@@ -58,8 +73,8 @@ and maps the Doc A–F letters used throughout the code to their files.
 | [Doc B — manifest-and-serialization.md](docs/design/manifest-and-serialization.md) | `Package.st` authoring and the literal micro-format |
 | [Doc C — resolver.md](docs/design/resolver.md) | The pure resolver, constraint provenance, and conflict narration |
 | [Doc D — installer.md](docs/design/installer.md) | `Sha256`, the content-addressed store, and `gst-package` registration |
-| [Doc E — execution-and-cli.md](docs/design/execution-and-cli.md) | `ProcessRunner`, `ExecutionScope`, and the CLI verbs |
-| [Doc F — publish-and-sources.md](docs/design/publish-and-sources.md) | The publish pipeline and `GitIndexSource` |
+| [Doc E — execution-and-cli.md](docs/design/execution-and-cli.md) | `ProcessRunner`, `ExecutionScope`, the CLI verbs, and the diagnosis boundary |
+| [Doc F — publish-and-sources.md](docs/design/publish-and-sources.md) | The publish pipeline, entry validation, and `GitIndexSource` |
 | [docs/sprints/](docs/sprints/) | The delivery record — what each sprint built, with its seed and law count |
 
 ## License

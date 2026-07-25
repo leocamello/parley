@@ -137,6 +137,13 @@ Full specification: **[resolver.md](resolver.md)**. System-level summary and inv
 
 - **`Installer`** — strictly post-resolution: fetch each `.star` archive via its `PackageSource`, verify by **content hash** (content-addressed cache; integrity for free), register via the flagless `gst-package` baseline (staged under the star's true name — Doc D §4) and local `PackageLoader`. The installed set is an immutable value; switching or rolling back an environment re-points rather than mutates.
 - **`ExecutionScope`** — the honest `bundle exec` for 3.2.5. Holds the resolved, content-hashed `.star` set; answers `run:` by composing and launching a **clean child `gst` invocation** with a curated package path, so only the exact resolved set is visible to that image's `PackageLoader`. The scope is a domain object: inspectable, composable, and the single home of invocation logic.
+- **`CLI` / `CliResult`** — the six verbs as an orchestration that answers a **value**: the CLI never prints and never terminates the image.
+
+## 5.5 Phase 4 — The Ecosystem (Sprint 7+)
+
+- **`Publisher`** — manifest → toolchain-built `.star` → populated index entry, landed into a destination index. Refusal-first (releases are immutable), batched pre-flight, destination-confined staging, build fail-stop. Parley never zips: the toolchain owns the archive format (Doc F §1).
+- **`GitIndexSource`** — a git checkout used as an index directory, by pure composition over `DirectorySource` plus exactly one git moment at `snapshot`. `fetch:version:` runs no git, so install-time bytes are the ones resolution saw (Doc F §3).
+- **`CommandLine` and the diagnosis boundary** — the composition root of one invocation: the flag grammar, the wiring (all state derived from the *working directory*, never the process cwd), and the error boundary. **No Parley command ever answers a backtrace, and no failing command ever exits `0`.** A declared Parley error is a diagnosis at exit `1`; anything else is a defect in Parley at exit `70`, distinct so a script can tell "your input is wrong" from "the tool is broken". The boundary is a **closed set with a law**, and the shipped binary is law-guarded — glue that chooses an exit code is not glue, it is the product (Doc E §4.2/§4.3, §8 decision 30).
 
 ---
 
@@ -177,8 +184,21 @@ The algebra is tested **as laws** over randomized generated versions and constra
 | `Parley.Resolver` | 2 | Pure function; `strategy:` seam |
 | `Parley.BacktrackingStrategy` | 2 | MVP solver; future `PubGrubStrategy` |
 | `Parley.Resolution` / `ConflictReport` | 2 | The two possible answers of resolution |
+| `Parley.IndexSnapshot` | 2 | The sealed, immutable view of a source the resolver consumes |
+| `Parley.SourceError` | 2 | Batched source problems: every rejection path of a scan is a diagnosis |
+| `Parley.PinVerification` | 2 | Whether a lockfile's pins still satisfy the manifest |
+| `Parley.Sha256` | 3 | Pure FIPS 180-4; the integrity primitive, vector-anchored |
+| `Parley.ContentStore` | 3 | Content-addressed `<sha256>.star` cache; detection only, never self-repair |
 | `Parley.Installer` | 3 | Fetch, hash-verify, register via `gst-package` |
+| `Parley.InstalledSet` / `InstallError` | 3 | The immutable install product; batched install problems |
+| `Parley.ProcessRunner` | 3 | **The one process seam** — the only pathway that ever creates a child process |
 | `Parley.ExecutionScope` | 3 | Process-level sandbox; `run:` launches curated child `gst` |
+| `Parley.ExecutionError` | 3 | Fail-stop registration failure: the command line and its exit code |
+| `Parley.ManifestFile` | 3 | Loads the owner's own `Package.st` (namespace-current file-in; decision 19) |
+| `Parley.CLI` / `CliResult` | 3 | The six verbs as an orchestration answering a value |
+| `Parley.Publisher` / `PublishError` | 4 | Manifest → archive → entry; batched publish problems |
+| `Parley.CommandLine` | 4 | The composition root: flag grammar, wiring, and the diagnosis boundary |
+| `Parley.LockError` | 4 | A `parley.lock` that cannot be read — the operator's file, named as such |
 
 ---
 
@@ -202,3 +222,18 @@ The algebra is tested **as laws** over randomized generated versions and constra
 16. **Process-level sandboxing** — 3.2.5 cannot isolate versions in-image; child `gst` with curated paths is the honest `bundle exec`.
 17. **Explicit DSL methods; DNU as error path only** — the manifest vocabulary is browsable API surface (senders, implementors, completion, hover docs); `doesNotUnderstand:` turns typos into rich `ManifestVocabularyError`s.
 18. **Axiomatic SUnit laws** — set theory proven over generated versions.
+19. **`Parley.Parley` entry-point gateway** — 3.2.5 namespaces swallow unknown keyword sends as binding setters; a shadow class inside the namespace preserves the Doc B §2 authoring syntax verbatim without any kernel extension.
+20. **Single-line canonical rendering** — one artifact, one line; diffs and hashes stay meaningful.
+21. **`Term` carries an equality-excluded `origin`** — provenance travels with the term without polluting its value identity.
+22. **Decision pins** — the resolver records *why* a version was chosen, not only that it was; the Sprint 2 soundness gap closed in Sprint 3.
+23. **`ApplicationManifest` carries no value equality** — a composition of environment and lockfile is not a value; the precedent every later composition root follows.
+24. **Source-protocol unknowns are ordinary values, never errors** — "this source has no such package" is an answer, not an exception.
+25. **The install-pipeline contract** — fetch → verify → store, in that order; the store never repairs itself.
+26. **Name-equality MVP constraint + staged registration plan** — 3.2.5's `StarPackage` requires filename to equal internal package name, so registration stages each content-addressed archive under its true name before the flagless `gst-package --target-directory`.
+27. **`RegistrySource` is deferred entirely, not stubbed** — a registry source without a registry is either a renamed `DirectorySource` or an untestable HTTP shell; it arrives with hosting.
+28. **A declared settled-class exception is a *public contract* exception, not a line-count exception** — private helpers in service of a declared change need no separate declaration; new public selectors always do.
+29. **Fail-stop governs the run that failed, not the run after it** — preserving a failed run's evidence must not make the next invocation non-deterministic.
+30. **Glue that chooses an exit code is not glue** — the "wrapper exempt from SUnit obligations" declaration let a `src/` directory ship unreachable, so the shipped `publish` verb answered a backtrace **and exited `0`**. The exemption is withdrawn: the wiring and the boundary live in `CommandLine` with laws, and `bin/` is drift-guarded.
+31. **A boundary must blame the right party** — 3.2.5's `fileIn:` signals a kernel error on a missing file, so `resolve` before `parley init` was answered with exit `70` ("a defect in Parley"). `ManifestFile` checks the path first: exit `1`, naming the verb that fixes it. Fail-wrong in its second form is a lying *attribution*, not a lying exit code.
+32. **The closed-set law states what the code can support** — the second bucket is "declared undiagnosed with its ground named", not "provably never signaled out of a verb", because three classes could not meet the stronger claim. A law that asserts something untrue is the disease, not the cure. (Sprint 9 closes those escapes and the strong claim becomes true again.)
+33. **A reviewer amendment is delivered work and carries the same burden of proof** — a Gate A review must verify fixture/oracle *pairings*, not only pinned literals; "the reviewer wrote it" is not evidence.
