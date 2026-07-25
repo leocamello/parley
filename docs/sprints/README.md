@@ -19,11 +19,18 @@ number is the total axiomatic laws green at that sprint's close.
 | [04](sprint-04-notes.md) | The first real source — `DirectorySource`, end-to-end resolve-on-disk | [#6](https://github.com/leocamello/parley/issues/6) | `046c438` | 263 |
 | [05](sprint-05-notes.md) | The Installer — `Sha256`, `ContentStore`, `Installer`, the registration plan | [#7](https://github.com/leocamello/parley/issues/7) | `7c48f9a` | 308 |
 | [06](sprint-06-notes.md) | `ExecutionScope` + CLI — the process seam, the curated child image, all five verbs | [#8](https://github.com/leocamello/parley/issues/8) | `af8782d` | 356 |
+| [07](sprint-07-notes.md) | Publish + `GitIndexSource` — `Publisher`, the second real source, the ecosystem loop | [#9](https://github.com/leocamello/parley/issues/9) | `09d2307` | 409 |
+| [08](sprint-08-notes.md) | The diagnosis boundary — `CommandLine`, exit codes that never lie, the law-guarded binary | [#10](https://github.com/leocamello/parley/issues/10) | `4ef95a5` | 461 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a
 toolchain-built star resolved, locked, installed, registered, and its class
 proven visible inside the curated child process — a package lands in an image.
+Sprint 7 closed the ecosystem loop: author A publishes, author B resolves,
+installs and executes A's package. Sprint 8 closed it *through the shipped
+binary* — the same loop driven end to end by real `bin/parley-main.st` child
+processes, with exit codes that distinguish "your input is wrong" from "the
+tool is broken" and never answer `0` on a failure.
 
 ## Naming
 
