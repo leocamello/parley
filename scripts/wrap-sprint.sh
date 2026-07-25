@@ -91,7 +91,12 @@ echo "📋 Audit recorded in $AUDIT_FILE:"
 cat "$AUDIT_FILE"
 
 echo "📦 Staging Sprint $SPRINT workspace..."
-git add src/ tests/ scripts/ 2>/dev/null || true
+# bin/ entered the scope regex at Sprint 8, when the wrapper stopped being
+# exempt from laws and became a deliverable like any other. It was missing
+# here, so bin/parley-main.st came back unstaged at the Sprint 8 wrap and had
+# to be staged by hand. Anything inside the active scope-<N> regex that a
+# sprint can legitimately change belongs in this list.
+git add src/ bin/ tests/ scripts/ 2>/dev/null || true
 [[ -f "$NOTES_FILE" ]] && git add "$NOTES_FILE"
 
 git status --short
