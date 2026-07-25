@@ -82,7 +82,11 @@ setters; no value equality.'>
         "Run the §1 pipeline and answer the landed archive's sha256 hex
          digest; signal one PublishError on any problem."
         <category: 'publishing'>
-        | missing code |
+        | destination missing code |
+        destination := File name: destDir.
+        (destination exists and: [destination isDirectory]) ifFalse: [
+            ^PublishError signalProblems:
+                (Array with: self missingDestinationProblem)].
         (File name: self entryPath) exists ifTrue: [
             ^PublishError signalProblems:
                 (Array with: self refusalProblem)].
@@ -95,6 +99,18 @@ setters; no value equality.'>
                 'package build failed with exit code ', code printString,
                 ': ', self buildCommand)].
         ^self land
+    ]
+
+    missingDestinationProblem [
+        "Private — the destination check that precedes everything else
+         (Doc F §1, Sprint 8): a destination that does not exist or is
+         not a directory is one problem naming it. Publish does NOT
+         create it — an author publishing into a directory that is not
+         there has made an error worth naming, and creating it silently
+         would make a typo indistinguishable from an intent. Nothing is
+         checked after this, nothing is written, no process is spawned."
+        <category: 'private-problems'>
+        ^destDir, ': missing or unreadable destination directory - publish does not create it'
     ]
 
     refusalProblem [

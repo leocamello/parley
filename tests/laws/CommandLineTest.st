@@ -178,7 +178,14 @@ diagnosis boundary.'>
         work := self track:
             (CommandLineFixtures diamondRootWorkDirNamed: 'cl-resolve-work').
         index := self freshDir: 'cl-resolve-index'.
-        SourceFixtures populateDiamondIn: index.
+        "the INSTALL diamond, not the source diamond: ExecFixtures
+         diamondLockString embeds the true digests, and SourceFixtures
+         populateDiamondIn: writes the 'ab12'/'cd34'/'ef56'
+         placeholders — the oracle and that fixture can never agree.
+         This is the pairing CliTest>>diamondEntriesDir: has used since
+         Sprint 6. Corrected by the operator mid-Sprint 8, from the
+         agent's report; the mistake was the reviewer's."
+        InstallFixtures populateInstallDiamondIn: index.
         result := (self commandLineIn: work runner: RecordingRunner new)
             run: (Array with: 'resolve' with: '--source' with: index).
         self assert: result exitCode = 0.

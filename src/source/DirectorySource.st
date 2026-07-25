@@ -135,7 +135,7 @@ and the install-time fetch:version: of Doc D §1.1.'>
          (name, version) across files; a problem is recorded against
          the file's basename and the file contributes no entry."
         <category: 'private'>
-        | basename entry shape fields name version key |
+        | basename entry shape value fields name version key |
         basename := aFile stripPath.
         entry := [IndexEntryReader readFrom: (ReadStream on: aFile contents)]
             on: IndexEntryParseError, IndexEntryFormatError
@@ -151,6 +151,10 @@ and the install-time fetch:version: of Doc D §1.1.'>
         shape := self schemaProblemIn: entry.
         shape notNil ifTrue: [
             problems add: basename, ': ', shape.
+            ^self].
+        value := self valueProblemIn: entry.
+        value notNil ifTrue: [
+            problems add: basename, ': ', value.
             ^self].
         fields := self fieldsOf: entry.
         name := fields at: #name.
@@ -254,6 +258,45 @@ and the install-time fetch:version: of Doc D §1.1.'>
             ((pair isKindOf: Array) and: [pair size = 2]) ifFalse: [^false].
             (self isSchemaStringArray: pair) ifFalse: [^false]].
         ^true
+    ]
+
+    "---- §4.1 value-shape validation (Doc F §4.1, Sprint 8) ----"
+
+    valueProblemIn: anEntry [
+        "Private — the first §4.1 value defect of an entry already
+         known to have the §4 schema shape, as the descriptive tail of
+         one problem, or nil when every value parses. Shape validation
+         asks whether a field is a string; it never asked whether the
+         string MEANS anything, and a #version 'banana' was the last
+         way a malformed entry could crash instead of diagnose.
+
+         Runs BEFORE duplicate detection, which needs a parsed version
+         to compare. One problem per file, as everywhere in the scan."
+        <category: 'private-values'>
+        | fields |
+        fields := self fieldsOf: anEntry.
+        (self parses: [Version fromString: (fields at: #version)])
+            ifFalse: [
+                ^'#version ', (fields at: #version) printString,
+                    ' does not parse as a version'].
+        (fields at: #dependencies) do: [:pair |
+            (self parses: [VersionConstraint fromString: (pair at: 2)])
+                ifFalse: [
+                    ^'#dependencies constraint ', (pair at: 2) printString,
+                        ' for ', (pair at: 1) printString,
+                        ' does not parse as a version constraint']].
+        ^nil
+    ]
+
+    parses: aBlock [
+        "Private — whether the SETTLED parser aBlock consults accepts
+         its input. Validation asks the parsers and never re-implements
+         them: they stay the single definition of what parses, and this
+         answers only whether they said yes."
+        <category: 'private-values'>
+        ^[aBlock value. true]
+            on: VersionFormatError, ConstraintFormatError
+            do: [:e | e return: false]
     ]
 
     isSchemaArchive: aValue [

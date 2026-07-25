@@ -7,6 +7,18 @@
  authoring syntax works verbatim — and answers the manifest recorded
  by define:. A file that recorded nothing signals one ManifestError
  whose single problem names the path (wording pinned in RED).
+
+ The path is checked FIRST (Doc E §3 step 0, Sprint 8 — the third
+ declared settled-class exception, granted at the Sprint 8 RED
+ review): 3.2.5's FileStream fileIn: signals a kernel
+ SystemExceptions.FileError on a missing file, so without this check
+ the most ordinary user error in the tool — resolve before parley
+ init — reaches the Doc E §4.2 boundary UNDIAGNOSED and is answered
+ with exit 70, 'this is a defect in Parley, not in your project'.
+ That is the fail-wrong disease in its second form: not a lying exit
+ code, but a lying attribution of blame. A missing Package.st is the
+ operator's problem, so Parley says so — exit 1, one problem, naming
+ the verb that writes one.
  All recording state lives here; the gateway's sole change is the
  declared one-send exception (ManifestFile record: before answering).
  Trust boundary unchanged (architecture §2.2): only the root
@@ -37,10 +49,13 @@ one-problem ManifestError naming the path.'>
     ManifestFile class >> load: aPath [
         "File the developer's own Package.st at aPath in with the
          Parley namespace current and answer the recorded manifest.
-         Signals one ManifestError naming the path when the file never
-         sent define:."
+         Signals one ManifestError naming the path when the path does
+         not exist, and another when the file never sent define:."
         <category: 'loading'>
         | previous |
+        (File name: aPath) exists ifFalse: [
+            ^ManifestError signalProblems: (Array with:
+                aPath, ': missing or unreadable Package.st - run parley init to write one')].
         recorded := nil.
         previous := Namespace current.
         [Namespace current: (Smalltalk at: #Parley).

@@ -31,6 +31,14 @@
      destination-confined, removed on success, LEFT IN PLACE after a
      failed build (fail-stop never cleans up behind an error).
 
+ Sprint 8 (issue #10 S11, Doc F §1) adds the DESTINATION CHECK laws
+ below, closing the Sprint 7 ruled gap: a destination that does not
+ exist or is not a directory is one pinned PublishError problem
+ (CommandLineFixtures missingDestinationProblemFor:), checked before
+ the refusal check — nothing written, nothing created, no process
+ spawned. S11 lives here, in the settled Publisher suite, because it
+ is a Publisher law; the acceptance selector testS11_ mirrors it.
+
  Real processes appear only where the law under test IS the toolchain
  build; every such law touches the missing Publisher class before
  anything could spawn, so the red phase spawns nothing. Star digests
@@ -113,6 +121,65 @@ destination-confined stage.'>
             runner: RecordingRunner new.
         self assert: publisher packageXml
             = PublishFixtures greetingPackageXml
+    ]
+
+    "---- S11 (Sprint 8): the destination check comes first ----"
+
+    testAMissingDestinationIsOnePinnedProblem [
+        "Doc F §1, closing the Sprint 7 ruled gap: a destination that
+         does not exist is one PublishError problem naming it. Publish
+         does NOT create it — creating it silently would make a typo
+         indistinguishable from an intent. Nothing is written, and no
+         process is spawned (a recording runner proves it)."
+        | work dest runner problems |
+        work := self greetingWorkDir: 'pub-dest-work'.
+        dest := self track: (PublishFixtures absentPathNamed: 'pub-dest-dest').
+        runner := RecordingRunner new.
+        problems := self problemsFrom: [
+            (self publisherFor: PublishFixtures greetingManifest
+                in: work to: dest runner: runner) publish].
+        self assert: problems size = 1.
+        self assert: (problems at: 1)
+            = (CommandLineFixtures missingDestinationProblemFor: dest).
+        self assert: runner commands = #().
+        self deny: (File name: dest) exists
+    ]
+
+    testADestinationThatIsNotADirectoryIsTheSameProblem [
+        "'does not exist OR is not a directory' — one check, one
+         wording, following the DirectorySource precedent applied to
+         the write side."
+        | holder dest work runner problems |
+        holder := self freshDir: 'pub-destfile-holder'.
+        SourceFixtures write: 'not a directory'
+            toFile: 'index' in: holder.
+        dest := holder, '/index'.
+        work := self greetingWorkDir: 'pub-destfile-work'.
+        runner := RecordingRunner new.
+        problems := self problemsFrom: [
+            (self publisherFor: PublishFixtures greetingManifest
+                in: work to: dest runner: runner) publish].
+        self assert: problems size = 1.
+        self assert: (problems at: 1)
+            = (CommandLineFixtures missingDestinationProblemFor: dest).
+        self assert: runner commands = #().
+        self assert: (self contentsOf: dest) = 'not a directory'
+    ]
+
+    testTheDestinationCheckPrecedesEverythingElse [
+        "Nothing is checked after it: the manifest declares fileIns
+         that are absent from the working directory, and the batched
+         pre-flight is still not what the author is told about."
+        | work dest problems |
+        work := self freshDir: 'pub-destorder-work'.
+        dest := self track:
+            (PublishFixtures absentPathNamed: 'pub-destorder-dest').
+        problems := self problemsFrom: [
+            (self publisherFor: PublishFixtures absentFileInsManifest
+                in: work to: dest runner: RecordingRunner new) publish].
+        self assert: problems size = 1.
+        self assert: (problems at: 1)
+            = (CommandLineFixtures missingDestinationProblemFor: dest)
     ]
 
     "---- S6: the real build lands the release ----"
