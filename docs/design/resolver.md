@@ -43,6 +43,18 @@ Resolution answers exactly one of two **values** (never search-loop exceptions):
 
 The strategy seam: `Resolver strategy: BacktrackingStrategy new`. A future `PubGrubStrategy` must be an additive swap — this doc's value objects (`Term`, `Incompatibility`) are PubGrub's clauses; only the loop changes.
 
+### 2.1 Retirement lives in the snapshot, and the resolver never learns about it (Sprint 10)
+
+A retired release (Doc B §5.5) must be invisible to fresh resolution and still reachable for an existing lock. Both fall out of the snapshot's existing shape with **zero resolver change**, and that is the point — the resolver stays a pure function of (root manifest, snapshot), unaware that retirement exists:
+
+- `versionsOf:` **excludes** retired versions. The resolver selects only from what it is offered, so a retired release is never picked, never appears in a conflict derivation, and needs no special case anywhere in the search loop.
+- `dependenciesOf:version:` and `sha256For:version:` **still answer** for a retired release. A lock that already pins one verifies and installs exactly as before.
+- `retirementReasonFor:version:` answers the author's reason, or `nil` — carried so consumers can surface it, and used by nothing inside resolution.
+
+Adding a kind-check to the resolver would have been the obvious implementation and the wrong one: it would put a policy decision inside a pure search, and every future strategy would have to reimplement it. Filtering at the snapshot means `PubGrubStrategy` inherits retirement semantics for free.
+
+**Not yet surfaced to consumers, deliberately.** Telling an operator that a *pinned* dependency has been retired requires reading the index on the `install` fast path — and Doc E §4.1's settled law says that path must complete **without consuming the source's snapshot**, proved by a snapshot-signaling source double. Retirement reporting therefore belongs with a verb that is allowed to consult the index (the deferred `parley check`), not to `install`. Sprint 10 delivers the schema and the resolution semantics; a retired release is observable through `update` and fresh `resolve`, where the snapshot is consumed anyway.
+
 ---
 
 ## 3. `Term` & `Incompatibility` behavior
@@ -164,4 +176,5 @@ Default invocation flow for `parley install`:
 - Derivation-tree inspection: walk a real failure via `cause` links; assert external leaves and derived internal nodes; snapshot the rendered narration.
 - Purity: resolver runs against a hand-built in-memory snapshot with no filesystem or process access.
 - **Soundness (decision pins):** a late edge constraining an already-decided package MUST collapse — the recoverable shape backtracks to a compatible candidate; the unsatisfiable shape answers a `ConflictReport` whose external leaves include the `#decision` node. **Randomized post-hoc law:** every answered `Resolution` satisfies the root manifest's constraints and every dependency edge of every selected version (seeded generated snapshots).
+- **Retirement (§2.1, Sprint 10):** a snapshot built with a retired release omits that version from `versionsOf:` while `dependenciesOf:version:` and `sha256For:version:` still answer for it (the two halves of "excluded from fresh resolution, still fetchable", asserted together); a resolution over a snapshot whose highest version is retired selects the next lower one **and the resolver is unchanged** — proved by resolving the same shape against a hand-built snapshot with that version simply absent and asserting the identical `Resolution`; retiring every version of a required package answers a `ConflictReport`, never a crash; `retirementReasonFor:version:` answers the author's reason and `nil` for a live release; and a snapshot with no retirements is byte-identical in behavior to a pre-Sprint-10 one (declared regression guard).
 - **`DirectorySource` (§1.1):** a real directory of entry files snapshots correctly (versions, parsed constraints, hashes); malformed/mis-tagged/duplicate entries batch into one `SourceError` in sorted-filename order; a snapshot is a sealed value — files added after `snapshot` answers do not change it; end-to-end: directory → resolve → lockfile bytes on disk, byte-identical across runs and equal to the hand-built-snapshot result for the same shape.

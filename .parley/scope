@@ -37,9 +37,10 @@ scope-8: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/i
 # from Sprint 8 onward, and wrap-sprint.sh now stages it.
 scope-9: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 # scope-10 is identical to scope-9: Sprint 10 introduces no new src/
-# directory and no new class at all — the lock body-shape check lands in
-# the settled CLI's existing pinnedResolution boundary, and the boundary
-# table is a class-side method on Sprint 8's CommandLine. So
-# scripts/run-tests.st is unchanged. bin/ stays in scope — S8 and S11
-# spawn the shipped binary.
+# directory and no new class at all. Retirement is a schema plus
+# accessors on the settled IndexEntryReader / DirectorySource /
+# IndexSnapshot; the lock body-shape check lands in the settled CLI's
+# existing pinnedResolution boundary; the boundary table is a class-side
+# method on Sprint 8's CommandLine. So scripts/run-tests.st is
+# unchanged. bin/ stays in scope — S12 spawns the shipped binary.
 scope-10: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)

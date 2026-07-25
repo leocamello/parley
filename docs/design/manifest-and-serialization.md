@@ -147,6 +147,25 @@ Fixed key order; ALL keys always present (empty string / empty array when unset)
 5. Single spaces between elements; no trailing whitespace; single trailing newline.
 6. `fileIns` — **preserved order, never sorted** (§6).
 
+### 5.5 Retirement schema (`#'parley-retired'`, format 1) — Sprint 10
+
+The third schema, and the answer to "where does a retirement signal live" (§8 decision 37). A retired release stays **fetchable** — an existing lock that pins it keeps installing, because breaking a build that already resolved is never the right response to a late-discovered problem — and is **excluded from fresh resolution**, carrying a reason the author wrote.
+
+```smalltalk
+#(#'parley-retired' 1
+  #retirements #(
+      #('kernel-json' '0.3.1' 'security: CVE-2026-1234, upgrade to 0.3.2')
+      #('kernel-old' '1.0.0' 'deprecated: renamed to kernel-new')))
+```
+
+`retirements` sorted by name then version (§5.4 rule 3); each tuple is exactly `#(<name> <version> <reason>)`, three Strings, the version exact and three-component.
+
+**The signal is an index-level record, never a key inside the entry.** A `#retired` key in the `#'parley-index'` artifact would require *rewriting a published entry*, which contradicts refusal-first publishing (Doc F §1) and changes bytes that are already content-addressed and possibly signed. Retirement is an assertion the index owner makes **about** a release, not a property **of** it, and the schema says so by keeping them in separate artifacts.
+
+**No format-version bump.** `#'parley-index' 1` and `#'parley-lock' 1` are untouched; this is an additive third tag, and the reader's tag whitelist (§7) grows by one. The cost is one-directional and worth naming plainly: an index that adopts retirements becomes **unreadable to pre-Sprint-10 Parley**, whose scan rejects the unknown tag. That is the safe failure direction — a stale client refuses rather than silently resolving a package the owner retired — but it is exactly why this schema was time-critical: every release published before it lands is another deployed client that a retirement-bearing index will stop. Sprint 10 exists to close that window while it is still cheap.
+
+**Contents-not-filename identity applies** (Doc C §1, Sprint 4). A retirement record is any file in the index whose artifact carries the tag — the scan dispatches on the tag it read, never on the filename — and an index may hold several, merged. This is the same rule that already lets an entry file be named anything.
+
 ---
 
 ## 6. Two Ordering Rules (both deliberate — do not "fix" either)
@@ -163,7 +182,7 @@ Fixed key order; ALL keys always present (empty string / empty array when unset)
 Serialization does **not** live on the builder or the manifest. The writer/reader are a dedicated pair owning the micro-format for both schemas (index + lock, distinguished by tag).
 
 - `IndexEntryWriter` — `write: aManifest on: aStream` / `writeLock: aResolution on: aStream`, applying §5.4 exactly.
-- `IndexEntryReader` — `readFrom: aStream` → parsed structure → `LibraryManifest fromIndexEntry:` / lock value. Unknown format tag or unsupported format version is a clear error (forward-evolution point).
+- `IndexEntryReader` — `readFrom: aStream` → parsed structure → `LibraryManifest fromIndexEntry:` / lock value / retirement record. Unknown format tag or unsupported format version is a clear error (forward-evolution point). The whitelist is `#'parley-index'`, `#'parley-lock'` and — from Sprint 10 — `#'parley-retired'` (§5.5); adding a tag is a **declared settled-class exception**, never a silent widening, because "unknown tag is an error" is what makes the forward-evolution point real.
 - **Round-trip identity law (SUnit, required):** *build → write → read = build* — the pair composes to the identity on manifests, verified in complete isolation (no builder, no resolver).
 
 ## 8. SUnit Requirements for This Doc
