@@ -205,12 +205,17 @@ labels.'>
          — the law fails first.
 
          The bucket is 'declared undiagnosed, with its ground named'
-         (Doc E §4.2, amended at the Sprint 8 RED review) — NOT
-         'provably never signaled out of a verb'. Two of the five meet
-         that stronger claim; three do not, and their escape paths are
-         named below rather than papered over. The law's guarantee is
-         unchanged: no Parley error class reaches exit 70 without
-         somebody having decided it should.
+         (Doc E §4.2). SPRINT 9 RESTORES THE STRONG CLAIM: with the lock
+         boundary (§4.1) and the authoring-error boundary (§3) in place,
+         every name below is 'provably never signaled out of a verb',
+         and Sprint9AcceptanceTest testS7 demonstrates it by driving a
+         real input through a real verb for each one. The weaker ground
+         stays written down in the doc because the law must keep
+         accepting it for the next class that legitimately needs it —
+         but it has no members. The list's five names do not change;
+         only their ground does. The law's guarantee is unchanged: no
+         Parley error class reaches exit 70 without somebody having
+         decided it should.
 
          Declared reasons, one per class (posted on issue #10):
            ConstraintFormatError — signaled only by
@@ -228,14 +233,18 @@ labels.'>
              path, raised while the author's OWN Package.st is being
              filed in.
 
-         Residue declared honestly on issue #10 and NOT closed by this
-         sprint: the reader errors can still escape through the CLI's
-         parley.lock read, and the vocabulary error escapes
-         ManifestFile load: — both then land on exit 70. Nonzero, one
-         line, no backtrace: fail-stop, never fail-wrong. Reclassifying
-         them as exit-1 diagnoses is design (it needs a lock-validation
-         and an authoring-error boundary), not a fix, and is out of
-         this sprint's declared scope."
+         The Sprint 8 residue, CLOSED by Sprint 9 (issue #11): the
+         reader errors escaped through the CLI's parley.lock read and
+         landed on exit 70; the lock boundary of Doc E §4.1 turns them
+         into a LockError diagnosis at exit 1. The vocabulary error's
+         declared escape was stated inaccurately at Sprint 8 and is
+         corrected here: on 3.2.5 it never escapes ManifestFile load: at
+         all, because the doit context of a filed-in statement is
+         parentless — gst prints its own backtrace and abandons the
+         statement, and load: then answers the WRONG diagnosis ('no
+         manifest defined'). The toolchain probe and the architectural
+         consequence are recorded in LockBoundaryFixtures
+         vocabularyMessageForSelector:."
         <category: 'closed set'>
         ^#('ConstraintFormatError' 'IndexEntryFormatError'
            'IndexEntryParseError' 'ManifestVocabularyError'
@@ -243,10 +252,23 @@ labels.'>
     ]
 
     CommandLineFixtures class >> diagnosedErrorClassNames [
-        "The five declared Parley errors of Doc E §4.2, by name — the
-         oracle the law holds the boundary's own declared set to."
+        "The declared Parley errors of Doc E §4.2, by name — the oracle
+         the law holds the boundary's own declared set to.
+
+         AMENDED FOR SPRINT 9 (issue #11): the set becomes SIX. LockError
+         joins it, because a parley.lock that cannot be read is the
+         OPERATOR's file and must be diagnosed at exit 1 rather than
+         reported as a defect in Parley. This edit is the deliberate
+         decision the closed-set drift law exists to force: the law
+         fails first, and whoever moves the boundary must come here and
+         say so. It lands in RED, so the two settled laws that read this
+         oracle — DiagnosisBoundaryTest
+         testTheBoundaryDeclaresExactlyTheDocumentedErrors and
+         Sprint8AcceptanceTest testS7_theBoundaryIsAClosedSet — fail in
+         red with the sprint and pass again in green. Declared on issue
+         #11."
         <category: 'closed set'>
-        ^#('ExecutionError' 'InstallError' 'ManifestError'
+        ^#('ExecutionError' 'InstallError' 'LockError' 'ManifestError'
            'PublishError' 'SourceError')
     ]
 

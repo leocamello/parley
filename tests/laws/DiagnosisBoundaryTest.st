@@ -28,10 +28,13 @@
  moved into an object with laws.
 
  Scope note, declared honestly (issue #10): the bin/ drift law covers
- DIRECTORIES, not flags. GitIndexSource is built, lawful, and still
+ DIRECTORIES, not flags. GitIndexSource was built, lawful, and still
  unreachable from the binary because wiring it needs a repo-plus-cache
- flag grammar — design, not a fix, and deferred on the issue. This law
- does not falsely claim otherwise.
+ flag grammar — design, not a fix, and deferred on that issue. This law
+ does not falsely claim otherwise, and it still does not: Sprint 9
+ closes the flag gap with its OWN law, over the flag table, in
+ SourceFlagTest. Directories and flags are two different reachability
+ questions and each keeps its own law.
 
  DECLARED PASS IN RED (issue #10):
  testTheUndiagnosedListNamesOnlyRealParleyErrorClasses — it checks the
@@ -62,10 +65,13 @@ subdirectory.'>
 
     "---- S7: the boundary is a closed set ----"
 
-    testTheBoundaryDeclaresExactlyTheFiveDocumentedErrors [
-        "The declared diagnosed set is Doc E §4.2's five, no more and
+    testTheBoundaryDeclaresExactlyTheDocumentedErrors [
+        "The declared diagnosed set is exactly Doc E §4.2's, no more and
          no fewer — read from the boundary, so it cannot claim one
-         thing and handle another."
+         thing and handle another. Renamed at Sprint 9 (issue #11): the
+         set became SIX when LockError joined it, and a selector that
+         says 'five' while asserting six is the drift this law exists to
+         prevent."
         self assert: (CommandLineFixtures namesOf:
             CommandLine diagnosedErrorClasses)
                 = CommandLineFixtures diagnosedErrorClassNames

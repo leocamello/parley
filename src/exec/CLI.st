@@ -195,13 +195,50 @@ construction; zero public setters.'>
 
     pinnedResolution [
         "Private — the lock's Resolution through the settled reader,
-         nil when no lock exists."
+         nil when no lock exists.
+
+         THE READ IS A BOUNDARY (Doc E §4.1, Sprint 9 — the declared
+         settled-class exception on this class). A lockfile that does
+         not parse, or that parses but is not a #'parley-lock' 1
+         artifact, is one LockError — never a raw IndexEntryParseError
+         or IndexEntryFormatError, which is how a corrupt lock used to
+         reach the §4.2 boundary undiagnosed and be answered with exit
+         70. parley.lock is the operator's file, not Parley's defect.
+
+         The reader and Resolution fromLockEntry: are consumed
+         unchanged: validation asks them and never re-implements them."
         <category: 'private'>
-        | file |
+        | file entry |
         file := File name: self lockPath.
         file exists ifFalse: [^nil].
-        ^Resolution fromLockEntry:
-            (IndexEntryReader readFrom: (ReadStream on: file contents))
+        entry := [IndexEntryReader readFrom: (ReadStream on: file contents)]
+            on: IndexEntryParseError, IndexEntryFormatError
+            do: [:e | ^self signalLockProblem: e messageText].
+        (entry at: 1) = #'parley-lock' ifFalse: [
+            ^self signalLockProblem: 'wrong artifact tag ',
+                (entry at: 1) printString,
+                ' - parley.lock holds only #''parley-lock'' 1 artifacts'].
+        ^Resolution fromLockEntry: entry
+    ]
+
+    signalLockProblem: aDescription [
+        "Private — one LockError carrying the lock path, the reader's
+         own message and the repair. The reader's message travels
+         VERBATIM: it names a character position, and on a hand-edited
+         file that position is the operator's only handle, so
+         paraphrasing it would throw away the one thing that makes the
+         diagnosis actionable.
+
+         The repair named is parley update, because update is the one
+         verb that ignores the lock entirely and rewrites it — the same
+         shape as init in the missing-Package.st diagnosis (§8 decision
+         31). install diagnoses and stops: repairing a corrupt lock
+         silently would make a damaged lock indistinguishable from a
+         valid one."
+        <category: 'private'>
+        ^LockError signalProblems: (Array with:
+            self lockPath, ': ', aDescription,
+            ' - run parley update to rewrite it')
     ]
 
     resolveAndLock: aManifest [

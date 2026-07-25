@@ -256,17 +256,25 @@ diagnosis boundary.'>
     ]
 
     testEveryDeclaredBatchedErrorIsDiagnosedTheSameWay [
-        "One shape for all four problem-carrying declared errors —
-         the boundary classifies by handling, not by class."
+        "One shape for every problem-carrying declared error — the
+         boundary classifies by handling, not by class.
+
+         LockError joined them at Sprint 9 (issue #11): it carries
+         problems exactly as its four siblings do, which is precisely
+         why the boundary absorbs it with NO new mechanism — the
+         batched-error handler is derived from the declared list, so
+         adding a name to that list is the whole change."
         | work |
         work := self freshDir: 'cl-declared-work'.
-        (Array
+        ((Array
             with: [ManifestError signalProblems: #('manifest problem')]
             with: [SourceError signalProblems: #('source problem')]
             with: [InstallError signalProblems: #('install problem')]
-            with: [PublishError signalProblems: #('publish problem')])
+            with: [PublishError signalProblems: #('publish problem')]),
+            (Array with: [LockError signalProblems: #('lock problem')]))
                 with: #(#('manifest problem') #('source problem')
-                        #('install problem') #('publish problem'))
+                        #('install problem') #('publish problem')
+                        #('lock problem'))
                 do: [:raise :expected |
                     | result |
                     result := self resultOfRaising: raise in: work.
