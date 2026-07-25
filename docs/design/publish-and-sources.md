@@ -18,7 +18,7 @@ The pipeline, in order:
 4. **Build:** run `gst-package --target-directory <dest>/.parley-publish-stage <dest>/.parley-publish-stage/package.xml` through the runner — the toolchain builds `<stage>/<name>.star` (it owns the archive format; Parley never zips). A nonzero exit is **fail-stop**: one `PublishError` whose single problem carries the exact command line and exit code (wording pinned in RED). The stage is left in place for inspection — fail-stop never cleans up behind an error.
 5. **Digest and land:** read the star's bytes, digest through the settled `Sha256`, write `<dest>/<name>-<version>.star` (the bytes) and `<dest>/<name>-<version>.st` (the entry, through the §2 writer selector, carrying that filename and digest), then remove the stage. The filenames follow the Doc B §5.2 example (`kernel-json-0.3.1.star`); they are storage convention only — entry identity remains contents-not-filename (Sprint 4), and registration re-stages archives under `<name>.star` per Doc D §4.
 
-**Ruled gap (Sprint 7 close-out, to close in Sprint 8):** `aDestDir` is assumed to exist. Publishing into a directory that does not exist escapes step 3 as a raw file error rather than the promised single `PublishError` — fail-stop, never fail-wrong (nothing is written), but it is on the first path a new author walks. The ruling: publish **does not create** the destination; a missing `<dest>` becomes one `PublishError` problem, the `DirectorySource` `'<path>: missing or unreadable directory'` precedent applied to the write side. Until then, `publish` promises one `PublishError` only for a destination that exists.
+Step 1 is preceded by one **destination check** (Sprint 8, closing the Sprint 7 ruled gap): if `aDestDir` does not exist or is not a directory, signal one `PublishError` whose single problem names it (exact wording pinned in RED, following the `DirectorySource` `'<path>: missing or unreadable directory'` precedent applied to the write side). Publish **does not create** the destination — an author publishing into a directory that is not there has made an error worth naming, and creating it silently would make a typo indistinguishable from an intent. Nothing is checked after it, nothing is written, no process is spawned.
 
 ### 1.1 The composed `package.xml`
 
@@ -54,6 +54,19 @@ The Sprint 4 ruling: a literal-valid, tag-valid entry missing §5.2 schema keys 
 
 After the settled tag/format checks, each entry must have the §5.2 shape: the eight keys `#name #version #summary #author #license #fileIns #dependencies #archive`, present, **in the fixed order**, each with its schema kind — strings for the five scalar fields; `fileIns` an array of strings; `dependencies` an array of `#(name constraint)` string pairs; `archive` either `#()` or `#(<filename> #sha256 <hex>)`. A violation is **one problem naming the file and the defect** (exact wordings pinned in RED), batched with every other scan problem into the **one `SourceError`** in sorted-filename order (Sprint 4 semantics, unchanged). Directory sources stop being operator-curated: a malformed entry is now a diagnosis, not a crash.
 
+### 4.1 Value-shape validation (Sprint 8 — the remainder of the gap, closed)
+
+Shape validation asks whether a field is a string; it never asked whether the string means anything. So a `#version 'banana'` — shape-perfect — still escaped the scan as a raw error. That is the last place a malformed entry crashes instead of diagnosing, and it closes here.
+
+After the §4 shape checks pass and **before** duplicate detection (which needs a parsed version to compare), each entry's values must parse:
+
+- `#version` must parse as a `Version` (the settled `Version fromString:`);
+- every `#dependencies` pair's constraint must parse as a `VersionConstraint` (the settled `VersionConstraint fromString:`).
+
+A violation is **one problem naming the file and the unparseable value** (exact wordings pinned in RED), batched exactly as every other scan problem is. One problem per file, as always: the first defect the file has is the one the operator is told about. With this, **every** rejection path of the scan is a batched `SourceError` — a directory source has no remaining way to crash on third-party content.
+
+The settled parsers are consumed unchanged and stay the single definition of what parses: validation asks them, it never re-implements them.
+
 ## 5. The `CLI` `publish` verb
 
 - Argv grammar gains `publish <dir>` (a declared settled-class exception on `CLI`; the pinned usage verbs line was amended at staging, operator-side): `<dir>` is the destination index directory. `publish` with no directory answers the usage lines, exit `2`. No source collaborator is required.
@@ -66,6 +79,8 @@ After the settled tag/format checks, each entry must have the §5.2 shape: the e
 - **Writer:** the new selector's byte-pinned oracle; the settled `write:on:` output byte-unchanged (a declared regression guard — it passes in red).
 - **`GitIndexSource`:** first `snapshot` clones (fixture repositories are built locally through `ProcessRunner`, with committer identity supplied per-command via `git -c user.name=… -c user.email=…` — the developer's git config is never touched); a later `snapshot` sees upstream growth through `--ff-only` pull; a git failure is the pinned one-problem `SourceError`; `fetch:version:` answers archive bytes from the checkout without running git (provable: grow upstream after snapshot — fetch still answers the snapshotted bytes).
 - **Schema validation:** each violation kind (missing key, wrong order, wrong kind, malformed `#archive`) is one pinned problem; multiple bad files batch into one `SourceError` in sorted-filename order alongside a clean directory still scanning (asserted in the same law via a second directory); the settled parse/tag errors are unchanged.
+- **Value validation (Sprint 8):** an unparseable `#version` and an unparseable dependency constraint are each one pinned problem; they batch with the shape and settled problems in sorted-filename order; a shape-valid, value-valid directory still scans; and **no scan input crashes** — the settled parse/tag/shape/duplicate problem shapes are all unchanged around them.
+- **`Publisher` destination check (Sprint 8):** a destination that does not exist is one pinned `PublishError` problem — nothing written, **no process spawned** (recording runner), and the destination is not created.
 - **`CLI`:** `publish <dir>` success line and exit codes; the refusal surfacing as lines exit `1`; `publish` without a directory answering usage exit `2` (**passes in red** — the settled CLI already answers usage for unknown shapes — declared).
 - **End-to-end (the sprint's exit):** author A publishes into a directory; author B's working dir depends on the published package; `install` + `exec` prove the class visible in B's curated child — **the ecosystem loop closes**. A second e2e leg resolves the same published index through a `GitIndexSource` clone.
 - **Hygiene:** every fixture path (working dirs, destinations, repos, caches, stores, targets) under `tmp/`, unique per test, removed recursively in tearDown; `tmp/` empty or absent after a clean run; the developer image never mutated; no network, ever — git operates on local paths only.

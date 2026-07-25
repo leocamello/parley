@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 7
-phase: green
+sprint: 8
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -24,3 +24,10 @@ scope-6: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/i
 # notes. Both appear only as deletions in the reorganization commit and can be
 # dropped from scope-8 onward.
 scope-7: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|\.parley_sprint_scope$|SPRINT[0-9]+-NOTES\.md$)
+# scope-8 drops scope-7's one-off migration paths (the old harness-state
+# filename and the flat sprint notes) — both landed as deletions in the
+# reorganization commit and can never appear again. No new src/ directory
+# this sprint: CommandLine lives in src/exec/, so scripts/run-tests.st is
+# unchanged. bin/ stays in scope — the wrapper is rewritten and, for the
+# first time, law-guarded.
+scope-8: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)

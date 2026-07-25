@@ -65,9 +65,43 @@ The recording is the sprint's **sole settled-class exception**: `Parley.Parley c
 - **`update`** — ignores any existing lock: resolve fresh, rewrite `parley.lock`, then install + register as above. (`install` keeps a valid pin; `update` is the verb that moves it.)
 - **`exec <script>`** — `ExecutionScope run:` with the script; `CliResult` carries the child's exit code and no lines of its own (the child already streamed to the terminal).
 
-### 4.2 The executable wrapper (thin, untested)
+### 4.2 `CommandLine` — the wiring, as an object (Sprint 8)
 
-`bin/parley` (POSIX sh, ~3 lines) execs `gst -f bin/parley-main.st -- <argv>`; `parley-main.st` lives in `bin/` — NOT `src/exec/`, whose every `.st` the test harness files in, and a main script executes on file-in — files in the `src/` directories (run-tests order), wires the real collaborators (`DirectorySource` from `--source <dir>` when given, store at `<cwd>/.parley/store`, target at `<cwd>/.parley/packages`, a real `ProcessRunner`), sends `CLI run:`, prints the lines, exits with the code. The wrapper is glue, not logic: everything it wires is law-tested beneath it; the wrapper itself carries none and is excluded from SUnit obligations. (Per-invocation file-in is the honest MVP cost; a prebuilt image is deferred tooling polish.)
+The wrapper used to hold the wiring *and* the flag grammar *and* the error boundary, and was declared "glue, excluded from SUnit obligations". That declaration was wrong and it cost: the hardcoded file-in list silently missed `src/publish/`, so the shipped `publish` verb answered a `doesNotUnderstand:` backtrace — **and exited `0`**. Untested glue that decides an exit code is not glue; it is the product. Everything the wrapper did except loading, printing and exiting now lives in an object with laws.
+
+- `CommandLine class >> in: aWorkingDir runner: aProcessRunner` — the working directory (`Package.st`, `parley.lock`, and the `.parley/` state beneath it) and the one process seam, held immutably. Construction is **pathname-passive**: no I/O, no process. Class-side construction; zero public setters; no value equality (the decision-23 precedent).
+- `run: anArgvArray` — the whole wrapper's logic as a value-answering message: strip a leading `--`, parse the flag grammar out of the argv, wire the real collaborators, send `CLI run:`, and map anything that escapes to a diagnosis. Answers a **`CliResult`** — it never prints and never terminates the image.
+  - **Flag grammar (MVP):** `--source <dir>` ⇒ a `DirectorySource` over `<dir>`; absent ⇒ `nil` (the verbs that need none still run). The remaining arguments are the verb argv handed to `CLI run:` unchanged.
+  - **Wiring:** store at `<aWorkingDir>/.parley/store`, target at `<aWorkingDir>/.parley/packages` (created when absent), the injected runner. Deriving both from the working directory rather than the process's cwd is what makes the wiring law-testable under `tmp/`.
+
+#### The diagnosis boundary
+
+**No Parley command ever answers a backtrace, and no failing command ever exits `0`.** `run:` maps every outcome onto exactly three shapes:
+
+| Outcome | `lines` | `exitCode` |
+| --- | --- | --- |
+| Success | the verb's own lines | `0` |
+| Usage (unknown verb, wrong arity, source-requiring verb with no source) | the pinned usage lines | `2` |
+| A **diagnosed** problem — the verb answered it, or a declared Parley error reached the boundary | the problems / the message | `1` |
+| An **undiagnosed** error — anything else reaching the boundary | one line naming the error's class and message text (wording pinned in RED) | `70` |
+
+- The **declared Parley errors** are `ManifestError`, `SourceError`, `InstallError`, `ExecutionError` and `PublishError`. An error carrying `problems` contributes those as the lines; one carrying only a `messageText` contributes that as a single line. Exit `1` — the tool understood what went wrong and is telling the operator.
+- Anything else is a **defect in Parley**, not in the operator's project: exit **`70`** (`EX_SOFTWARE`), distinct from `1` so a script can tell "your input is wrong" from "the tool is broken". Still one line, never a backtrace: Parley diagnoses, it does not dump.
+- The boundary is a **closed set with a law**: every `Error` subclass defined in the `Parley` namespace is either mapped to exit `1` here or is provably never signaled out of a verb. A new error class that neither drifts into the `70` bucket silently — the law fails first.
+- The mapping is expressed as **`on:do:` handlers**, never an `isKindOf:` chain. Smalltalk's exception system already *is* the taxonomy; re-implementing it as branching would be the kind-branching the architecture bans, and would silently mis-handle a subclass. `CommandLine` classifies by handling, and the one thing it decides is which of the four shapes above the outcome takes.
+
+`CommandLine` is a **composition root**, not a manager: it holds no domain state, makes no domain decision, and answers a value. It exists because the wiring and the boundary are decisions — and decisions belong in objects with laws, not in a script nobody tests.
+
+### 4.3 The executable wrapper (genuinely thin)
+
+`bin/parley` (POSIX sh, ~3 lines) execs `gst -f bin/parley-main.st -- <argv>`; `parley-main.st` lives in `bin/` — NOT `src/exec/`, whose every `.st` the test harness files in, and a main script executes on file-in. It does exactly four things and holds no logic:
+
+1. file in **every** directory under `src/`, in load order;
+2. send `CommandLine in: <cwd> runner: ProcessRunner new` `run: <argv>`;
+3. print the result's lines;
+4. `ObjectMemory quit:` the result's exit code.
+
+Printing and exiting happen **here alone**. The file-in list stays explicit because load order is semantic, and it is **law-guarded**: a law reads the wrapper's own source and requires every existing `src/` subdirectory to appear in it, so a new `src/` directory can never again ship unreachable. (Per-invocation file-in is the honest MVP cost; a prebuilt image is deferred tooling polish.)
 
 ## 5. SUnit Requirements for This Doc
 
@@ -75,6 +109,8 @@ The recording is the sprint's **sole settled-class exception**: `Parley.Parley c
 - **`ExecutionScope`:** the pinned child command composition (pure, exact string); `register` executes the real plan (real `gst-package`, real archive bytes land byte-identical in the target as `<name>.star`); fail-stop on the first failing command (real: staging copies garbage bytes fine, then `gst-package` exits `1` on the non-archive — the `ExecutionError` names that registration command and code; later commands never run); `run:` really launches the curated child (a script leaves a sentinel; the exit code comes back).
 - **`ManifestFile`:** loading a written `Package.st` answers the built manifest (round-trips name/version/dependencies); a define-less file signals the pinned error.
 - **`CLI`:** every verb law — init template + refusal; resolve's byte-stable lock oracle and conflict narration; the fast-path skip proof (valid lock + primed store + a source double failing both `snapshot` and `fetch:version:` ⇒ success); stale-lock re-resolution; the corruption fail-stop; update re-pinning what install would keep; exec propagating the child code; usage/exit-2 shapes.
+- **`CommandLine` (Sprint 8):** the wiring laws — `publish` reaches a real `Publisher` through the wiring (the shipped defect, closed); `--source <dir>` still wires the settled verbs; the store and target land under the *working directory*, not the process cwd. The boundary laws — a declared Parley error becomes its problems and exit `1`; an undeclared error becomes one pinned line and exit **`70`** (provable with a runner double signaling a plain `Error`); **no failing outcome ever answers exit `0`**. The closed-set law: every `Error` subclass in the `Parley` namespace is accounted for by the boundary.
+- **The shipped binary (Sprint 8):** laws that run `bin/parley-main.st` itself as a child process through `ProcessRunner` — success exits `0`, a diagnosed failure exits nonzero, and neither prints a backtrace. Plus the drift law: the wrapper's own source names **every** existing `src/` subdirectory. These are the only laws that test glue, and they exist because glue that chooses an exit code is not glue.
 - **End-to-end (the sprint's exit):** entries + a real archive (a toolchain-**built** `.star`: `gst-package --target-directory <dir> <pkgdir>/package.xml` builds `<dir>/<name>.star` from an authored package.xml + `.st` file — lowercase internal name per Doc B §3.4 and the name-equality constraint, Doc D §4) → resolve → lockfile → install → register → a curated child proves the package's class is visible — **a package lands in an image**. System stars are never copied as fixtures: their capitalized internal names violate §3.4 under name equality.
 - **Digest discipline (amended for real archives):** authored opaque byte strings keep operator-verifiable pinned digest literals (Doc D style); toolchain-built `.star` bytes vary by machine, so their entry digests are computed at fixture time through the **settled, vector-anchored** `Sha256` — never pinned as literals, and never used to test `Sha256` itself.
 - **Hygiene:** every directory (working dirs, stores, targets, child images) lives under `tmp/`, unique per test, removed in tearDown; `tmp/` empty or absent after a clean run. **The developer image is never mutated**: no test files a package into the harness image; real processes appear only where the law under test IS execution, and always confined to `tmp/`.
