@@ -75,4 +75,4 @@
 
 ## 8. Scope Discipline
 
-Implement what the current milestone specifies — nothing more. Do not invent architecture: if a design question is not answered by the design docs or the master plan, stop and ask rather than improvising. Prerelease version support, backjumping, `PubGrubStrategy`, and registry hosting are all explicitly deferred; do not build them.
+Implement what the current milestone specifies — nothing more. Do not invent architecture: if a design question is not answered by the design docs, the decision log ([`docs/design/architecture.md` §8](docs/design/architecture.md#8-decision-log)) or the milestone issue, stop and ask rather than improvising. The **deferred list is [`docs/roadmap.md`](docs/roadmap.md) §3** — prerelease versions, backjumping, `PubGrubStrategy`, registry hosting and the rest each carry the reason they were deferred. Do not build them.

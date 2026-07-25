@@ -15,7 +15,7 @@ For each `(package, version, sha256)` triple of the `Resolution`, in **sorted pa
 3. **Verify** — `Sha256 hexDigestOf:` the fetched bytes must equal the triple's `sha256` exactly. This is the **integrity boundary**: a mismatched archive is a batched problem and is **never written to the store** (verify-then-store).
 4. **Store** — verified bytes enter the `ContentStore` under their hash.
 
-Every problem found across the whole pass — a fetch failure, a hash mismatch, a triple whose `sha256` is `''` (no published archive; nothing to verify against) — batches into **one `InstallError`** in sorted package-name order (the `ManifestError problems` house style; master plan §8 decision 24 spirit: one error per operation, never an exception per package). A clean pass answers an immutable `InstalledSet`.
+Every problem found across the whole pass — a fetch failure, a hash mismatch, a triple whose `sha256` is `''` (no published archive; nothing to verify against) — batches into **one `InstallError`** in sorted package-name order (the `ManifestError problems` house style; §8 decision 24 spirit: one error per operation, never an exception per package). A clean pass answers an immutable `InstalledSet`.
 
 ### 1.1 `DirectorySource fetch:version:` (the stub becomes real)
 

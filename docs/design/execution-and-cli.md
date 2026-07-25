@@ -1,6 +1,6 @@
 # Parley Design — Execution Scope & CLI
 
-> **Scope:** `ProcessRunner`, `ExecutionScope`, `ExecutionError`, `ManifestFile`, `CLI`, `CliResult` — the Phase 3 closer (Sprint 6) — plus `CommandLine` and the diagnosis boundary (Sprint 8) and `LockError` (Sprint 9). All classes in the `Parley` namespace, all in `src/exec/`; structural immutability applies throughout (class-side construction; zero public setters). This document is where Parley finally touches the operating system: it defines the ONE process seam, the curated child `gst` invocation, the resolution of the deferred `gst Package.st` caveat (master plan §8 decision 19), and the command-line verbs wired over Sprints 0–5. Every 3.2.5 mechanic pinned here was verified empirically against the toolchain at staging (issue #8).
+> **Scope:** `ProcessRunner`, `ExecutionScope`, `ExecutionError`, `ManifestFile`, `CLI`, `CliResult` — the Phase 3 closer (Sprint 6) — plus `CommandLine` and the diagnosis boundary (Sprint 8) and `LockError` (Sprint 9). All classes in the `Parley` namespace, all in `src/exec/`; structural immutability applies throughout (class-side construction; zero public setters). This document is where Parley finally touches the operating system: it defines the ONE process seam, the curated child `gst` invocation, the resolution of the deferred `gst Package.st` caveat (§8 decision 19), and the command-line verbs wired over Sprints 0–5. Every 3.2.5 mechanic pinned here was verified empirically against the toolchain at staging (issue #8).
 
 ---
 

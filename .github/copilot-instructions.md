@@ -32,7 +32,7 @@ Every feature flows through five stages, tracked on its GitHub issue (created fr
   2. Every scenario is mechanically testable (concrete Given/When/Then, no vague adjectives).
   3. In-scope/out-of-scope boundaries are explicit and consistent with the delivered record (`docs/sprints/`) and the decision log (`docs/design/architecture.md` §8).
   4. No conflict with existing invariants (hard bans §6, serialization rules §9, resolver purity).
-  5. No collision with the deferred list (prerelease, backjumping, PubGrub, registry) — or the collision is declared and justified.
+  5. No collision with the **deferred list in [`docs/roadmap.md`](../docs/roadmap.md) §3** — read it rather than recalling it; each row carries the reason it was deferred and the decision that ruled it — or the collision is declared and justified.
   6. Architecture-impact section names the design docs/classes it touches.
 When all six pass, state **"No further objections"** and stop critiquing — never generate additional rounds of feedback on an approved artifact.
 
@@ -49,7 +49,7 @@ When all six pass, state **"No further objections"** and stop critiquing — nev
 - Your current active assignment is strictly defined by **the active sprint's milestone tracking issue** and **that sprint's spec of record** (named in your kickoff prompt; see `docs/design/README.md` for the Doc A–F map). Read `.parley/scope` to learn which sprint is active.
 - **Do NOT read ahead** into specs for later sprints. Earlier sprints' docs are fair game — the classes they describe are settled API you build on.
 - **Classes delivered by earlier sprints are settled API.** Do not modify them unless your milestone issue *declares the exception explicitly*, naming the class and the selector. If a spec seems to require touching settled code with no declared exception, stop and ask on the issue.
-- **Do NOT create or modify files outside the active sprint's scope regex.** The authoritative list is the `scope-<N>` line in `.parley/scope` matching the active `sprint:` — read it rather than assuming. Out-of-scope commits are rejected by the scope sentinel (`.githooks/pre-commit`). Only the human operator edits `.parley/scope` (sprint number, phase, scope regex), `scripts/*`, and `.githooks/*`.
+- **Do NOT create or modify files outside the active sprint's scope regex.** The authoritative list is the `scope-<N>` line in `.parley/scope` matching the active `sprint:` — read it rather than assuming. Out-of-scope commits are rejected by the scope sentinel (`.githooks/pre-commit`). Only the human operator edits `.parley/scope` (sprint number, phase, scope regex), `scripts/*`, `.githooks/*`, `docs/roadmap.md`, and `docs/operating/runbook.md`. You may **read** the roadmap and the runbook — the roadmap's deferred list is part of Stage 1 — but never edit them.
 - Implement only what the current milestone specifies. Work in small, reviewable increments; do not proceed to the next class while the previous one has failing tests.
 
 ## 4. The Verification Protocol (No Direct `gst` Calls)
