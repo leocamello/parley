@@ -47,6 +47,7 @@ A `PackageSource` whose index is a git repository of entry files. Pure compositi
 - `snapshot` — **the source's one I/O moment, git moment included**: when `aCacheDir` does not exist, run `git clone <repo> <cache>`; when it does, run `git -C <cache> pull --ff-only`; then answer the inner source's `snapshot`. A nonzero git exit signals one **`SourceError`** whose single problem carries the exact command line and exit code (wording pinned in RED) — the settled batched-scan error class; a broken transport and a broken entry are both "this source cannot answer".
 - `versionsOf:`, `manifestFor:version:`, `fetch:version:` — pure delegation to the inner `DirectorySource`. `fetch:version:` reads the **existing** checkout and runs no git command: the metadata/archive split holds — resolution consumed the snapshot that the one git moment produced, and install-time fetch must see exactly those bytes, not a moved branch.
 - Archives live in the repository beside the entries, exactly as in any directory source.
+- **Reachable from the binary** (Sprint 9): `CommandLine`'s `--git <repo>` flag builds one, with the cache at `<workingDir>/.parley/git/<sha256 of the repo location>` (Doc E §4.2). Until then `GitIndexSource` was built, lawful and unreachable — a source class inside a directory the `bin/` drift law *did* name, which is why Sprint 9 adds a second drift law over the flag table rather than widening the first.
 
 ## 4. Schema-shape entry validation (`DirectorySource` — the Sprint 4 gap, closed)
 
