@@ -218,6 +218,33 @@ exec propagation — all over doubles, spawning nothing.'>
             = ExecFixtures diamondLockString
     ]
 
+    testResolveWithNoDependenciesConfirmsRatherThanSayingNothing [
+        "A dependency-free project resolves to zero pins, and zero pins
+         used to mean zero lines: `parley resolve` printed NOTHING and
+         exited 0. The lock really was written and the work really did
+         succeed, but a verb that says nothing reads as a verb that did
+         nothing — and this is precisely the first run after `parley
+         init`, when a project has no dependencies yet. Found by using
+         the shipped binary, not by a failing law: nothing covered the
+         empty case, which is why it could look broken while passing."
+        | work cli result |
+        work := self workDir: 'cli-resolve-empty'
+            package: ExecFixtures noDependencyRootContents.
+        cli := self cliIn: work
+            source: (DirectorySource on: (self freshDir: 'cli-resolve-empty-entries'))
+            storeRoot: 'tmp/parley-cli-empty-store'
+            target: 'tmp/parley-cli-empty-target'
+            runner: RecordingRunner new.
+        result := cli run: #('resolve').
+        self assert: result exitCode = 0.
+        self assert: result lines size = 1
+            description: 'a successful resolve must report something'.
+        self assert: result lines
+            = (Array with: ExecFixtures noDependenciesLine).
+        self assert: (self lockContentsIn: work)
+            = ExecFixtures emptyLockString
+    ]
+
     testResolveNarratesAConflictAndWritesNoLock [
         | work entries manifest report cli result |
         work := self workDir: 'cli-conflict'

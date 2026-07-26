@@ -449,12 +449,31 @@ construction; zero public setters.'>
 
     reportPins: aResolution [
         "Private — one '<name> <version>' line per resolved pin in
-         sorted package-name order, exit 0."
+         sorted package-name order, exit 0.
+
+         A project with no dependencies resolves to NO pins, and one
+         line is answered rather than none: the lock really was written
+         (#packages #()), the work really did succeed, and a verb that
+         prints nothing at all reads as a verb that did nothing at all.
+         Silence is the wrong report for success — especially on the
+         first run after `parley init`, which is exactly when a project
+         has no dependencies yet."
         <category: 'private'>
+        aResolution packageNames isEmpty ifTrue: [
+            ^CliResult
+                lines: (Array with: self noDependenciesLine)
+                exitCode: 0].
         ^CliResult
             lines: (aResolution packageNames collect: [:name |
                 name, ' ', (aResolution versionOf: name) printString])
             exitCode: 0
+    ]
+
+    noDependenciesLine [
+        "Private — the pinned confirmation for a dependency-free
+         project (pinned in RED)."
+        <category: 'private'>
+        ^'no dependencies to resolve - wrote parley.lock'
     ]
 
     reportConflict: aReport [

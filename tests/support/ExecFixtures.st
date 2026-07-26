@@ -121,6 +121,30 @@ Stateless; uniqueness comes from per-test labels.'>
             SourceFixtures newline
     ]
 
+    ExecFixtures class >> noDependencyRootContents [
+        "A valid manifest declaring NO dependencies — the shape `parley
+         init` now writes, and the shape a first resolve actually meets."
+        <category: 'package files'>
+        ^'Parley define: [:pkg |
+    pkg
+        name: ''my-app'';
+        version: ''0.1.0'';
+        fileIns: #(''App.st'') ]', SourceFixtures newline
+    ]
+
+    ExecFixtures class >> noDependenciesLine [
+        "The pinned confirmation a dependency-free resolve answers."
+        <category: 'pinned wordings'>
+        ^'no dependencies to resolve - wrote parley.lock'
+    ]
+
+    ExecFixtures class >> emptyLockString [
+        "The byte-stable lock a dependency-free project produces."
+        <category: 'pinned wordings'>
+        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #())',
+            SourceFixtures newline
+    ]
+
     ExecFixtures class >> definelessContents [
         "Valid Smalltalk that never sends define: — the S9 fixture."
         <category: 'package files'>
