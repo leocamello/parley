@@ -128,9 +128,14 @@ Stateless; uniqueness comes from per-test labels.'>
 Object new.', SourceFixtures newline
     ]
 
-    ExecFixtures class >> initTemplateContents [
-        "The exact bytes parley init writes: the Doc B §2 template
-         block, verbatim, single trailing newline (pinned)."
+    ExecFixtures class >> docBTemplateContents [
+        "Doc B §2's illustration, verbatim — the full authoring
+         vocabulary including two dependencies. This used to be what
+         `parley init` wrote, and the round-trip law below still proves
+         the DOCUMENTED syntax loads. It stopped being the init template
+         when that template became a starter skeleton: an example that
+         declares packages nobody has is a fine illustration and a bad
+         starting point."
         <category: 'package files'>
         ^'"Package.st"
 Parley define: [:pkg |
@@ -143,6 +148,25 @@ Parley define: [:pkg |
         fileIns: #(''Reader.st'' ''Writer.st'' ''Extensions.st'');
         dependency: ''kernel-streams'' constraint: ''>=1.0 <2.0'';
         dependency: ''kernel-strings'' constraint: ''^0.4.2'' ]',
+            SourceFixtures newline
+    ]
+
+    ExecFixtures class >> initTemplateContents [
+        "The exact bytes parley init writes: the starter skeleton,
+         verbatim, single trailing newline (pinned). NOT Doc B §2's
+         illustration — see CLI>>templateContents for why."
+        <category: 'package files'>
+        ^'"Package.st — the manifest Parley reads.
+ Edit the values below, then:  parley resolve --source <index-dir>
+ Add a dependency with:        dependency: ''name'' constraint: ''^1.0.0''"
+Parley define: [:pkg |
+    pkg
+        name: ''my-package'';
+        version: ''0.1.0'';
+        summary: '''';
+        author: '''';
+        license: '''';
+        fileIns: #(''MyPackage.st'') ]',
             SourceFixtures newline
     ]
 
@@ -314,8 +338,10 @@ stream close', SourceFixtures newline
         "The pinned usage answer: two lines, exit code 2."
         <category: 'pinned wordings'>
         ^Array
-            with: 'usage: parley <verb>'
+            with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
             with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>'
+            with: 'flags: --source <dir>  index entries in a local directory'
+            with: '       --git <repo>    index entries in a git repository'
     ]
 
     ExecFixtures class >> initSuccessLines [

@@ -66,7 +66,7 @@ cleared recording between loads.'>
     testLoadRoundTripsTheFullDocBTemplate [
         | dir manifest |
         dir := self freshDir: 'mf-template'.
-        ExecFixtures writePackage: ExecFixtures initTemplateContents
+        ExecFixtures writePackage: ExecFixtures docBTemplateContents
             in: dir.
         manifest := ManifestFile load: dir, '/Package.st'.
         self assert: manifest name = 'kernel-json'.
@@ -84,6 +84,25 @@ cleared recording between loads.'>
         self assert: (manifest dependencies at: 2) name = 'kernel-strings'.
         self assert: (manifest dependencies at: 2) constraint
             = (VersionConstraint fromString: '^0.4.2')
+    ]
+
+    testTheInitSkeletonLoadsAndDeclaresNoPhantomDependencies [
+        "What `parley init` writes must be a working starting point, not
+         only valid Smalltalk: it has to LOAD, and it must declare no
+         dependency the operator does not have. The old template was Doc
+         B §2's illustration, so `init` followed by `resolve` failed on
+         two packages that exist nowhere — the worst possible first run,
+         and nothing tested it because the round-trip law above asserted
+         the illustration's values rather than the template's fitness."
+        | dir manifest |
+        dir := self freshDir: 'mf-init-skeleton'.
+        ExecFixtures writePackage: ExecFixtures initTemplateContents
+            in: dir.
+        manifest := ManifestFile load: dir, '/Package.st'.
+        self assert: manifest dependencies isEmpty
+            description: 'the init skeleton declares a dependency the operator does not have'.
+        self deny: manifest name isEmpty.
+        self deny: manifest fileIns isEmpty
     ]
 
     "---- S9: a define-less file is a one-problem error ----"

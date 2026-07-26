@@ -440,8 +440,10 @@ construction; zero public setters.'>
         <category: 'private'>
         ^CliResult
             lines: (Array
-                with: 'usage: parley <verb>'
-                with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>')
+                with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
+                with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>'
+                with: 'flags: --source <dir>  index entries in a local directory'
+                with: '       --git <repo>    index entries in a git repository')
             exitCode: 2
     ]
 
@@ -483,19 +485,26 @@ construction; zero public setters.'>
     ]
 
     templateContents [
-        "Private — the Doc B §2 template, byte-exact (pinned in RED)."
+        "Private — the starter skeleton parley init writes, byte-exact
+         (pinned in RED). It is deliberately NOT Doc B §2's illustration:
+         that example declares kernel-json with two dependencies that do
+         not exist, so `init` followed by `resolve` failed on phantom
+         packages — the worst possible first run. A template's job is to
+         be a correct starting point, not a feature tour. The dependency
+         syntax is taught in the header comment instead, where it costs
+         nothing to read and nothing to resolve."
         <category: 'private'>
-        ^'"Package.st"
+        ^'"Package.st — the manifest Parley reads.
+ Edit the values below, then:  parley resolve --source <index-dir>
+ Add a dependency with:        dependency: ''name'' constraint: ''^1.0.0''"
 Parley define: [:pkg |
     pkg
-        name: ''kernel-json'';
-        version: ''0.3.1'';
-        summary: ''A JSON reader/writer speaking pure message sends'';
-        author: ''Leonardo'';
-        license: ''MIT'';
-        fileIns: #(''Reader.st'' ''Writer.st'' ''Extensions.st'');
-        dependency: ''kernel-streams'' constraint: ''>=1.0 <2.0'';
-        dependency: ''kernel-strings'' constraint: ''^0.4.2'' ]',
+        name: ''my-package'';
+        version: ''0.1.0'';
+        summary: '''';
+        author: '''';
+        license: '''';
+        fileIns: #(''MyPackage.st'') ]',
             (String with: Character nl)
     ]
 ]
