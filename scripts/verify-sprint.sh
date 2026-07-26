@@ -166,9 +166,29 @@ PARSE_ERRORS=$(grep -c 'parse error' <<< "$TEST_OUTPUT" || true)
 
 verdict_pass=false
 red_reason=""
+# Load integrity — asserted in BOTH phases. A test file that fails to parse
+# does not fail: it VANISHES, taking its laws with it, and the surviving suite
+# passes. Green used to check only the sentinel and the exit code, so the gate
+# would report 🎉 PASS while tests silently disappeared — the same fail-wrong
+# disease as the Sprint 7 `publish` verb that answered a backtrace and exited
+# 0, one level up in the tooling. Found at the Sprint 10 close-out, where a raw
+# double-quote in a method comment derailed a file-in; it surfaced loudly there
+# (59 errors in unrelated settled suites), but a whole file failing to load is
+# silent, and silence is what a gate exists to break.
+EXPECTED_TESTFILES=$(find tests -name '*.st' 2>/dev/null | wc -l)
+LOADED_TESTFILES=$(grep -c '^PARLEY-TESTFILE:' <<< "$TEST_OUTPUT" || true)
+load_reason=""
+if [[ "$PARSE_ERRORS" -gt 0 ]]; then
+  load_reason="parse errors present — $PARSE_ERRORS reported; laws in a file that does not parse never run"
+elif [[ "$LOADED_TESTFILES" -lt "$EXPECTED_TESTFILES" ]]; then
+  load_reason="only $LOADED_TESTFILES of $EXPECTED_TESTFILES test files loaded cleanly — the missing file's laws did not run"
+fi
+
 if [[ "$PHASE" == "green" ]]; then
-  # Green: exit 0 AND the PASS sentinel.
-  if [[ $TEST_EXIT_CODE -eq 0 ]] && grep -q '^PARLEY-VERIFY: PASS' <<< "$TEST_OUTPUT"; then
+  # Green: exit 0 AND the PASS sentinel AND every test file actually loaded.
+  if [[ -n "$load_reason" ]]; then
+    red_reason="$load_reason"
+  elif [[ $TEST_EXIT_CODE -eq 0 ]] && grep -q '^PARLEY-VERIFY: PASS' <<< "$TEST_OUTPUT"; then
     verdict_pass=true
   fi
 else
@@ -176,13 +196,12 @@ else
   RUN=$(sed -n 's/.* run=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
   FAILED=$(sed -n 's/.* failed=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
   ERRORS=$(sed -n 's/.* errors=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
-  # Every .st under tests trees must have produced a PARLEY-TESTFILE marker.
-  EXPECTED_TESTFILES=$(find tests -name '*.st' 2>/dev/null | wc -l)
-  LOADED_TESTFILES=$(grep -c '^PARLEY-TESTFILE:' <<< "$TEST_OUTPUT" || true)
+  # Load integrity is checked above, for both phases; red states it in its own
+  # terms because red must fail on MISSING BEHAVIOR, never on broken syntax.
   if [[ "$PARSE_ERRORS" -gt 0 ]]; then
     red_reason="parse errors present — red must fail on missing behavior, not broken syntax"
-  elif [[ "$LOADED_TESTFILES" -lt "$EXPECTED_TESTFILES" ]]; then
-    red_reason="only $LOADED_TESTFILES of $EXPECTED_TESTFILES test files loaded cleanly"
+  elif [[ -n "$load_reason" ]]; then
+    red_reason="$load_reason"
   elif [[ -z "$RUN" || "$RUN" -eq 0 ]]; then
     red_reason="no tests ran — red requires runnable failing tests"
   elif [[ "$((FAILED + ERRORS))" -eq 0 ]]; then

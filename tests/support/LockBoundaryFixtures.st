@@ -117,9 +117,11 @@ uniqueness comes from per-test labels.'>
 
     LockBoundaryFixtures class >> wrongTagLockProblemFor: aPath [
         "The boundary's own tag check, in the grammar of the settled
-         DirectorySource wrong-tag problem with the two roles swapped:
-         a source directory holds only index entries, and parley.lock
-         holds only lock artifacts."
+         DirectorySource wrong-tag problem with the two roles swapped.
+         The asymmetry is real and stays: from Sprint 10 a source
+         directory holds entries AND retirement records, while
+         parley.lock holds only lock artifacts — so only the lock side
+         can still say 'only'."
         <category: 'pinned wordings'>
         ^self lockProblemFor: aPath message:
             'wrong artifact tag #''parley-index'' - parley.lock holds only #''parley-lock'' 1 artifacts'

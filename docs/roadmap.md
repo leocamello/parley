@@ -24,13 +24,25 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-- **Sprint 10 — retirement: the third schema, and the boundary that guards it.** ⏱ Issue #12. Retire/yank schema headroom (`#'parley-retired' 1` index-level record, Doc B §5.5; snapshot filtering, Doc C §2.1; scan tag dispatch, Doc F §4.2), with decision 35's lock body/value validation and the deserialization-boundary law riding along **as a prerequisite** — a retirement record is a third sender of `IndexEntryReader readFrom:`, and adding a new operator-editable boundary while the boundary reasoning is unfixed would ship the same defect a third time. Ruled at staging: [§8 decision 37](design/architecture.md#8-decision-log).
+*(nothing — Sprint 10 closed; the next sprint is staged at Gate C from the list below)*
+
+### Recently delivered
+
+- **Sprint 10 — retirement: the third schema, and the boundary that guards it.** ⏱ Issue #12, commit `c15c2c5`, **539 laws**. Retire/yank schema headroom (`#'parley-retired' 1` index-level record, Doc B §5.5; snapshot filtering, Doc C §2.1; scan tag dispatch, Doc F §4.2), with decision 35's lock body/value validation and the deserialization-boundary law riding along **as a prerequisite** — a retirement record is a third sender of `IndexEntryReader readFrom:`, and adding a new operator-editable boundary while the boundary reasoning is unfixed would ship the same defect a third time. Ruled at staging: [§8 decision 37](design/architecture.md#8-decision-log).
 
 ### Next, in order
 
-1. **Ergonomics verbs** — *deferred 0×; no external clock, but a named consumer is waiting.* In the order history says users ask for them: `parley why <pkg>` / `tree` first (near-free from the `ConstraintLedger`'s provenance — this is where existing strength is cheapest to expose), then **`parley check`** (a verb spelling of the pin fast path, and the ruled home of **retirement reporting**, which was deferred out of Sprint 10 because warning on a retired *pinned* dependency would break the settled fast-path no-snapshot law), then selective `parley update <pkg>` (the first real pressure on the all-or-nothing grammar), then `parley add` (needs a ruling on machine-editing `Package.st`).
+1. **Ergonomics verbs** — *deferred 0×; **top of the list**; no external clock, but a named consumer is waiting.* In the order history says users ask for them: `parley why <pkg>` / `tree` first (near-free from the `ConstraintLedger`'s provenance — this is where existing strength is cheapest to expose), then **`parley check`** (a verb spelling of the pin fast path, and the ruled home of **retirement reporting**, which was deferred out of Sprint 10 because warning on a retired *pinned* dependency would break the settled fast-path no-snapshot law), then selective `parley update <pkg>` (the first real pressure on the all-or-nothing grammar), then `parley add` (needs a ruling on machine-editing `Package.st`).
 2. **`PubGrubStrategy` + prereleases** — *deferred 0×; **trigger-gated**, does not compete until its trigger fires.* Pre-validated by Hex and Bundler, both of which discarded backtracking resolvers after pathological freezes on real graphs. The trigger is **graph size or observed slowness, never calendar**. Prereleases ride in the same sprint because they touch `Version` comparison — the declared single change site — exactly once.
 3. **`RegistrySource` + entry signing** — *deferred 0×; **blocked on hosting**, an external precondition.* Per-package HTTP fetch of signed canonical entries (Hex's model; Cargo's sparse-index lesson — git indexes lose at scale). Byte-stable canonical rendering makes entry signing unusually cheap, because canonicalization is already a law. Made cheaper again by decision 37: retirement never rewrites a published entry, so signatures stay valid across a retirement.
+
+### Carried gaps — ranked, unscheduled (runbook §2.4)
+
+Recorded at Gate B, scheduled at Gate C against the list above — never at the moment of discovery.
+
+- **`isLockString:` is duplicated across two classes** because sharing it meant adding a public selector to a settled class. Cost is bounded (two copies, both covered by laws) and it compounds only if a *third* schema validator appears — which is the trigger to fix it, not a date. *Severity: low. No consumer constraint.*
+- **The boundary drift law is textually anchored** (§8 decision 38): a sender split across lines or reached through a temporary is not seen. *Severity: low-moderate — the law's guarantee is real but narrower than its name suggests. The stronger form is reflective enumeration.* **Consumer constraint:** the law proves every *textually spelled* sender is declared, not every sender.
+- **`retirementReasonFor:version:` is written, tested and unread** until `parley check` exists. By design (§8 decision 37), and the named consumer is item 1 above. *Severity: none — this is scheduling, not a gap.*
 
 ### Recently cleared
 
@@ -54,6 +66,8 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 | Output capture; any shell-quoting layer | Parley composes command lines from paths it controls; the child streams to Parley's own stdout/stderr | Doc E §1 |
 | A prebuilt image | Per-invocation file-in is the honest MVP cost; deferred tooling polish | Doc E §4.3 |
 | Pruning the `--git` cache | No verb removes checkouts; one directory per distinct repo location | Sprint 9 notes |
+| Validating the lock's sha256 as hex | Shape-checked only, mirroring Doc F §4's `#archive`; digest *truth* is `verifyHash:` on the install path | Sprint 10 scope |
+| Batching lock problems | One file, one repair, one problem — deliberately unlike the scan | Sprint 10 scope |
 
 ---
 
