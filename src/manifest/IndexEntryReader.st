@@ -58,6 +58,39 @@ third-party content ever reaches a compiler pathway.'>
         ^self new parse: aStream
     ]
 
+    IndexEntryReader class >> formatTags [
+        "The whitelist: every format tag this Parley reads (Doc B §7).
+         #'parley-retired' joined it at Sprint 10 (Doc B §5.5) as a
+         DECLARED settled-class exception — adding a tag is never a
+         silent widening, because 'unknown tag is an error' is what
+         makes the forward-evolution point real.
+
+         It is a DECLARATION consumed twice: the check below tests
+         membership in it, and the rejection message is RENDERED from
+         it — so the whitelist cannot grow without its sentence growing
+         in the same change, which is the rule the Sprint 10 RED review
+         ruled (Doc B §7)."
+        <category: 'reading'>
+        ^#(#'parley-index' #'parley-lock' #'parley-retired')
+    ]
+
+    IndexEntryReader class >> formatTagsText [
+        "Private — the whitelist rendered for the rejection message.
+         This message is the ONLY place an operator learns what a build
+         accepts, so it names every tag, in whitelist order."
+        <category: 'private'>
+        | out tags |
+        tags := self formatTags.
+        out := WriteStream on: String new.
+        1 to: tags size do: [:i |
+            i = 1 ifFalse: [
+                out nextPutAll: (i = tags size
+                    ifTrue: [' and ']
+                    ifFalse: [', '])].
+            out nextPutAll: (tags at: i) printString].
+        ^out contents
+    ]
+
     parse: aStream [
         "Private — one artifact: a single literal array, then end of
          input, then tag validation."
@@ -78,18 +111,19 @@ third-party content ever reaches a compiler pathway.'>
     ]
 
     validateTagOf: anArray [
-        "Private — accept only the #'parley-index' 1 and #'parley-lock' 1
-         openings (the pair owns both schemas; Doc B §7)."
+        "Private — accept only the whitelisted format tags at version 1
+         (the pair owns every schema; Doc B §7)."
         <category: 'private'>
         | tag |
         (anArray size >= 2 and: [(anArray at: 1) isSymbol])
             ifFalse: [^IndexEntryFormatError new signal:
                 'artifact does not open with a format tag and version'].
         tag := anArray at: 1.
-        (tag = #'parley-index' or: [tag = #'parley-lock'])
+        (self class formatTags includes: tag)
             ifFalse: [^IndexEntryFormatError new signal:
                 'unknown format tag ', tag printString,
-                ': this Parley reads #''parley-index'' and #''parley-lock'' artifacts'].
+                ': this Parley reads ', self class formatTagsText,
+                ' artifacts'].
         (anArray at: 2) = 1
             ifFalse: [^IndexEntryFormatError new signal:
                 'unsupported ', tag printString, ' format version ',

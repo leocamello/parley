@@ -214,6 +214,30 @@ exit 70.'>
                 (self lockPathIn: work))
     ]
 
+    testAMalformedBodyLockIsTheThirdRejectionGround [
+        "Sprint 10 (issue #12; Doc E §4.1, §8 decision 35). The two
+         grounds above are SYNTACTIC; this file passes both — right tag,
+         right format version — and has no #packages. It used to reach
+         Resolution fromLockEntry: and die there as a KERNEL
+         SystemExceptions.NotFound at exit 70: the same sentence, on the
+         same file, that this boundary exists to abolish. The law lives
+         here because the claim belongs to this class: one LockError,
+         one problem, the settled three-part shape."
+        | work index problems |
+        work := self diamondWorkDir: 'lock-body-work'.
+        index := self freshDir: 'lock-body-index'.
+        LockSchemaFixtures
+            writeLockContents: LockSchemaFixtures malformedBodyLockContents
+            in: work.
+        problems := self installProblemsFrom: [
+            (self cliIn: work source: (DirectorySource on: index))
+                run: #('install')].
+        self assert: problems size = 1.
+        self assert: (problems at: 1)
+            = (LockSchemaFixtures missingLockKeyProblemFor:
+                (self lockPathIn: work) key: #packages)
+    ]
+
     testTheLockErrorCarriesTheBatchedHouseStyleMessage [
         "LockError carries problems exactly as its batched siblings do —
          which is why the Sprint 8 boundary absorbs it with no new

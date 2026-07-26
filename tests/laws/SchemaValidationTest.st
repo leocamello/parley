@@ -213,7 +213,7 @@ and a schema-clean directory still scanning.'>
             = (PublishFixtures missingKeyProblemFor: 'mb-missing-key.st'
                 key: #summary).
         self assert: (problems at: 3)
-            = ('mc-wrongtag.st: wrong artifact tag #''parley-lock'' - a source directory holds only #''parley-index'' 1 entries').
+            = ('mc-wrongtag.st: wrong artifact tag #''parley-lock'' - a source directory holds #''parley-index'' 1 entries and #''parley-retired'' 1 records').
         self assert: (problems at: 4)
             = (PublishFixtures archiveKindProblemFor: 'md-archive.st').
         self assert: (problems at: 5)

@@ -123,7 +123,7 @@ and are removed in tearDown.'>
         problems := self problemsFrom: [(DirectorySource on: dir) snapshot].
         self assert: problems size = 1.
         self assert: (problems at: 1)
-            = 'zz-lock.st: wrong artifact tag #''parley-lock'' - a source directory holds only #''parley-index'' 1 entries'
+            = 'zz-lock.st: wrong artifact tag #''parley-lock'' - a source directory holds #''parley-index'' 1 entries and #''parley-retired'' 1 records'
     ]
 
     testS4_duplicateNameVersionAcrossFilesFails [

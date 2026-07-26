@@ -140,6 +140,52 @@ equality (the decision-23 precedent).'>
                 with: #gitSourceOn:)
     ]
 
+    "---- the declared deserialization boundaries (Doc E §4.2) ----"
+
+    CommandLine class >> deserializationBoundaries [
+        "Every point where Parley reads a file the OPERATOR can edit:
+         each row is the class that reads it and the file it reads.
+
+         WHY THIS ENUMERATION EXISTS, and why it is not a widened
+         neighbour (§8 decision 35). The §4.2 closed set quantifies over
+         Error subclasses defined in the Parley namespace, and a KERNEL
+         error raised inside a verb is outside it entirely — which is
+         exactly how a malformed-body parley.lock survived Sprint 9 with
+         every law green, dying inside a constructor and answered with
+         exit 70. Enumerating more error classes could not have caught
+         that and will not catch the next one. The invariant that
+         carries the weight is per BOUNDARY: validate shape before
+         handing the value to a constructor, and answer a diagnosis at
+         exit 1 on malformed content.
+
+         The anchor is mechanical: IndexEntryReader readFrom: is the
+         single literals-only parser, so every sender of it in src/ is a
+         deserialization boundary by construction, and the drift law
+         reads src/ and requires every sender to appear here. The two
+         senders are the CLI's parley.lock read (§4.1) and the
+         DirectorySource scan (Doc F §4/§4.1/§4.2) — which from Sprint
+         10 also reads retirement records through that same sender, so
+         the new schema is covered the moment it exists. ManifestFile is
+         declared alongside them because it reads an operator-editable
+         file by a DIFFERENT mechanism (file-in, not the reader) and is
+         precisely the boundary a reader-anchored enumeration would
+         otherwise miss.
+
+         A DECLARATION CONSUMED TWICE, as sourceFlags and
+         diagnosedErrorClasses are: the drift law compares it against
+         src/, and the per-boundary laws ITERATE it, so a row added
+         without a malformed-input law fails the suite rather than
+         quietly widening the claim. The second column is what makes a
+         row a boundary rather than a reader: a row that cannot name the
+         operator's file does not belong here."
+        <category: 'deserialization boundaries'>
+        ^Array
+            with: (Array with: CLI with: 'parley.lock')
+            with: (Array with: DirectorySource
+                with: 'index entries and retirement records')
+            with: (Array with: ManifestFile with: 'Package.st')
+    ]
+
     CommandLine class >> sourceFlagNames [
         "Every flag the table declares — the grammar's own vocabulary,
          derived from the table so the parser cannot know a flag the

@@ -41,13 +41,23 @@ and the install-time fetch:version: of Doc D §1.1.'>
     ]
 
     snapshot [
-        "The source's one I/O moment: read every entry file once, in
+        "The source's one I/O moment: read every artifact file once, in
          sorted-filename order, and answer the sealed immutable
          IndexSnapshot value — or signal one SourceError batching every
-         problem the scan found."
+         problem the scan found.
+
+         From Sprint 10 the index holds two kinds of artifact (Doc F
+         §4.2): release entries and retirement records. Both are read
+         here and handed to the snapshot, which is where retirement
+         takes effect (Doc C §2.1); the scan makes no resolution
+         decision of its own."
         <category: 'source protocol'>
-        ^IndexSnapshot releases:
-            (self scanEntries collect: [:entry | self releaseFrom: entry])
+        | scanned |
+        scanned := self scanArtifacts.
+        ^IndexSnapshot
+            releases: ((scanned at: 1)
+                collect: [:entry | self releaseFrom: entry])
+            retirements: (scanned at: 2)
     ]
 
     versionsOf: aPackageName [
@@ -108,12 +118,23 @@ and the install-time fetch:version: of Doc D §1.1.'>
     ]
 
     scanEntries [
-        "Private — read every .st file in sorted-filename order, one
-         #'parley-index' 1 artifact each, batching every problem
-         (unparseable, wrong tag, duplicate, missing directory) into
-         one SourceError. Answers the parsed entries in scan order."
+        "Private — the release entries of the scan, in sorted-filename
+         order. The scan's other half is the retirement records; every
+         caller here (versionsOf:, manifestFor:version:, fetch:version:)
+         asks about published releases and nothing else."
         <category: 'private'>
-        | dir problems seen entries |
+        ^self scanArtifacts at: 1
+    ]
+
+    scanArtifacts [
+        "Private — read every .st file in sorted-filename order, one
+         artifact each, dispatch on the tag the reader already
+         validated, and batch every problem (unparseable, wrong tag,
+         malformed entry, malformed retirement record, duplicate,
+         missing directory) into one SourceError. Answers
+         {entries. retirement tuples}, both in scan order."
+        <category: 'private'>
+        | dir problems seen entries retired |
         dir := File name: path.
         (dir exists and: [dir isDirectory]) ifFalse: [
             ^SourceError signalProblems:
@@ -121,33 +142,110 @@ and the install-time fetch:version: of Doc D §1.1.'>
         problems := OrderedCollection new.
         seen := Dictionary new.
         entries := OrderedCollection new.
+        retired := OrderedCollection new.
         ((dir files select: [:each | each name endsWith: '.st'])
             asSortedCollection: [:a :b | a stripPath <= b stripPath])
             do: [:each |
-                self scan: each into: entries seen: seen problems: problems].
+                self scan: each into: entries retiring: retired
+                    seen: seen problems: problems].
         problems isEmpty ifFalse: [SourceError signalProblems: problems].
-        ^entries
+        ^Array with: entries with: retired
     ]
 
-    scan: aFile into: entries seen: seen problems: problems [
+    "---- §4.2 tag dispatch (Doc F, Sprint 10) ----"
+
+    artifactHandlers [
+        "Private — the artifact table: each row is a format tag, the
+         message that takes such an artifact in, and the noun a
+         diagnosis calls it by.
+
+         A dispatch on a VALUE THE READER ALREADY VALIDATED — the shape
+         the index/lock split has used since Sprint 2 — never an
+         isKindOf: chain. Contents decide, never the filename (Doc C §1,
+         Sprint 4): an index owner may name and split these files
+         however they like.
+
+         It is a DECLARATION consumed twice: the dispatch looks a tag up
+         in it, and the wrong-tag diagnosis is RENDERED from it, so what
+         a source directory accepts and what its diagnosis says it
+         accepts cannot drift apart."
+        <category: 'private-dispatch'>
+        ^Array
+            with: (Array with: #'parley-index'
+                with: #takeEntry:named:into:retiring:seen:problems:
+                with: 'entries')
+            with: (Array with: #'parley-retired'
+                with: #takeRetirements:named:into:retiring:seen:problems:
+                with: 'records')
+    ]
+
+    handlerFor: aTag [
+        "Private — the row for a tag, or nil when a source directory
+         does not hold that artifact at all."
+        <category: 'private-dispatch'>
+        ^self artifactHandlers
+            detect: [:row | (row at: 1) = aTag]
+            ifNone: [nil]
+    ]
+
+    artifactVocabularyText [
+        "Private — what a source directory holds, rendered from the
+         table: '#''parley-index'' 1 entries and #''parley-retired'' 1
+         records'. The diagnosis it feeds used to say a source directory
+         holds ONLY entries, which this sprint made false — and a
+         diagnosis that misstates what is allowed sends an operator to
+         delete a file that belongs there (Sprint 10 RED review)."
+        <category: 'private-dispatch'>
+        | out rows |
+        rows := self artifactHandlers.
+        out := WriteStream on: String new.
+        1 to: rows size do: [:i |
+            i = 1 ifFalse: [
+                out nextPutAll: (i = rows size
+                    ifTrue: [' and ']
+                    ifFalse: [', '])].
+            out nextPutAll: ((rows at: i) at: 1) printString;
+                nextPutAll: ' 1 ';
+                nextPutAll: ((rows at: i) at: 3)].
+        ^out contents
+    ]
+
+    scan: aFile into: entries retiring: retired seen: seen problems: problems [
         "Private — one file: parse through the literals-only reader,
-         check the tag, check the §5.2 schema shape, detect duplicate
-         (name, version) across files; a problem is recorded against
-         the file's basename and the file contributes no entry."
+         then hand the artifact to the handler its tag selects. A
+         problem is recorded against the file's basename and the file
+         contributes nothing."
         <category: 'private'>
-        | basename entry shape value fields name version key |
+        | basename artifact row |
         basename := aFile stripPath.
-        entry := [IndexEntryReader readFrom: (ReadStream on: aFile contents)]
+        artifact := [IndexEntryReader readFrom: (ReadStream on: aFile contents)]
             on: IndexEntryParseError, IndexEntryFormatError
             do: [:e |
                 problems add: basename, ': ', e messageText.
                 e return: nil].
-        entry isNil ifTrue: [^self].
-        (entry at: 1) = #'parley-index' ifFalse: [
+        artifact isNil ifTrue: [^self].
+        row := self handlerFor: (artifact at: 1).
+        row isNil ifTrue: [
             problems add: basename, ': wrong artifact tag ',
-                (entry at: 1) printString,
-                ' - a source directory holds only #''parley-index'' 1 entries'.
+                (artifact at: 1) printString,
+                ' - a source directory holds ', self artifactVocabularyText.
             ^self].
+        "3.2.5's Array class >> with: stops at five arguments, so the
+         sixth is concatenated rather than passed."
+        ^self
+            perform: (row at: 2)
+            withArguments: ((Array
+                with: artifact with: basename with: entries
+                with: retired with: seen), (Array with: problems))
+    ]
+
+    takeEntry: entry named: basename into: entries retiring: retired seen: seen problems: problems [
+        "Private — one #'parley-index' 1 release entry: the §5.2 schema
+         shape, then the §4.1 values, then duplicate (name, version)
+         detection across files. Unchanged by Sprint 10 except that the
+         tag test above now selects it."
+        <category: 'private'>
+        | shape value fields name version key |
         shape := self schemaProblemIn: entry.
         shape notNil ifTrue: [
             problems add: basename, ': ', shape.
@@ -167,6 +265,90 @@ and the install-time fetch:version: of Doc D §1.1.'>
             ^self].
         seen at: key put: basename.
         entries add: entry
+    ]
+
+    takeRetirements: record named: basename into: entries retiring: retired seen: seen problems: problems [
+        "Private — one #'parley-retired' 1 record (Doc B §5.5): its own
+         shape validation, exactly as an entry has, then every triple
+         becomes a snapshot retirement tuple {name. Version. reason}.
+
+         A retirement naming a release the index does not hold is
+         accepted silently: an index owner may retire ahead of a
+         deletion, and the snapshot simply never matches it."
+        <category: 'private'>
+        | problem |
+        problem := self retirementProblemIn: record.
+        problem notNil ifTrue: [
+            problems add: basename, ': ', problem.
+            ^self].
+        ((self fieldsOf: record) at: #retirements) do: [:triple |
+            retired add: (Array
+                with: (triple at: 1)
+                with: (Version fromString: (triple at: 2))
+                with: (triple at: 3))]
+    ]
+
+    "---- §5.5 retirement-record validation (Doc F §4.2) ----"
+
+    retirementKeys [
+        "Private — the Doc B §5.5 keys. One key, always present."
+        <category: 'private-retirement'>
+        ^#(#retirements)
+    ]
+
+    retirementKeyText [
+        "Private — the record's schema vocabulary rendered for a
+         problem, derived from retirementKeys so the two cannot drift."
+        <category: 'private-retirement'>
+        ^'the only key of a retirement record is ',
+            (self retirementKeys at: 1) printString
+    ]
+
+    retirementProblemIn: aRecord [
+        "Private — the first §5.5 defect of a tag-valid retirement
+         record, as the descriptive tail of one problem, or nil when the
+         record is well formed. One problem per file, as everywhere in
+         the scan: a malformed record is a diagnosis, not a crash.
+
+         Shape first, then values — the Doc F §4.1 lesson, that a shape
+         check never asks whether a string MEANS anything. The settled
+         Version fromString: is consulted, never re-implemented."
+        <category: 'private-retirement'>
+        | keys triples |
+        aRecord size odd ifTrue: [
+            ^'malformed retirement record - the schema keys and values do not pair up'].
+        keys := OrderedCollection new.
+        3 to: aRecord size - 1 by: 2 do: [:i | keys add: (aRecord at: i)].
+        self retirementKeys do: [:key |
+            (keys includes: key) ifFalse: [
+                ^'missing schema key ', key printString, ' - ',
+                    self retirementKeyText]].
+        keys do: [:key |
+            (self retirementKeys includes: key) ifFalse: [
+                ^'unknown schema key ', key printString, ' - ',
+                    self retirementKeyText]].
+        triples := (self fieldsOf: aRecord) at: #retirements.
+        (self isRetirementTriples: triples) ifFalse: [
+            ^'#retirements must be an array of #(<name> <version> <reason>) string triples'].
+        triples do: [:triple |
+            (self parses: [Version fromString: (triple at: 2)])
+                ifFalse: [
+                    ^'#retirements version ', (triple at: 2) printString,
+                        ' for ', (triple at: 1) printString,
+                        ' does not parse as a version']].
+        ^nil
+    ]
+
+    isRetirementTriples: aValue [
+        "Private — an array of three-element #(name version reason)
+         String triples."
+        <category: 'private-retirement'>
+        (aValue isKindOf: Array) ifFalse: [^false].
+        aValue do: [:triple |
+            ((triple isKindOf: Array) and: [triple size = 3])
+                ifFalse: [^false].
+            (self isSchemaStringArray: triple) ifFalse: [^false]].
+        ^true
     ]
 
     "---- §5.2 schema-shape validation (Doc F §4) ----"

@@ -208,7 +208,7 @@ construction; zero public setters.'>
          The reader and Resolution fromLockEntry: are consumed
          unchanged: validation asks them and never re-implements them."
         <category: 'private'>
-        | file entry |
+        | file entry shape value |
         file := File name: self lockPath.
         file exists ifFalse: [^nil].
         entry := [IndexEntryReader readFrom: (ReadStream on: file contents)]
@@ -218,7 +218,144 @@ construction; zero public setters.'>
             ^self signalLockProblem: 'wrong artifact tag ',
                 (entry at: 1) printString,
                 ' - parley.lock holds only #''parley-lock'' 1 artifacts'].
+        shape := self lockShapeProblemIn: entry.
+        shape notNil ifTrue: [^self signalLockProblem: shape].
+        value := self lockValueProblemIn: entry.
+        value notNil ifTrue: [^self signalLockProblem: value].
         ^Resolution fromLockEntry: entry
+    ]
+
+    "---- the third rejection ground: body shape (Doc E §4.1) ----"
+
+    lockKeys [
+        "Private — the Doc B §5.3 keys, in the fixed order §5.4 rule 2
+         defines. All present, always, in exactly this sequence."
+        <category: 'private-lock'>
+        ^#(#root #packages)
+    ]
+
+    lockKeyOrderText [
+        "Private — the fixed key order rendered for a problem, derived
+         from lockKeys so the two can never drift apart."
+        <category: 'private-lock'>
+        | out |
+        out := WriteStream on: String new.
+        self lockKeys
+            do: [:each | out nextPutAll: each printString]
+            separatedBy: [out nextPut: Character space].
+        ^out contents
+    ]
+
+    lockShapeProblemIn: anEntry [
+        "Private — the first Doc B §5.3 shape defect of a tag-valid
+         lockfile, as the descriptive tail of one problem, or nil when
+         the lock has the schema shape.
+
+         THIS IS THE THIRD REJECTION GROUND (§8 decision 35). The two
+         before it are syntactic; a lockfile that parses, carries the
+         right tag and declares a supported format version but has a
+         malformed body used to reach Resolution fromLockEntry: and die
+         there as a KERNEL SystemExceptions.NotFound, answered with exit
+         70 — 'a defect in Parley' about the operator's own hand-edited
+         file. Validating here keeps fromLockEntry: trusting and fed
+         only values this boundary accepted, exactly as
+         LibraryManifest fromIndexEntry: is fed only entries the scan
+         validated.
+
+         ONE PROBLEM PER LOCKFILE, first defect found: the operator is
+         repairing one file, not auditing it, and the repair is the same
+         either way. Deliberately unlike the directory scan, which
+         batches because it reports on many files at once."
+        <category: 'private-lock'>
+        | keys fields |
+        anEntry size odd ifTrue: [
+            ^'malformed lock - the schema keys and values do not pair up'].
+        keys := OrderedCollection new.
+        3 to: anEntry size - 1 by: 2 do: [:i | keys add: (anEntry at: i)].
+        self lockKeys do: [:key |
+            (keys includes: key) ifFalse: [
+                ^'missing schema key ', key printString,
+                    ' - the fixed key order is ', self lockKeyOrderText]].
+        keys do: [:key |
+            (self lockKeys includes: key) ifFalse: [
+                ^'unknown schema key ', key printString,
+                    ' - the fixed key order is ', self lockKeyOrderText]].
+        keys asArray = self lockKeys ifFalse: [
+            ^'schema keys out of order - the fixed key order is ',
+                self lockKeyOrderText].
+        fields := self lockFieldsOf: anEntry.
+        (self isLockString: (fields at: #root)) ifFalse: [
+            ^'#root must be a string'].
+        (self isLockPackageTuples: (fields at: #packages)) ifFalse: [
+            ^'#packages must be an array of #(<name> <version> #sha256 <hex digest>) tuples'].
+        ^nil
+    ]
+
+    lockValueProblemIn: anEntry [
+        "Private — the first value defect of a lockfile already known to
+         have the §5.3 shape, or nil when every version parses.
+
+         The Doc F §4.1 lesson, applied here: a shape check asks whether
+         a field is a string, and never whether the string MEANS
+         anything, so a shape-perfect lock pinning version 'banana' was
+         still a kernel error waiting to happen. The settled
+         Version fromString: is CONSUMED, never re-implemented — it
+         stays the single definition of what parses, and this asks only
+         whether it said yes."
+        <category: 'private-lock'>
+        ((self lockFieldsOf: anEntry) at: #packages) do: [:tuple |
+            (self parsesVersion: (tuple at: 2)) ifFalse: [
+                ^'#packages version ', (tuple at: 2) printString,
+                    ' for ', (tuple at: 1) printString,
+                    ' does not parse as a version']].
+        ^nil
+    ]
+
+    parsesVersion: aString [
+        "Private — whether the settled parser accepts aString."
+        <category: 'private-lock'>
+        ^[Version fromString: aString. true]
+            on: VersionFormatError
+            do: [:e | e return: false]
+    ]
+
+    lockFieldsOf: anEntry [
+        "Private — the lock's key-value pairs after the tag and version,
+         as a Dictionary (Doc B §5.3 fixed key order)."
+        <category: 'private-lock'>
+        | fields |
+        fields := Dictionary new.
+        3 to: anEntry size - 1 by: 2 do: [:i |
+            fields at: (anEntry at: i) put: (anEntry at: i + 1)].
+        ^fields
+    ]
+
+    isLockString: aValue [
+        "Private — a schema string is a String and NOT a Symbol: in
+         3.2.5 Symbol is a String subclass, and the two are distinct
+         literals in the micro-format grammar."
+        <category: 'private-lock'>
+        ^aValue isString and: [aValue isSymbol not]
+    ]
+
+    isLockPackageTuples: aValue [
+        "Private — an array of four-element
+         #(<name> <version> #sha256 <hex digest>) tuples. Every
+         structural defect answers the one wording: they are one
+         question and one repair, as the settled #dependencies and
+         #archive checks already are. The digest itself is not
+         inspected — shape only; digest truth is Doc D §3's
+         verifyHash:."
+        <category: 'private-lock'>
+        (aValue isKindOf: Array) ifFalse: [^false].
+        aValue do: [:tuple |
+            ((tuple isKindOf: Array) and: [tuple size = 4])
+                ifFalse: [^false].
+            (self isLockString: (tuple at: 1)) ifFalse: [^false].
+            (self isLockString: (tuple at: 2)) ifFalse: [^false].
+            (tuple at: 3) == #sha256 ifFalse: [^false].
+            (self isLockString: (tuple at: 4)) ifFalse: [^false]].
+        ^true
     ]
 
     signalLockProblem: aDescription [
