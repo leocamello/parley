@@ -136,7 +136,7 @@ Fixed key order; ALL keys always present (empty string / empty array when unset)
       #('kernel-streams' '1.4.0' #sha256 'cd34…')))
 ```
 
-`packages` sorted by name; exact versions only (three components), no constraints.
+`packages` sorted by name; exact versions only (three components), no constraints. Each `#sha256` is **64 lowercase hex characters** — validated as that shape from Sprint 11 (§7.1, §8 decision 42), so a mistyped digest is a lockfile diagnosis rather than a corruption report from the store.
 
 ### 5.4 Canonical rendering (byte-stability)
 
@@ -186,6 +186,15 @@ Serialization does **not** live on the builder or the manifest. The writer/reade
 
 **The rejection message must name every tag the whitelist holds** (Sprint 10 RED review). It reads `unknown format tag <X>: this Parley reads #'parley-index', #'parley-lock' and #'parley-retired' artifacts` — widening the whitelist without widening the sentence would make the forward-evolution point state something false, and this message is the *only* place an operator learns what this build accepts. No settled law pins its bytes (`MicroFormatTest` asserts only that it names the offending tag and differs from the version message), so the sentence stays free to grow with the whitelist — but it must grow **in the same change**.
 - **Round-trip identity law (SUnit, required):** *build → write → read = build* — the pair composes to the identity on manifests, verified in complete isolation (no builder, no resolver).
+
+### 7.1 `SchemaShape` — the shapes the schemas are made of (Sprint 11)
+
+`Parley.SchemaShape` (`src/manifest/`) holds the value predicates both schema validators ask, as class-side messages: `isString:`, `isStringArray:`, `isHexDigest:`.
+
+It exists because `CLI>>isLockString:` and `DirectorySource>>isSchemaString:` were the *same* predicate in two classes — duplicated deliberately in Sprint 10, because sharing it then meant adding a public selector to a settled class. Hex-digest validation (§8 decision 42) is the third caller, which is exactly the trigger Sprint 10 named for fixing it.
+
+- `isHexDigest:` — exactly **64 lowercase hex characters**, the shape a sha256 renders as under §5.4. It validates the *shape*, never the truth: whether a digest matches its bytes is `ContentStore>>verifyHash:` and nothing else.
+- It holds no state, decides nothing, and answers questions about values handed to it — not a manager, and not a place for future "helpers" to accumulate. A predicate belongs here when **two** schema validators need it; one caller keeps it private, as before.
 
 ## 8. SUnit Requirements for This Doc
 

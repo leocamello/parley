@@ -24,7 +24,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-*(nothing — Sprint 10 closed; the next sprint is staged at Gate C from the list below)*
+- **Sprint 11 — the inspection verbs, and the debt they let us clear.** Issue #13. `why` / `tree` / `check` (the roadmap's top item), plus four carried gaps taken deliberately because the sprint's own work is what makes three of them cheap: `check` is the named consumer that closes the unread `retirementReasonFor:version:`; hex-digest validation is the third caller that triggers the `isLockString:` dedup into `SchemaShape`; and the drift law's textual anchor is hardened with its claim bounded. Operator direction: no time pressure — deliver functionality *and* clear debt, structured.
 
 ### Recently delivered
 
@@ -32,7 +32,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### Next, in order
 
-1. **Ergonomics verbs** — *deferred 0×; **top of the list**; no external clock, but a named consumer is waiting.* In the order history says users ask for them: `parley why <pkg>` / `tree` first (near-free from the `ConstraintLedger`'s provenance — this is where existing strength is cheapest to expose), then **`parley check`** (a verb spelling of the pin fast path, and the ruled home of **retirement reporting**, which was deferred out of Sprint 10 because warning on a retired *pinned* dependency would break the settled fast-path no-snapshot law), then selective `parley update <pkg>` (the first real pressure on the all-or-nothing grammar), then `parley add` (needs a ruling on machine-editing `Package.st`).
+1. **Ergonomics verbs** — *deferred 0×; **top of the list**; no external clock, but a named consumer is waiting.* In the order history says users ask for them: `parley why <pkg>` / `tree` first (**corrected at Sprint 11 staging:** these are *not* "near-free from the `ConstraintLedger`'s provenance" as this list long claimed — the ledger is transient and `Resolution` keeps no edges. They walk the lock plus the snapshot instead, which is both cheaper and more truthful, since it explains the world the operator is actually running — §8 decision 40), then **`parley check`** (a verb spelling of the pin fast path, and the ruled home of **retirement reporting**, which was deferred out of Sprint 10 because warning on a retired *pinned* dependency would break the settled fast-path no-snapshot law), then selective `parley update <pkg>` (the first real pressure on the all-or-nothing grammar), then `parley add` (needs a ruling on machine-editing `Package.st`).
 2. **`PubGrubStrategy` + prereleases** — *deferred 0×; **trigger-gated**, does not compete until its trigger fires.* Pre-validated by Hex and Bundler, both of which discarded backtracking resolvers after pathological freezes on real graphs. The trigger is **graph size or observed slowness, never calendar**. Prereleases ride in the same sprint because they touch `Version` comparison — the declared single change site — exactly once.
 3. **`RegistrySource` + entry signing** — *deferred 0×; **blocked on hosting**, an external precondition.* Per-package HTTP fetch of signed canonical entries (Hex's model; Cargo's sparse-index lesson — git indexes lose at scale). Byte-stable canonical rendering makes entry signing unusually cheap, because canonicalization is already a law. Made cheaper again by decision 37: retirement never rewrites a published entry, so signatures stay valid across a retirement.
 
@@ -41,7 +41,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 Recorded at Gate B, scheduled at Gate C against the list above — never at the moment of discovery.
 
 - **`isLockString:` is duplicated across two classes** because sharing it meant adding a public selector to a settled class. Cost is bounded (two copies, both covered by laws) and it compounds only if a *third* schema validator appears — which is the trigger to fix it, not a date. *Severity: low. No consumer constraint.*
-- **The boundary drift law is textually anchored** (§8 decision 38): a sender split across lines or reached through a temporary is not seen. *Severity: low-moderate — the law's guarantee is real but narrower than its name suggests. The stronger form is reflective enumeration.* **Consumer constraint:** the law proves every *textually spelled* sender is declared, not every sender.
+- **The boundary drift law is textually anchored** (§8 decision 38, corrected): a sender split across lines or reached through a temporary is not seen. **There is no reflective alternative on 3.2.5** — probed at Sprint 11 staging: `whichSelectorsReferTo:` searches literals rather than sends and finds none of the real senders; `allCallsOn:` does not exist. *Severity: low-moderate.* **Consumer constraint:** the law proves every *textually spelled* sender is declared, not every sender. **Scheduled into Sprint 11** as a hardening (whitespace normalization) plus an explicitly bounded claim, not as a mechanism swap.
 - **`retirementReasonFor:version:` is written, tested and unread** until `parley check` exists. By design (§8 decision 37), and the named consumer is item 1 above. *Severity: none — this is scheduling, not a gap.*
 
 ### Recently cleared
