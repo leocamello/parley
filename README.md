@@ -21,7 +21,7 @@ parley exec        Run a program inside a curated, resolved environment
 parley publish     Build the archive and land a release in an index
 ```
 
-`--source <dir>` selects a directory index for the verbs that need one. Parley's state for a project lives beside that project, under `<working-dir>/.parley/`.
+`--source <dir>` selects a directory index, and `--git <repo>` a git repository of index entries, for the verbs that need one. The two are mutually exclusive. Parley's state for a project lives beside that project, under `<working-dir>/.parley/`.
 
 ### Exit codes
 
@@ -35,6 +35,93 @@ Parley never answers a backtrace, and no failing command ever exits `0`:
 | `70` | a defect in **Parley**, not in your project. One line, never a dump. Please report it. |
 
 The split between `1` and `70` is deliberate and law-enforced: a script checking `$?` can tell "your input is wrong" from "the tool is broken".
+
+## Using an installed package
+
+### Coming from pip
+
+The model maps almost one-to-one, with one important difference at the import step:
+
+| Python | Parley |
+| --- | --- |
+| `python -m venv .venv` + `activate` | nothing to activate — every project's environment is `<project>/.parley/` |
+| `pip install requests` | `parley install --source <index>` |
+| `pyproject.toml` / `requirements.txt` | `Package.st` |
+| `pip freeze` → pinned versions | `parley.lock` (written by `resolve`, byte-stable) |
+| `import requests` | `PackageLoader fileInPackage: 'greeter'` |
+| `python run.py` | `parley exec run.st` |
+
+So **`parley exec` is the pip-and-import equivalent**: it is `python run.py` with the project's environment already in place.
+
+Two differences worth knowing up front:
+
+- **There is no global install and no activation.** Every project resolves into its own `<project>/.parley/`, so you are always in the equivalent of a virtualenv and never in a system-wide one.
+- **Loading is explicit, and it is not namespaced.** A package is *not* on a search path waiting to be found — nothing is available until you ask for it, and when you do, its classes land in scope directly. `PackageLoader fileInPackage: 'greeter'` behaves like `from greeter import *`, not like `import greeter`.
+
+A complete program:
+
+```smalltalk
+"run.st"
+PackageLoader fileInPackage: 'greeter'.
+Transcript showCr: (Greeter greet: 'world').
+```
+
+```sh
+parley install --source ../index
+parley exec run.st                     # → Hello, world!
+```
+
+### The three ways to run
+
+`install` leaves a real GNU Smalltalk image at `<project>/.parley/packages/parley.im`, so `exec` is a convenience, not the only door.
+
+**1. `parley exec run.st`** — use this for anything repeatable. It composes the curated child for you:
+
+```sh
+gst -i -I .parley/packages/parley.im --no-user-files run.st
+```
+
+`-i` rebuilds the image from the kernel on every run, so **no state leaks between runs**. That reproducibility is the whole point, and it is what makes `exec` the right choice in CI.
+
+**2. The same command by hand, without `-i`** — reuses the built image instead of rebuilding it:
+
+```sh
+gst -I .parley/packages/parley.im --no-user-files run.st
+```
+
+Roughly an order of magnitude faster to start. The trade is real: the image now accumulates whatever you file into it, so this is for iterating, not for reproducing.
+
+**3. An interactive REPL with your dependencies available:**
+
+```sh
+gst -I .parley/packages/parley.im --no-user-files
+```
+
+```smalltalk
+st> PackageLoader fileInPackage: 'greeter'.
+st> (Greeter greet: 'REPL') printNl.
+'Hello, REPL!'
+```
+
+This is the closest thing to `python` inside an activated virtualenv, and it is the fastest way to explore a dependency you have just installed. The image path may be absolute, so the REPL works from any directory.
+
+### One sharp edge
+
+`exec` reports the child's exit code faithfully — and GNU Smalltalk 3.2.5 continues past an unhandled error at the top level of a script, then **exits `0`**. So a script that fails can still leave you with `$? = 0`:
+
+```
+$ parley exec broken.st
+Object: nil error: did not understand #greet:   ← the child's own backtrace, not Parley's
+$ echo $?
+0
+```
+
+Parley's own "never exit `0` on failure" guarantee covers Parley's diagnoses, not your script's runtime behaviour. If a script's success matters to CI, end it deliberately:
+
+```smalltalk
+result isNil ifTrue: [ObjectMemory quit: 1].
+ObjectMemory quit: 0
+```
 
 ## Design highlights
 
