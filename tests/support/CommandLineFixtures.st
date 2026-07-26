@@ -380,7 +380,7 @@ labels.'>
     CommandLineFixtures class >> wrongTagProblemFor: aBaseName [
         <category: 'pinned wordings'>
         ^aBaseName,
-            ': wrong artifact tag #''parley-lock'' - a source directory holds only #''parley-index'' 1 entries'
+            ': wrong artifact tag #''parley-lock'' - a source directory holds #''parley-index'' 1 entries and #''parley-retired'' 1 records'
     ]
 
     "---- value-shape violating entry files (Doc F §4.1) ----"

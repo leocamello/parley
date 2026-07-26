@@ -102,7 +102,7 @@ tearDown.'>
 
     wrongTagProblemFor: aBaseName [
         ^aBaseName,
-            ': wrong artifact tag #''parley-lock'' - a source directory holds only #''parley-index'' 1 entries'
+            ': wrong artifact tag #''parley-lock'' - a source directory holds #''parley-index'' 1 entries and #''parley-retired'' 1 records'
     ]
 
     duplicateC24ProblemFor: aBaseName [
@@ -363,6 +363,31 @@ tearDown.'>
         snap := (DirectorySource on: dir) snapshot.
         self assertVersions: (snap versionsOf: 'c')
             are: #('1.5.0' '2.4.0' '3.0.0')
+    ]
+
+    "---- Sprint 10: the tag dispatch changes nothing for an index
+     without retirement records (issue #12; Doc F §4.2) ----"
+
+    testADirectoryWithNoRetirementRecordsScansExactlyAsBefore [
+        "DECLARED PASS IN RED (issue #12). The whole compatibility
+         argument for an additive third tag rests on this: an index that
+         adopts nothing behaves exactly as it did, and the scan's new
+         dispatch must be invisible to it. The guard consumes only
+         settled API, so it runs from the first day — a regression guard
+         that only starts running in green never watched the change that
+         could break it. It lives here rather than in the Sprint 10
+         suites because the claim belongs to this class."
+        | dir snap |
+        dir := self freshDir: 'law-no-retirements'.
+        RetirementFixtures populateLiveIndexIn: dir.
+        snap := (DirectorySource on: dir) snapshot.
+        self assertVersions: (snap versionsOf: 'kernel-json')
+            are: #('0.3.1' '0.3.2').
+        self assert: (snap sha256For: 'kernel-json'
+            version: (self version: '0.3.2'))
+                = RetirementFixtures digestJson032.
+        self assert: (snap dependenciesOf: 'kernel-json'
+            version: (self version: '0.3.1')) isEmpty
     ]
 ]
 

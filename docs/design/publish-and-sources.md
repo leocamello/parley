@@ -72,6 +72,14 @@ The settled parsers are consumed unchanged and stay the single definition of wha
 
 With Doc B §5.5 the index holds two kinds of artifact, so the scan reads each `.st` file, takes the tag the reader already validated, and dispatches: `#'parley-index'` is a release entry (§4/§4.1 above, unchanged), `#'parley-retired'` is a retirement record. **Contents-not-filename identity** (Doc C §1) decides which is which — never the filename — so an index owner may name and split these files however they like, and several retirement records merge.
 
+**The wrong-tag diagnosis is corrected with the dispatch** (Sprint 10 RED review). The settled scan told an operator `'<file>: wrong artifact tag #'parley-lock' - a source directory holds only #''parley-index'' 1 entries'`. From this sprint that sentence is **false**: a source directory legitimately holds retirement records too, and a diagnosis that misstates what is allowed sends the operator to delete a file that belongs there. It becomes:
+
+```
+<file>: wrong artifact tag #'parley-lock' - a source directory holds #'parley-index' 1 entries and #'parley-retired' 1 records
+```
+
+The two settled oracles pinning the old sentence (`DirectorySourceTest>>wrongTagProblemFor:`, `CommandLineFixtures>>wrongTagProblemFor:`) were amended by the operator at the RED review. This falls inside the declared `DirectorySource` exception — it is the same change as the dispatch, seen from the error path — and it is a *strengthening*: the branch now fires only for tags that are genuinely wrong.
+
 A retirement record gets its own shape validation, exactly as an entry does: the single key `#retirements`, an Array of three-element `#(<name> <version> <reason>)` String tuples, each version parsing through the settled `Version fromString:` (§4.1's lesson). Violations are one problem naming the file and the defect, batched into the same one `SourceError` in sorted-filename order — a retirement record is index content like any other, and a malformed one is a diagnosis, not a crash.
 
 The retirements collected are handed to the snapshot (Doc C §2.1), which is where they take effect. The scan's job ends at reading and validating; it makes no resolution decision. This is a **declared settled-class exception** on `DirectorySource`; `GitIndexSource` holds an inner `DirectorySource` and inherits retirement support without being touched at all.

@@ -183,6 +183,8 @@ Serialization does **not** live on the builder or the manifest. The writer/reade
 
 - `IndexEntryWriter` — `write: aManifest on: aStream` / `writeLock: aResolution on: aStream`, applying §5.4 exactly.
 - `IndexEntryReader` — `readFrom: aStream` → parsed structure → `LibraryManifest fromIndexEntry:` / lock value / retirement record. Unknown format tag or unsupported format version is a clear error (forward-evolution point). The whitelist is `#'parley-index'`, `#'parley-lock'` and — from Sprint 10 — `#'parley-retired'` (§5.5); adding a tag is a **declared settled-class exception**, never a silent widening, because "unknown tag is an error" is what makes the forward-evolution point real.
+
+**The rejection message must name every tag the whitelist holds** (Sprint 10 RED review). It reads `unknown format tag <X>: this Parley reads #'parley-index', #'parley-lock' and #'parley-retired' artifacts` — widening the whitelist without widening the sentence would make the forward-evolution point state something false, and this message is the *only* place an operator learns what this build accepts. No settled law pins its bytes (`MicroFormatTest` asserts only that it names the offending tag and differs from the version message), so the sentence stays free to grow with the whitelist — but it must grow **in the same change**.
 - **Round-trip identity law (SUnit, required):** *build → write → read = build* — the pair composes to the identity on manifests, verified in complete isolation (no builder, no resolver).
 
 ## 8. SUnit Requirements for This Doc
