@@ -55,6 +55,18 @@ Adding a kind-check to the resolver would have been the obvious implementation a
 
 **Not yet surfaced to consumers, deliberately.** Telling an operator that a *pinned* dependency has been retired requires reading the index on the `install` fast path — and Doc E §4.1's settled law says that path must complete **without consuming the source's snapshot**, proved by a snapshot-signaling source double. Retirement reporting therefore belongs with a verb that is allowed to consult the index (the deferred `parley check`), not to `install`. Sprint 10 delivers the schema and the resolution semantics; a retired release is observable through `update` and fresh `resolve`, where the snapshot is consumed anyway.
 
+### 2.2 Held pins live in the snapshot too, and the resolver never learns about them either (Sprint 12)
+
+Selective `parley update <pkg>` moves one package and leaves the rest of the lock where it is. The obvious implementation — teach the resolver about "pinned" packages — is the wrong one for the reason §2.1 already gives: it puts policy inside a pure search and every future strategy reimplements it. The right one is the same trick, applied a second time.
+
+- `IndexSnapshot>>holding: aDictionary` (name → `Version`) answers a **new** snapshot in which `versionsOf:` offers, for every held name, exactly the held version — and nothing else. Unheld packages are unaffected. The receiver is unchanged: structural immutability, an operation answering a new instance (Architecture §1.5).
+- Everything else answers as before. `dependenciesOf:version:` and `sha256For:version:` are untouched, because a held pin must still describe itself.
+- The `Resolver`, `BacktrackingStrategy` and `ConstraintLedger` are **not modified and not entered differently**. `update <pkg>` resolves the ordinary way against a narrower snapshot; a selective update is a normal resolution of a smaller world.
+
+**A held pin outranks a retirement.** When a held version is also retired, the snapshot offers it anyway — narrowing wins. This looks like a conflict between §2.1 and this section and is not: `versionsOf:`'s retirement filter answers "what may a *fresh* resolution pick", and a held pin is not being picked, it is being *kept*. The precedent is exactly decision 37's second half — an existing lock keeps installing a retired release, because excluding it from fresh resolution was never meant to strand a project that already depends on it. A selective update is, for every package it does not name, closer to `install` than to `resolve`. The verb that tells an operator a pin has been retired is `check` (Doc E §4.1), which exists for that purpose and reports it as a problem; failing an unrelated `update kernel-a` because `kernel-b`'s pin was retired last week would blame the wrong package for the wrong thing.
+
+**Provenance stays at the CLI, not in the ledger.** When holding the rest makes the named package unmovable, the resolver answers an ordinary `ConflictReport` about a world with few candidates — truthful, but silent about *why* the world was small. The missing sentence is supplied by the verb, not by a new `Term` kind: Doc E §4.1's `update <pkg>` prepends one line naming that the other pins were held and that `parley update` moves everything. Blame belongs at the boundary that had the context — the same placement as decisions 31, 35, 42 and 44.
+
 ---
 
 ## 3. `Term` & `Incompatibility` behavior
