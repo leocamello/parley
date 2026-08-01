@@ -25,10 +25,10 @@ mean the same thing. This table is the map.
 | Doc | File | Covers | Introduced |
 | --- | --- | --- | --- |
 | **A** | [`domain-model.md`](domain-model.md) | The keystone algebra: `Version`, `VersionRange`, `VersionConstraint`, `Term`, `Incompatibility`, `Dependency` | Sprint 0 |
-| **B** | [`manifest-and-serialization.md`](manifest-and-serialization.md) | `Package.st` authoring, `ManifestBuilder`, the literal micro-format, `IndexEntryWriter`/`Reader` | Sprint 1 |
+| **B** | [`manifest-and-serialization.md`](manifest-and-serialization.md) | `Package.st` authoring, `ManifestBuilder`, the literal micro-format, `IndexEntryWriter`/`Reader`, `SchemaShape` (the shared value predicates) | Sprint 1 |
 | **C** | [`resolver.md`](resolver.md) | The pure resolver, `ConstraintLedger` provenance, `BacktrackingStrategy`, conflict narration, the `PackageSource` protocol | Sprint 2 |
 | **D** | [`installer.md`](installer.md) | `Sha256`, the content-addressed `ContentStore`, `Installer`, the `gst-package` registration plan | Sprint 5 |
-| **E** | [`execution-and-cli.md`](execution-and-cli.md) | `ProcessRunner`, `ExecutionScope` (the curated child `gst`), `ManifestFile`, `CLI`, `CommandLine` and the diagnosis boundary, `LockError` and the lock/authoring blame boundaries, the shipped binary | Sprint 6 |
+| **E** | [`execution-and-cli.md`](execution-and-cli.md) | `ProcessRunner`, `ExecutionScope` (the curated child `gst`), `ManifestFile`, `CLI`, `CommandLine` and the diagnosis boundary, `LockError` and the lock/authoring blame boundaries, the shipped binary, the `why`/`tree`/`check` inspection verbs | Sprint 6 |
 | **F** | [`publish-and-sources.md`](publish-and-sources.md) | The publish pipeline, the composed `package.xml`, schema-shape and value-shape validation, `GitIndexSource` | Sprint 7 |
 
 ## Why the filenames are not letter-prefixed
