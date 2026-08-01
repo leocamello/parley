@@ -34,8 +34,10 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 ### Next, in order
 
 1. **`parley add <pkg> <constraint>`** — *deferred 0×; top of the list once Sprint 12 lands; no external clock.* The last of the ergonomics verbs, and the one that needs a **ruling before a sprint**: it machine-edits the operator's `Package.st`, which is executable Smalltalk, not a data file Parley owns. Rewriting it means either a text-level edit that must preserve the author's formatting and comments, or a round-trip through `ManifestBuilder` that would silently reformat a file the author wrote by hand. Neither is obviously right and the choice is not a sprint-scope decision. **Trigger for staging: the ruling, not the calendar.**
-2. **`PubGrubStrategy` + prereleases** — *deferred 0×; **trigger-gated**, does not compete until its trigger fires.* Pre-validated by Hex and Bundler, both of which discarded backtracking resolvers after pathological freezes on real graphs. The trigger is **graph size or observed slowness, never calendar**. Prereleases ride in the same sprint because they touch `Version` comparison — the declared single change site — exactly once.
-3. **`RegistrySource` + entry signing** — *deferred 0×; **blocked on hosting**, an external precondition.* Per-package HTTP fetch of signed canonical entries (Hex's model; Cargo's sparse-index lesson — git indexes lose at scale). Byte-stable canonical rendering makes entry signing unusually cheap, because canonicalization is already a law. Made cheaper again by decision 37: retirement never rewrites a published entry, so signatures stay valid across a retirement.
+2. **The sparse-index client** — *deferred 0×; the v1.0 distribution answer (§5).* `SparseIndexSource`: per-package metadata at `<base>/<name>/<version>`, fetched on demand, hash-pinned — the shape crates.io migrated *to* and Hex.pm has always served. **Not blocked on hosting**, because the transport is a process seam like git: `curl -sfS <url> -o <file>` through the settled `ProcessRunner`, which means the whole source is provable offline against a static directory tree over `file://` (probed at the v1.0 staging: exit `0` on a hit, exit `37` on a miss — two distinct grounds, no network, no HTTP implementation in Smalltalk). Ships the protocol so that hosting is later a deployment rather than a redesign.
+3. **Release hardening** — *deferred 0×; the last v1.0 item.* `parley --version` (there is no version constant anywhere in `bin/` or `src/exec/` — the first thing every bug report needs); **publishing to a shared index** (`publish <dir>` writes to a directory you own; git-index-as-registry needs the other half, commit-and-push or a documented contributor workflow — this is the gap between "package manager" and "ecosystem"); README and docs for a stranger; and the prebuilt-image decision **taken on measurements**, trigger-gated like `PubGrubStrategy` rather than on intuition.
+4. **`PubGrubStrategy` + prereleases** — *deferred 0×; **trigger-gated**, does not compete until its trigger fires.* Pre-validated by Hex and Bundler, both of which discarded backtracking resolvers after pathological freezes on real graphs. The trigger is **graph size or observed slowness, never calendar**. Prereleases ride in the same sprint because they touch `Version` comparison — the declared single change site — exactly once.
+5. **Entry signing** — *deferred 0×; **2.0 axis** (§5), not a v1.0 blocker.* Byte-stable canonical rendering already makes signing unusually cheap *whenever* it lands, because canonicalization is a law rather than a convention, and decision 37 keeps signatures valid across a retirement. What is not cheap is the verification itself: under the no-third-party-libraries ban it is PKCS#1 v1.5 over `LargeInteger` or Ed25519 curve arithmetic, written from scratch and vector-anchored like `Sha256` — a crypto sprint, where a subtle error is a security defect rather than a failing law. crates.io ran for years on checksums and transport trust; Hex added signing later. v1.0 does the same.
 
 ### Carried gaps — ranked, unscheduled (runbook §2.4)
 
@@ -63,7 +65,8 @@ Recorded at Gate B — or, for the first item below, at an operator walkthrough 
 
 | Deferred | Reason | Decision |
 | --- | --- | --- |
-| `RegistrySource`, registry hosting, signing, yanking-as-deletion | A registry source without a registry is either a renamed `DirectorySource` or an untestable HTTP shell; it arrives with hosting | §8 decision 27 |
+| Registry **hosting**, entry **signing**, yanking-as-deletion | Hosting is an operated service with an indefinite horizon (storage, CDN, moderation, name squatting, key custody, an entity to hold it); signing is a from-scratch crypto implementation under the no-third-party-libraries ban, where "the laws pass" is not sufficient assurance. Both are the 2.0 axis (§5) | §8 decision 27, narrowed at the v1.0 staging |
+| A `RegistrySource` that *is* a renamed `DirectorySource` | The original decision-27 reason, and it still holds: a source with no protocol of its own earns nothing. What is **no longer** deferred is the sparse-index **client**, which has a protocol, is testable offline, and is §5's item 3 | §5 |
 | Prerelease versions | Smallest well-defined semver surface for MVP; rides with `PubGrubStrategy` when that lands | §8 decision 8 |
 | Backjumping | Data supports it; the payoff belongs to `PubGrubStrategy`, not the backtracking loop | §8 decision 14 |
 | `PubGrubStrategy` | Trigger-gated on graph size or observed slowness | §2 above |
@@ -79,11 +82,46 @@ Recorded at Gate B — or, for the first item below, at an operator walkthrough 
 
 ## 4. Phase map (where the roadmap sits)
 
-Phases 1–3 are complete and Phase 4 is open. See [`design/architecture.md`](design/architecture.md) §3–§5.5 for what each phase means and [`sprints/`](sprints/) for what each sprint delivered.
+Phases 1–4 are complete and Phase 5 — the v1.0 line — is open. See [`design/architecture.md`](design/architecture.md) §3–§5.5 for what each phase means and [`sprints/`](sprints/) for what each sprint delivered.
 
 | Phase | Content | State |
 | --- | --- | --- |
 | 1 | The algebraic domain model | ✅ Sprint 0 |
 | 2 | The pure resolution engine | ✅ Sprints 2–3 |
 | 3 | The orchestration bridge — installer, execution scope, CLI | ✅ Sprints 4–6 |
-| 4 | The ecosystem — publish, sources, the shipped binary, the blame boundaries | 🔄 Sprints 7–10 |
+| 4 | The ecosystem — publish, sources, the shipped binary, the blame boundaries, the inspection verbs | ✅ Sprints 7–11 |
+| 5 | The release — the editing verbs, the sparse-index client, release hardening | 🔄 Sprints 12–15, the v1.0 line (§5) |
+| 6 | Hosting, signing, governance | ⏳ the 2.0 axis (§5) |
+
+---
+
+## 5. The path to v1.0
+
+**v1.0 is "the complete, honest, local-and-git package manager — whose client already speaks the registry protocol."** Ruled at the v1.0 staging (2026-08-02). The version ships when the *code* is done, never when a *service* is.
+
+### What v1.0 is not
+
+Not a hosted registry. Hosting is an operated service with an indefinite horizon — storage, CDN, moderation, name squatting, security response, key custody, and a legal entity to hold all of it — and binding a version number to it means the number ships on someone else's schedule. **Hosting, signing and governance are the 2.0 axis.**
+
+The distinction that makes this work, and the one the four-item plan originally blurred: a registry is **a client protocol plus an operated service**, and only the second is blocked. crates.io's own history is the argument — they migrated the *transport* from a git index to a sparse HTTP index without changing what a client fundamentally does: fetch per-package metadata on demand, pin by hash. The durable artifact was never the server.
+
+So v1.0 builds the protocol and proves it offline. The day someone hosts a Parley index, that is a deployment.
+
+### The sequence
+
+| # | Sprint | Why it is on the v1.0 line |
+| --- | --- | --- |
+| 12 | Selective `update <pkg>` | The all-or-nothing grammar is the last place the tool forces a diff nobody asked for. Staged, issue #14. |
+| 13 | `parley add` | Gated on a ruling first: machine-editing `Package.st` is either a formatting-preserving text edit or a `ManifestBuilder` round-trip that silently reformats a hand-written file. The ruling is the prerequisite, not the sprint. |
+| 14 | The sparse-index client | §2 item 2. Provable with no network and no server. |
+| 15 | Release hardening | §2 item 3: `--version`, publishing to a shared index, docs for a stranger, and the prebuilt-image call taken on measurements. |
+
+### What was ruled *out* of the line, and why
+
+- **`parley exec`'s exit-code truthfulness** — closed as a bounded limitation at Sprint 12 staging (§8 decision 45), not carried and not scheduled. Probed rather than estimated: no handler placement works on 3.2.5, `-f` is inert, and the only remaining mechanism is pattern-matching the child's backtrace out of a captured stream, which would buy "no failing outcome exits `0`" by breaking "never claim more than you can prove". `exec` is a **runner, not a test harness**, and v1.0 says so where the operator meets it.
+- **Entry signing** — §2 item 5. Checksum pinning plus transport trust is what the comparable registries shipped their own 1.0 on.
+- **`PubGrubStrategy` and prereleases** — §2 item 4, trigger-gated on real graph sizes. A resolver swap is not a release blocker; it is a performance answer waiting for a performance question.
+
+### The 2.0 axis
+
+Hosting, entry signing, and whatever governance a shared index needs. Reached from a v1.0 whose entry format is already canonical and signable, and whose client already fetches per-package metadata over a real transport — which is the whole point of building the road before the destination.
