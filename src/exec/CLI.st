@@ -1,8 +1,9 @@
 "Parley — CLI: the package-manager verbs over everything beneath.
  Spec: docs/design/execution-and-cli.md §4; issue #8 S10-S19.
- An orchestration answering a value: run: dispatches the MVP argv
+ An orchestration answering a value: run: dispatches the argv
  grammar (init | resolve | install | update | exec <script> |
- publish <dir>) and answers an immutable CliResult. The CLI never
+ publish <dir> | why <pkg> | tree | check) and answers an immutable
+ CliResult. The CLI never
  prints, never terminates the image, and never touches a process
  except through the scope's runner. Its own I/O is confined to the
  working directory's Package.st (init template, ManifestFile load)
@@ -73,10 +74,14 @@ construction; zero public setters.'>
             ifTrue: [^self exec: (anArgvArray at: 2)].
         (verb = 'publish' and: [anArgvArray size = 2])
             ifTrue: [^self publish: (anArgvArray at: 2)].
+        (verb = 'why' and: [anArgvArray size = 2 and: [source notNil]])
+            ifTrue: [^self why: (anArgvArray at: 2)].
         (anArgvArray size = 1 and: [source notNil]) ifTrue: [
             verb = 'resolve' ifTrue: [^self resolve].
             verb = 'install' ifTrue: [^self install].
-            verb = 'update' ifTrue: [^self update]].
+            verb = 'update' ifTrue: [^self update].
+            verb = 'tree' ifTrue: [^self tree].
+            verb = 'check' ifTrue: [^self check]].
         ^self usage
     ]
 
@@ -158,6 +163,175 @@ construction; zero public setters.'>
             lines: (Array with: 'published ', manifest name, ' ',
                 manifest version printString)
             exitCode: 0
+    ]
+
+    "---- the inspection verbs (Doc E §4.1, Sprint 11) ----"
+
+    why: aName [
+        "The dependent chains that put aName in the lock: one line per
+         chain, root first, arrow-joined, each hop naming the
+         constraint that demanded the next, chains sorted so the
+         output is byte-stable. A package not in the lock is a
+         one-line diagnosis at exit 1 — the operator's question about
+         a package they do not have, never a defect.
+
+         The graph comes from the LOCK PLUS THE SNAPSHOT (§8 decision
+         40), never the resolver: the ledger is transient, and a fresh
+         resolution may legitimately pick a different set than the
+         lock pins. The root's own edges come from its manifest; every
+         other node's from the settled dependenciesOf:version:."
+        <category: 'verbs'>
+        | resolution manifest chains |
+        resolution := self pinnedResolution.
+        resolution isNil ifTrue: [^self reportMissingLock].
+        (resolution packageNames includes: aName) ifFalse: [
+            ^CliResult
+                lines: (Array with: aName printString,
+                    ' is not pinned in parley.lock')
+                exitCode: 1].
+        manifest := self loadManifest.
+        chains := OrderedCollection new.
+        self collectChainsTo: aName
+            from: manifest dependencies
+            chain: manifest name, ' ', manifest version printString
+            visited: (Set with: manifest name)
+            resolution: resolution
+            snapshot: source snapshot
+            into: chains.
+        ^CliResult
+            lines: (chains asSortedCollection: [:a :b | a <= b]) asArray
+            exitCode: 0
+    ]
+
+    tree [
+        "The pinned graph root-down: one line per node, two-space
+         indent per level, each node '<name> <version>', children
+         sorted by name so the output is byte-stable. A package
+         reached more than once is rendered at each site with repeats
+         marked and not re-expanded, so the output cannot mislead
+         about depth. Same graph source as why (§8 decision 40)."
+        <category: 'verbs'>
+        | resolution manifest lines |
+        resolution := self pinnedResolution.
+        resolution isNil ifTrue: [^self reportMissingLock].
+        manifest := self loadManifest.
+        lines := OrderedCollection new.
+        lines add: manifest name, ' ', manifest version printString.
+        self addTreeLinesFor: manifest dependencies
+            depth: 1
+            seen: (Set with: manifest name)
+            resolution: resolution
+            snapshot: source snapshot
+            into: lines.
+        ^CliResult lines: lines asArray exitCode: 0
+    ]
+
+    check [
+        "The verb spelling of the pin fast path, and the place
+         retirement finally reaches the operator (§8 decision 37): in
+         order, whether parley.lock exists and validates, whether
+         PinVerification holds, and which pinned releases the index
+         now marks retired — the author's reason travelling VERBATIM
+         through the settled retirementReasonFor:version:. All good is
+         one confirmation line at exit 0; anything wrong is the
+         problems as lines at exit 1 — a retired pin is a PROBLEM, not
+         a warning: check exists to be run in CI, and an exit code
+         that ignored retirement would make the verb useless for the
+         one job it has."
+        <category: 'verbs'>
+        | resolution manifest snapshot problems |
+        resolution := self pinnedResolution.
+        resolution isNil ifTrue: [^self reportMissingLock].
+        manifest := self loadManifest.
+        problems := OrderedCollection new.
+        problems addAll:
+            (PinVerification of: manifest lock: resolution) problems.
+        snapshot := source snapshot.
+        resolution packageNames do: [:name |
+            | version reason |
+            version := resolution versionOf: name.
+            reason := snapshot retirementReasonFor: name version: version.
+            reason notNil ifTrue: [
+                problems add: 'lock pins ', name printString,
+                    ' at ', version printString,
+                    ', which the index has retired: ', reason]].
+        problems isEmpty ifTrue: [
+            ^CliResult
+                lines: (Array with: 'parley.lock is healthy - pins satisfy Package.st and nothing pinned is retired')
+                exitCode: 0].
+        ^CliResult lines: problems asArray exitCode: 1
+    ]
+
+    collectChainsTo: aTarget from: someDependencies chain: aChainString visited: aVisitedSet resolution: aResolution snapshot: aSnapshot into: aCollection [
+        "Private — the reverse walk rendered forward: extend
+         aChainString along every pinned edge, recording each chain
+         that reaches aTarget. Only pinned edges are walked — the verb
+         explains the lock, not the index — and a node already on the
+         current chain is never re-entered, so a cyclic lock cannot
+         hang the walk."
+        <category: 'private-inspection'>
+        someDependencies do: [:dep |
+            | name version rendered nextVisited |
+            name := dep name.
+            ((aResolution packageNames includes: name)
+                and: [(aVisitedSet includes: name) not]) ifTrue: [
+                version := aResolution versionOf: name.
+                rendered := aChainString, ' -> ', name, ' ',
+                    version printString,
+                    ' (', dep constraint printString, ')'.
+                name = aTarget
+                    ifTrue: [aCollection add: rendered]
+                    ifFalse: [
+                        nextVisited := aVisitedSet copy.
+                        nextVisited add: name.
+                        self collectChainsTo: aTarget
+                            from: (aSnapshot dependenciesOf: name
+                                version: version)
+                            chain: rendered
+                            visited: nextVisited
+                            resolution: aResolution
+                            snapshot: aSnapshot
+                            into: aCollection]]]
+    ]
+
+    addTreeLinesFor: someDependencies depth: aDepth seen: aSeenSet resolution: aResolution snapshot: aSnapshot into: aCollection [
+        "Private — the forward walk: children sorted by name, indented
+         two spaces per level; a node already rendered anywhere is
+         marked as a repeat and not re-expanded."
+        <category: 'private-inspection'>
+        | sorted |
+        sorted := someDependencies asSortedCollection:
+            [:a :b | a name <= b name].
+        sorted do: [:dep |
+            | name version line |
+            name := dep name.
+            (aResolution packageNames includes: name) ifTrue: [
+                version := aResolution versionOf: name.
+                line := (String new: aDepth * 2 withAll: Character space),
+                    name, ' ', version printString.
+                (aSeenSet includes: name)
+                    ifTrue: [aCollection add: line, ' (repeat)']
+                    ifFalse: [
+                        aSeenSet add: name.
+                        aCollection add: line.
+                        self addTreeLinesFor:
+                                (aSnapshot dependenciesOf: name
+                                    version: version)
+                            depth: aDepth + 1
+                            seen: aSeenSet
+                            resolution: aResolution
+                            snapshot: aSnapshot
+                            into: aCollection]]]
+    ]
+
+    reportMissingLock [
+        "Private — an inspection verb on a lockless project: exit 1,
+         and the repair is resolve — the verb that writes a FIRST lock
+         — not update, which is the repair for a corrupt one."
+        <category: 'private-inspection'>
+        ^CliResult
+            lines: (Array with: 'parley.lock is missing - run parley resolve to write it')
+            exitCode: 1
     ]
 
     "---- the install pipeline ----"
@@ -284,7 +458,7 @@ construction; zero public setters.'>
             ^'schema keys out of order - the fixed key order is ',
                 self lockKeyOrderText].
         fields := self lockFieldsOf: anEntry.
-        (self isLockString: (fields at: #root)) ifFalse: [
+        (SchemaShape isString: (fields at: #root)) ifFalse: [
             ^'#root must be a string'].
         (self isLockPackageTuples: (fields at: #packages)) ifFalse: [
             ^'#packages must be an array of #(<name> <version> #sha256 <hex digest>) tuples'].
@@ -308,7 +482,24 @@ construction; zero public setters.'>
                 ^'#packages version ', (tuple at: 2) printString,
                     ' for ', (tuple at: 1) printString,
                     ' does not parse as a version']].
+        ((self lockFieldsOf: anEntry) at: #packages) do: [:tuple |
+            (self isLockDigest: (tuple at: 4)) ifFalse: [
+                ^'#packages digest ', (tuple at: 4) printString,
+                    ' for ', (tuple at: 1) printString,
+                    ' must be 64 lowercase hex characters']].
         ^nil
+    ]
+
+    isLockDigest: aString [
+        "Private — a lock digest is 64 lowercase hex characters, OR
+         the empty string: '' is RECORDED ABSENCE, what the settled
+         writer renders for an #archive #() pin, and it must keep
+         reaching the settled Installer diagnosis instead of being
+         rejected here (Doc B §5.3; §8 decision 42 — the exemption is
+         for absence, not laxity). The version check above runs first:
+         the settled version wording is pinned by settled laws."
+        <category: 'private-lock'>
+        ^aString isEmpty or: [SchemaShape isHexDigest: aString]
     ]
 
     parsesVersion: aString [
@@ -330,14 +521,6 @@ construction; zero public setters.'>
         ^fields
     ]
 
-    isLockString: aValue [
-        "Private — a schema string is a String and NOT a Symbol: in
-         3.2.5 Symbol is a String subclass, and the two are distinct
-         literals in the micro-format grammar."
-        <category: 'private-lock'>
-        ^aValue isString and: [aValue isSymbol not]
-    ]
-
     isLockPackageTuples: aValue [
         "Private — an array of four-element
          #(<name> <version> #sha256 <hex digest>) tuples. Every
@@ -351,10 +534,10 @@ construction; zero public setters.'>
         aValue do: [:tuple |
             ((tuple isKindOf: Array) and: [tuple size = 4])
                 ifFalse: [^false].
-            (self isLockString: (tuple at: 1)) ifFalse: [^false].
-            (self isLockString: (tuple at: 2)) ifFalse: [^false].
+            (SchemaShape isString: (tuple at: 1)) ifFalse: [^false].
+            (SchemaShape isString: (tuple at: 2)) ifFalse: [^false].
             (tuple at: 3) == #sha256 ifFalse: [^false].
-            (self isLockString: (tuple at: 4)) ifFalse: [^false]].
+            (SchemaShape isString: (tuple at: 4)) ifFalse: [^false]].
         ^true
     ]
 
@@ -441,7 +624,7 @@ construction; zero public setters.'>
         ^CliResult
             lines: (Array
                 with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
-                with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>'
+                with: 'verbs: init | resolve | install | update | exec <script> | publish <dir> | why <pkg> | tree | check'
                 with: 'flags: --source <dir>  index entries in a local directory'
                 with: '       --git <repo>    index entries in a git repository')
             exitCode: 2

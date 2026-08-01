@@ -55,8 +55,8 @@
  boundary that rejected it would reject Parley's own output. The
  malformedLockRows walk above is NOT extended in red — the walk is a
  settled law that must keep passing, and a row whose rejection does
- not exist yet would fail it; folding the digest ground into the rows
- is noted for the operator at the RED review.
+ not exist yet would fail it; the fold was carried to GREEN at the
+ review and the digest row now closes the walk.
 
  Every fixture path is under tmp/, unique per test, removed recursively
  in tearDown; nothing here spawns and no network is contacted."

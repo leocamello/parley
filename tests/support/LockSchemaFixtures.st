@@ -237,7 +237,11 @@ uniqueness comes from per-test labels.'>
                 with: (Array with: self missingMarkerLockContents
                     with: [:path | self lockPackagesKindProblemFor: path])
                 with: (Array with: self nonStringFieldLockContents
-                    with: [:path | self lockPackagesKindProblemFor: path]))
+                    with: [:path | self lockPackagesKindProblemFor: path])),
+            (Array
+                with: (Array with: InspectionFixtures malformedDigestLockString
+                    with: [:path |
+                        InspectionFixtures malformedLockDigestProblemFor: path]))
     ]
 
     "---- the deserialization-boundary table (Doc E §4.2) ----"
@@ -371,18 +375,9 @@ uniqueness comes from per-test labels.'>
 
     LockSchemaFixtures class >> readerSenderFileNames [
         "Every .st file under src/ whose SOURCE TEXT sends
-         IndexEntryReader readFrom:, as '<dir>/<file>', sorted.
-
-         3.2.5's File>>files answers REGULAR FILES ONLY and never
-         recurses, so a src/ walk written the obvious way sees NOTHING
-         and the drift law passes vacuously — the trap that bit Sprint
-         8's bin/ law. namesDo: is the enumeration that sees directory
-         entries (it also yields '.' and '..', which are filtered), and
-         it is used at both levels here.
-
-         The search runs over codeOf: the file, never its raw text: a
-         comment that names the send is not a sender, and one such
-         comment exists (CommandLine's own boundary-table declaration).
+         IndexEntryReader readFrom:, as '<dir>/<file>', sorted —
+         delegating to the parameterized walk so the S13 law can drive
+         the SAME code path over a fabricated tree under tmp/.
 
          PROBED against the toolchain: the walk answers
          ('exec/CLI.st' 'source/DirectorySource.st'), while
@@ -390,16 +385,71 @@ uniqueness comes from per-test labels.'>
          records that answer, and
          testTheEnumerationSeesTheRealSenders holds this method to it."
         <category: 'drift law'>
+        ^self readerSenderFileNamesUnder: 'src'
+            subdirectories: self srcSubdirectoryNames
+    ]
+
+    LockSchemaFixtures class >> readerSenderFileNamesUnder: aRootPath subdirectories: someDirNames [
+        "Every .st file under aRootPath/<dir> for each of someDirNames
+         whose source text sends IndexEntryReader readFrom:, as
+         '<dir>/<file>', sorted.
+
+         3.2.5's File>>files answers REGULAR FILES ONLY and never
+         recurses, so a walk written the obvious way sees NOTHING and
+         the drift law passes vacuously — the trap that bit Sprint 8's
+         bin/ law. namesDo: is the enumeration that sees directory
+         entries (it also yields '.' and '..', which are filtered).
+
+         The search runs over normalizedCodeOf: the file, never its
+         raw text: a comment that names the send is not a sender (one
+         such comment exists — CommandLine's own boundary-table
+         declaration), and a sender whose receiver and selector are
+         split across a line break is still a sender (§8 decision 43;
+         the Sprint 10 walk matched one stripped line at a time and a
+         legal reformat vanished from it).
+
+         BOUNDED CLAIM (decision 38, corrected): this is a TEXTUAL
+         search, hardened against whitespace. Reflective sender
+         enumeration does not exist on 3.2.5 — whichSelectorsReferTo:
+         searches a method's literals, not its send bytecodes — so a
+         send assembled by perform: or interrupted by a comment
+         between receiver and selector stays invisible. The law claims
+         whitespace-robustness, nothing stronger."
+        <category: 'drift law'>
         | names |
         names := OrderedCollection new.
-        self srcSubdirectoryNames do: [:dirName |
-            (File name: 'src/', dirName) namesDo: [:fileName |
+        someDirNames do: [:dirName |
+            (File name: aRootPath, '/', dirName) namesDo: [:fileName |
                 ((fileName endsWith: '.st') and: [
-                    self does: (self codeOf: (File name: 'src/', dirName, '/',
-                        fileName) contents)
+                    self does: (self normalizedCodeOf:
+                        (File name: aRootPath, '/', dirName, '/',
+                            fileName) contents)
                         include: self readerSendSource])
                     ifTrue: [names add: dirName, '/', fileName]]].
         ^(names asSortedCollection: [:a :b | a <= b]) asArray
+    ]
+
+    LockSchemaFixtures class >> normalizedCodeOf: aSourceString [
+        "codeOf: aSourceString with every run of whitespace collapsed
+         to one space, so a send split across a line break reads as
+         contiguous text (§8 decision 43)."
+        <category: 'drift law'>
+        | out stream ch pendingSpace started |
+        out := WriteStream on: String new.
+        stream := ReadStream on: (self codeOf: aSourceString).
+        pendingSpace := false.
+        started := false.
+        [stream atEnd] whileFalse: [
+            ch := stream next.
+            ch isSeparator
+                ifTrue: [pendingSpace := true]
+                ifFalse: [
+                    (pendingSpace and: [started])
+                        ifTrue: [out nextPut: Character space].
+                    pendingSpace := false.
+                    started := true.
+                    out nextPut: ch]].
+        ^out contents
     ]
 
     LockSchemaFixtures class >> readerSenderClassNames [

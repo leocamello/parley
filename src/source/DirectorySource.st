@@ -347,7 +347,7 @@ and the install-time fetch:version: of Doc D §1.1.'>
         aValue do: [:triple |
             ((triple isKindOf: Array) and: [triple size = 3])
                 ifFalse: [^false].
-            (self isSchemaStringArray: triple) ifFalse: [^false]].
+            (SchemaShape isStringArray: triple) ifFalse: [^false]].
         ^true
     ]
 
@@ -405,9 +405,9 @@ and the install-time fetch:version: of Doc D §1.1.'>
         | fields |
         fields := self fieldsOf: anEntry.
         #(#name #version #summary #author #license) do: [:key |
-            (self isSchemaString: (fields at: key)) ifFalse: [
+            (SchemaShape isString: (fields at: key)) ifFalse: [
                 ^key printString, ' must be a string']].
-        (self isSchemaStringArray: (fields at: #fileIns)) ifFalse: [
+        (SchemaShape isStringArray: (fields at: #fileIns)) ifFalse: [
             ^'#fileIns must be an array of strings'].
         (self isSchemaDependencies: (fields at: #dependencies)) ifFalse: [
             ^'#dependencies must be an array of #(name constraint) string pairs'].
@@ -416,29 +416,13 @@ and the install-time fetch:version: of Doc D §1.1.'>
         ^nil
     ]
 
-    isSchemaString: aValue [
-        "Private — a schema string is a String and NOT a Symbol (in
-         3.2.5 Symbol is a String subclass, and the two are distinct
-         literals in the micro-format grammar)."
-        <category: 'private-schema'>
-        ^aValue isString and: [aValue isSymbol not]
-    ]
-
-    isSchemaStringArray: aValue [
-        <category: 'private-schema'>
-        (aValue isKindOf: Array) ifFalse: [^false].
-        aValue do: [:each |
-            (self isSchemaString: each) ifFalse: [^false]].
-        ^true
-    ]
-
     isSchemaDependencies: aValue [
         "Private — an array of #(name constraint) string pairs."
         <category: 'private-schema'>
         (aValue isKindOf: Array) ifFalse: [^false].
         aValue do: [:pair |
             ((pair isKindOf: Array) and: [pair size = 2]) ifFalse: [^false].
-            (self isSchemaStringArray: pair) ifFalse: [^false]].
+            (SchemaShape isStringArray: pair) ifFalse: [^false]].
         ^true
     ]
 
@@ -467,7 +451,22 @@ and the install-time fetch:version: of Doc D §1.1.'>
                     ^'#dependencies constraint ', (pair at: 2) printString,
                         ' for ', (pair at: 1) printString,
                         ' does not parse as a version constraint']].
-        ^nil
+        ^self archiveDigestProblemIn: (fields at: #archive)
+    ]
+
+    archiveDigestProblemIn: anArchiveValue [
+        "Private — the digest defect of a shape-valid #archive value,
+         or nil. A declared archive carries a digest that is exactly
+         64 lowercase hex characters — what the settled Sha256 renders
+         (Doc F §4; §8 decision 42). Shape only, never truth: whether
+         the digest matches any bytes stays the installer's
+         verifyHash:. #() carries no digest string at all, so absence
+         needs no exemption here."
+        <category: 'private-values'>
+        anArchiveValue isEmpty ifTrue: [^nil].
+        (SchemaShape isHexDigest: (anArchiveValue at: 3)) ifTrue: [^nil].
+        ^'#archive digest ', (anArchiveValue at: 3) printString,
+            ' must be 64 lowercase hex characters'
     ]
 
     parses: aBlock [
@@ -487,9 +486,9 @@ and the install-time fetch:version: of Doc D §1.1.'>
         (aValue isKindOf: Array) ifFalse: [^false].
         aValue isEmpty ifTrue: [^true].
         aValue size = 3 ifFalse: [^false].
-        (self isSchemaString: (aValue at: 1)) ifFalse: [^false].
+        (SchemaShape isString: (aValue at: 1)) ifFalse: [^false].
         (aValue at: 2) == #sha256 ifFalse: [^false].
-        ^self isSchemaString: (aValue at: 3)
+        ^SchemaShape isString: (aValue at: 3)
     ]
 
     releaseFrom: anEntry [

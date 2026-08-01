@@ -359,11 +359,14 @@ stream close', SourceFixtures newline
     "---- pinned CLI wordings (posted on issue #8) ----"
 
     ExecFixtures class >> usageLines [
-        "The pinned usage answer: two lines, exit code 2."
+        "The pinned usage answer: four lines, exit code 2. The verbs:
+         line gained the three inspection verbs at Sprint 11 (issue
+         #13) — the re-pin sanctioned at the RED review, extending the
+         settled block rather than replacing it."
         <category: 'pinned wordings'>
         ^Array
             with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
-            with: 'verbs: init | resolve | install | update | exec <script> | publish <dir>'
+            with: 'verbs: init | resolve | install | update | exec <script> | publish <dir> | why <pkg> | tree | check'
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
     ]
