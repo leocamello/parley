@@ -137,11 +137,11 @@ tearDown.'>
         self assert: (snap dependenciesOf: 'c' version: (self version: '2.4.0'))
             isEmpty.
         self assert: (snap sha256For: 'a' version: (self version: '1.0.0'))
-            = 'ab12'.
+            = 'ab12000000000000000000000000000000000000000000000000000000000000'.
         self assert: (snap sha256For: 'b' version: (self version: '1.0.0'))
-            = 'cd34'.
+            = 'cd34000000000000000000000000000000000000000000000000000000000000'.
         self assert: (snap sha256For: 'c' version: (self version: '2.4.0'))
-            = 'ef56'
+            = 'ef56000000000000000000000000000000000000000000000000000000000000'
     ]
 
     "---- every SourceError problem shape ----"
@@ -280,7 +280,7 @@ tearDown.'>
         self assertVersions: (snap versionsOf: 'c')
             are: #('1.5.0' '2.4.0' '3.0.0').
         self assert: (snap sha256For: 'c' version: (self version: '2.4.0'))
-            = 'ef56'
+            = 'ef56000000000000000000000000000000000000000000000000000000000000'
     ]
 
     "---- writer-authored entries converge with hand-built values ----"
@@ -388,6 +388,30 @@ tearDown.'>
                 = RetirementFixtures digestJson032.
         self assert: (snap dependenciesOf: 'kernel-json'
             version: (self version: '0.3.1')) isEmpty
+    ]
+
+    "---- Sprint 11: the #archive digest ground (issue #13; §8
+     decision 42, Doc F §4) ----"
+
+    testAMalformedArchiveDigestIsBatchedAndSortedWithItsSiblings [
+        "S11's law half. An entry whose #archive digest is not 64
+         lowercase hex is one problem in the settled scan-report shape,
+         batched and sorted with whatever else the scan found — the
+         digest ground joins the batch, it does not preempt it. Shape
+         only, never truth: whether the digest matches any bytes stays
+         the installer's verifyHash:. The scan check is non-empty
+         digests only — #() archives never carried one."
+        | dir problems |
+        dir := self freshDir: 'law-archive-digest'.
+        SourceFixtures write: InspectionFixtures badDigestEntryContents
+            toFile: 'aa-bad.st' in: dir.
+        SourceFixtures write: '#(#''parley-index'' 1 #name)'
+            toFile: 'zz-bad.st' in: dir.
+        problems := self problemsFrom: [(DirectorySource on: dir) snapshot].
+        self assert: problems size = 2.
+        self assert: (problems at: 1)
+            = (InspectionFixtures badDigestProblemFor: 'aa-bad.st').
+        self assert: ((problems at: 2) startsWith: 'zz-bad.st: ')
     ]
 ]
 

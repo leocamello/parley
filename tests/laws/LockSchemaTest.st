@@ -43,6 +43,21 @@
      whose real problem is that it is an index entry.
  Every other law in this file fails against the pre-sprint tree.
 
+ SPRINT 11 (issue #13, §8 decision 42) adds the digest ground: each
+ #sha256 must be 64 lowercase hex characters — the shape a sha256
+ renders as under §5.4 — validated through SchemaShape isHexDigest:
+ (Doc B §7.1). Shape only, never truth: whether a digest matches its
+ bytes stays ContentStore>>verifyHash:. The laws of that ground live
+ at the bottom of this file; one of them,
+ testAnEmptyLockDigestStaysAccepted, is a DECLARED PASS IN RED (issue
+ #13) — the guard that the new validation is not over-eager, because
+ the settled writer renders an archiveless pin as #sha256 '' and a
+ boundary that rejected it would reject Parley's own output. The
+ malformedLockRows walk above is NOT extended in red — the walk is a
+ settled law that must keep passing, and a row whose rejection does
+ not exist yet would fail it; folding the digest ground into the rows
+ is noted for the operator at the RED review.
+
  Every fixture path is under tmp/, unique per test, removed recursively
  in tearDown; nothing here spawns and no network is contacted."
 
@@ -276,6 +291,78 @@ LockError naming the path, the defect and parley update.'>
         self assert: (problems at: 1)
             = (LockBoundaryFixtures wrongTagLockProblemFor:
                 (self lockPathIn: work))
+    ]
+
+    "---- the digest ground (Sprint 11, issue #13, §8 decision 42) ----"
+
+    testAMalformedLockDigestIsALockDiagnosis [
+        "S10's value half: a lock correct in every shape whose #sha256
+         is not 64 lowercase hex is one LockError naming the path, the
+         digest and the repair — a shape defect of the operator's file,
+         diagnosed at the boundary, never a corruption report from a
+         store that was never reached."
+        | work index problems |
+        work := self diamondWorkDir: 'lock-digest-work'.
+        index := self freshDir: 'lock-digest-index'.
+        LockSchemaFixtures
+            writeLockContents: InspectionFixtures malformedDigestLockString
+            in: work.
+        problems := self installProblemsIn: work index: index.
+        self assert: problems size = 1.
+        self assert: (problems at: 1)
+            = (InspectionFixtures malformedLockDigestProblemFor:
+                (self lockPathIn: work))
+    ]
+
+    testAMalformedLockDigestNeverReadsAsCorruption [
+        "The settled corruption wording must NOT appear: corruption is
+         a store entry that no longer verifies, and the store was
+         never reached — decision 42's whole point is that the two
+         diagnoses stay distinct."
+        | work index result |
+        work := self diamondWorkDir: 'lock-digest-exit-work'.
+        index := self freshDir: 'lock-digest-exit-index'.
+        LockSchemaFixtures
+            writeLockContents: InspectionFixtures malformedDigestLockString
+            in: work.
+        result := self resultOf:
+            (Array with: 'install' with: '--source' with: index) in: work.
+        self assert: result exitCode = 1.
+        self assert: result lines = (Array with:
+            (InspectionFixtures malformedLockDigestProblemFor:
+                (self lockPathIn: work))).
+        result lines do: [:line |
+            self deny: (CommandLineFixtures does: line
+                include: 'store corruption')
+                description: 'the digest defect read as corruption: ', line].
+        self denyBlamesParley: result
+    ]
+
+    testAnEmptyLockDigestStaysAccepted [
+        "DECLARED PASS IN RED (issue #13) — see the class comment. The
+         settled writer renders an archiveless pin as #sha256 '', so
+         the digest ground must accept the empty string or Parley
+         rejects its own output. The pin passes the boundary and the
+         verification fast path, and the '' digest reaches the SETTLED
+         Installer diagnosis — never a LockError. ASSUMPTION posted on
+         issue #13: Doc B §5.3 names only the 64-hex shape, and ''
+         is admitted here as the writer's own rendering of absence."
+        | work index result |
+        work := self freshDir: 'lock-empty-digest-work'.
+        index := self freshDir: 'lock-empty-digest-index'.
+        ExecFixtures writePackage: (ExecFixtures cOnlyRootContents: '^2.0')
+            in: work.
+        ExecFixtures writeLock: InspectionFixtures emptyDigestLockString
+            in: work.
+        result := self resultOf:
+            (Array with: 'install' with: '--source' with: index) in: work.
+        self assert: result exitCode = 1.
+        self assert: result lines = (Array with:
+            'c 2.4.0: no published archive - the resolution carries an empty sha256').
+        result lines do: [:line |
+            self deny: (CommandLineFixtures does: line
+                include: 'parley update')
+                description: 'the empty digest was rejected at the lock boundary: ', line]
     ]
 ]
 

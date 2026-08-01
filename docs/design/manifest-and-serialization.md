@@ -136,7 +136,7 @@ Fixed key order; ALL keys always present (empty string / empty array when unset)
       #('kernel-streams' '1.4.0' #sha256 'cd34…')))
 ```
 
-`packages` sorted by name; exact versions only (three components), no constraints. Each `#sha256` is **64 lowercase hex characters** — validated as that shape from Sprint 11 (§7.1, §8 decision 42), so a mistyped digest is a lockfile diagnosis rather than a corruption report from the store.
+`packages` sorted by name; exact versions only (three components), no constraints. Each `#sha256` is **64 lowercase hex characters, or the empty string** — validated as that shape from Sprint 11 (§7.1, §8 decision 42), so a mistyped digest is a lockfile diagnosis rather than a corruption report from the store. The empty string is not a mistyped digest but **recorded absence**: it is what the writer renders for a pin whose entry declares `#archive #()`, and it keeps reaching the settled `Installer` diagnosis (`no published archive — the resolution carries an empty sha256`) rather than being rejected at the lock boundary. A boundary that refused it would refuse Parley's own output.
 
 ### 5.4 Canonical rendering (byte-stability)
 

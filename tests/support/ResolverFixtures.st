@@ -85,15 +85,15 @@ fresh value.'>
         | rs |
         rs := OrderedCollection new.
         rs add: (self release: 'a' version: '1.0.0'
-            sha256: 'ab12' dependencies: #(#('c' '>=1.0 <3.0'))).
+            sha256: 'ab12000000000000000000000000000000000000000000000000000000000000' dependencies: #(#('c' '>=1.0 <3.0'))).
         rs add: (self release: 'b' version: '1.0.0'
-            sha256: 'cd34' dependencies: #(#('c' '^2.0'))).
+            sha256: 'cd34000000000000000000000000000000000000000000000000000000000000' dependencies: #(#('c' '^2.0'))).
         rs add: (self release: 'c' version: '1.5.0'
-            sha256: 'ef15' dependencies: #()).
+            sha256: 'ef15000000000000000000000000000000000000000000000000000000000000' dependencies: #()).
         rs add: (self release: 'c' version: '2.4.0'
-            sha256: 'ef56' dependencies: #()).
+            sha256: 'ef56000000000000000000000000000000000000000000000000000000000000' dependencies: #()).
         rs add: (self release: 'c' version: '3.0.0'
-            sha256: 'ef30' dependencies: #()).
+            sha256: 'ef30000000000000000000000000000000000000000000000000000000000000' dependencies: #()).
         ^IndexSnapshot releases: rs
     ]
 

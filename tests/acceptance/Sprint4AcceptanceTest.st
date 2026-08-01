@@ -83,7 +83,7 @@ and are removed in tearDown.'>
     pinnedLockString [
         "The Sprint 2 S16 canonical lockfile bytes for the satisfiable
          diamond — the settled oracle for S10."
-        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12'') #(''b'' ''1.0.0'' #sha256 ''cd34'') #(''c'' ''2.4.0'' #sha256 ''ef56'')))',
+        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12000000000000000000000000000000000000000000000000000000000000'') #(''b'' ''1.0.0'' #sha256 ''cd34000000000000000000000000000000000000000000000000000000000000'') #(''c'' ''2.4.0'' #sha256 ''ef56000000000000000000000000000000000000000000000000000000000000'')))',
             (String with: Character nl)
     ]
 
@@ -100,7 +100,7 @@ and are removed in tearDown.'>
         self assert: (deps at: 1) constraint
             = (self constraint: '>=1.0.0 <3.0.0').
         self assert: (snap sha256For: 'b' version: (self version: '1.0.0'))
-            = 'cd34'
+            = 'cd34000000000000000000000000000000000000000000000000000000000000'
     ]
 
     testS2_malformedEntryFileFailsNamingFileAndPositionedReason [
@@ -161,7 +161,7 @@ and are removed in tearDown.'>
         self assertVersions: (snap versionsOf: 'c')
             are: #('1.5.0' '2.4.0' '3.0.0').
         self assert: (snap sha256For: 'c' version: (self version: '2.4.0'))
-            = 'ef56'
+            = 'ef56000000000000000000000000000000000000000000000000000000000000'
     ]
 
     testS7_writerAuthoredEntryLandsWithAnEmptyHash [

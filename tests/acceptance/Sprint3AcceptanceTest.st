@@ -151,7 +151,7 @@ ApplicationManifest, the lock read-back path, and pin verification.'>
         self assert: (resolution versionOf: 'b') = (self version: '1.0.0').
         self assert: (resolution versionOf: 'c') = (self version: '2.4.0').
         self assert: (self lockBytesFor: resolution)
-            = ('#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12'') #(''b'' ''1.0.0'' #sha256 ''cd34'') #(''c'' ''2.4.0'' #sha256 ''ef56'')))',
+            = ('#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12000000000000000000000000000000000000000000000000000000000000'') #(''b'' ''1.0.0'' #sha256 ''cd34000000000000000000000000000000000000000000000000000000000000'') #(''c'' ''2.4.0'' #sha256 ''ef56000000000000000000000000000000000000000000000000000000000000'')))',
                 (String with: Character nl))
     ]
 

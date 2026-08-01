@@ -197,7 +197,7 @@ generated snapshots, and the settled-bytes regression guard.'>
             against: ResolverFixtures satisfiableDiamondSnapshot.
         self assert: resolution isResolution.
         self assert: (self lockBytesFor: resolution)
-            = ('#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12'') #(''b'' ''1.0.0'' #sha256 ''cd34'') #(''c'' ''2.4.0'' #sha256 ''ef56'')))',
+            = ('#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12000000000000000000000000000000000000000000000000000000000000'') #(''b'' ''1.0.0'' #sha256 ''cd34000000000000000000000000000000000000000000000000000000000000'') #(''c'' ''2.4.0'' #sha256 ''ef56000000000000000000000000000000000000000000000000000000000000'')))',
                 (String with: Character nl))
     ]
 ]

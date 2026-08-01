@@ -128,6 +128,38 @@ declares, and one malformed-input law per declared boundary.'>
             = (Array with: 'CLI' with: 'DirectorySource')
     ]
 
+    testTheEnumerationSurvivesALineSplitSender [
+        "Sprint 11, S13's law half (issue #13; §8 decision 43, Doc E
+         §4.2). The Sprint 10 walk matched 'IndexEntryReader readFrom:'
+         as contiguous text on ONE stripped line, so a sender split
+         across a line break — legal Smalltalk, one reformat away —
+         vanished from the enumeration and took the drift law's
+         coverage with it. The hardened walk normalizes whitespace
+         before matching. The oracle is a fabricated src/ tree under
+         tmp/ holding one line-split sender and one quiet file, walked
+         through the SAME code path as the real enumeration —
+         parameterized by root and subdirectory list, with the settled
+         readerSenderFileNames delegating to it, which the guard
+         restated below is what proves. BOUNDED CLAIM (decision 38
+         corrected): this is a TEXTUAL search; reflective sender
+         enumeration does not exist on 3.2.5 (whichSelectorsReferTo:
+         searches literals, not sends), so a sender assembled by
+         perform: or split by a comment between the words stays
+         invisible — the law claims whitespace-robustness, nothing
+         stronger."
+        | root found |
+        root := self freshDir: 'boundary-linesplit-src'.
+        InspectionFixtures populateLineSplitTreeIn: root.
+        found := LockSchemaFixtures
+            readerSenderFileNamesUnder: root
+            subdirectories: InspectionFixtures lineSplitSubdirectoryNames.
+        self assert: found = InspectionFixtures lineSplitSenderFileNames
+            description: 'the hardened walk answered ', found printString.
+        self assert: LockSchemaFixtures readerSenderFileNames
+            = LockSchemaFixtures probeSenderFileNames
+            description: 'the settled enumeration no longer answers the probe oracle'
+    ]
+
     "---- the drift law, and the proof that it detects drift ----"
 
     testEverySenderOfTheReaderIsADeclaredBoundary [

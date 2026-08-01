@@ -108,7 +108,7 @@ uniqueness comes from per-test labels.'>
     LockSchemaFixtures class >> missingMarkerLockContents [
         "Four elements, but the third is not the literal #sha256."
         <category: 'malformed locks'>
-        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''c'' ''2.4.0'' #shazam ''abcd'')))',
+        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''c'' ''2.4.0'' #shazam ''abcd000000000000000000000000000000000000000000000000000000000000'')))',
             SourceFixtures newline
     ]
 
@@ -118,7 +118,7 @@ uniqueness comes from per-test labels.'>
          micro-format grammar — the distinction the settled entry
          validation already draws."
         <category: 'malformed locks'>
-        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(#c ''2.4.0'' #sha256 ''abcd'')))',
+        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(#c ''2.4.0'' #sha256 ''abcd000000000000000000000000000000000000000000000000000000000000'')))',
             SourceFixtures newline
     ]
 
@@ -128,7 +128,7 @@ uniqueness comes from per-test labels.'>
          string MEANS anything (Doc F §4.1), and the settled
          Version fromString: is what decides."
         <category: 'malformed locks'>
-        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''c'' ''banana'' #sha256 ''abcd'')))',
+        ^'#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''c'' ''banana'' #sha256 ''abcd000000000000000000000000000000000000000000000000000000000000'')))',
             SourceFixtures newline
     ]
 

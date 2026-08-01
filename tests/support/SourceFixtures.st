@@ -12,11 +12,24 @@
 
  The diamond entry set mirrors the settled Sprint 2 shape
  (ResolverFixtures satisfiableDiamondSnapshot): a 1.0.0 -> c
- '>=1.0.0 <3.0.0' (sha 'ab12'), b 1.0.0 -> c '>=2.0.0 <3.0.0'
- ('cd34'), c 1.5.0 ('ef15'), c 2.4.0 ('ef56'), c 3.0.0 ('ef30').
- Entry files carrying hashes are hand-authored strings, schema-exact
- per Doc B §5.2 (the writer emits #archive #() today; populated
- #archive triples exist only in hand-authored fixtures)."
+ '>=1.0.0 <3.0.0' (sha 'ab12...'), b 1.0.0 -> c '>=2.0.0 <3.0.0'
+ ('cd34...'), c 1.5.0 ('ef15...'), c 2.4.0 ('ef56...'), c 3.0.0
+ ('ef30...'). Entry files carrying hashes are hand-authored strings,
+ schema-exact per Doc B §5.2 (the writer emits #archive #() today;
+ populated #archive triples exist only in hand-authored fixtures).
+
+ DIGEST SHAPE (operator amendment at the Sprint 11 RED review, issue
+ #13, §8 decision 42). These digests are arbitrary bytes-truth — no
+ archive under tmp/ hashes to them, and nothing here ever verifies
+ one. From Sprint 11 the scan validates the SHAPE, so every digest
+ must be 64 lowercase hex characters or the entry is a scan problem
+ and the settled laws would fail against a boundary doing its job.
+ Each is its old four-character mnemonic padded with zeroes: 'ab12'
+ became 'ab12' followed by sixty zeroes, and so on, so the mnemonic
+ still reads at the front of every oracle. The offending-file fixtures
+ below are padded on the same rule: each must stay shape-VALID in
+ every ground EXCEPT the one it exists to offend, or the law it feeds
+ stops testing what it names."
 
 Namespace current: Parley.
 
@@ -100,33 +113,33 @@ a clean run. Stateless; uniqueness comes from per-test labels.'>
     ]
 
     SourceFixtures class >> diamondEntryA [
-        "a 1.0.0 -> c '>=1.0.0 <3.0.0', archive sha256 'ab12'."
+        "a 1.0.0 -> c '>=1.0.0 <3.0.0', archive sha256 'ab12...'."
         <category: 'diamond entries'>
-        ^'#(#''parley-index'' 1 #name ''a'' #version ''1.0.0'' #summary '''' #author '''' #license '''' #fileIns #(''A.st'') #dependencies #(#(''c'' ''>=1.0.0 <3.0.0'')) #archive #(''a-1.0.0.star'' #sha256 ''ab12''))', self newline
+        ^'#(#''parley-index'' 1 #name ''a'' #version ''1.0.0'' #summary '''' #author '''' #license '''' #fileIns #(''A.st'') #dependencies #(#(''c'' ''>=1.0.0 <3.0.0'')) #archive #(''a-1.0.0.star'' #sha256 ''ab12000000000000000000000000000000000000000000000000000000000000''))', self newline
     ]
 
     SourceFixtures class >> diamondEntryB [
-        "b 1.0.0 -> c '>=2.0.0 <3.0.0', archive sha256 'cd34'."
+        "b 1.0.0 -> c '>=2.0.0 <3.0.0', archive sha256 'cd34...'."
         <category: 'diamond entries'>
-        ^'#(#''parley-index'' 1 #name ''b'' #version ''1.0.0'' #summary '''' #author '''' #license '''' #fileIns #(''B.st'') #dependencies #(#(''c'' ''>=2.0.0 <3.0.0'')) #archive #(''b-1.0.0.star'' #sha256 ''cd34''))', self newline
+        ^'#(#''parley-index'' 1 #name ''b'' #version ''1.0.0'' #summary '''' #author '''' #license '''' #fileIns #(''B.st'') #dependencies #(#(''c'' ''>=2.0.0 <3.0.0'')) #archive #(''b-1.0.0.star'' #sha256 ''cd34000000000000000000000000000000000000000000000000000000000000''))', self newline
     ]
 
     SourceFixtures class >> diamondEntryC15 [
-        "c 1.5.0, no dependencies, archive sha256 'ef15'."
+        "c 1.5.0, no dependencies, archive sha256 'ef15...'."
         <category: 'diamond entries'>
-        ^'#(#''parley-index'' 1 #name ''c'' #version ''1.5.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-1.5.0.star'' #sha256 ''ef15''))', self newline
+        ^'#(#''parley-index'' 1 #name ''c'' #version ''1.5.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-1.5.0.star'' #sha256 ''ef15000000000000000000000000000000000000000000000000000000000000''))', self newline
     ]
 
     SourceFixtures class >> diamondEntryC24 [
-        "c 2.4.0, no dependencies, archive sha256 'ef56'."
+        "c 2.4.0, no dependencies, archive sha256 'ef56...'."
         <category: 'diamond entries'>
-        ^'#(#''parley-index'' 1 #name ''c'' #version ''2.4.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-2.4.0.star'' #sha256 ''ef56''))', self newline
+        ^'#(#''parley-index'' 1 #name ''c'' #version ''2.4.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-2.4.0.star'' #sha256 ''ef56000000000000000000000000000000000000000000000000000000000000''))', self newline
     ]
 
     SourceFixtures class >> diamondEntryC30 [
-        "c 3.0.0, no dependencies, archive sha256 'ef30'."
+        "c 3.0.0, no dependencies, archive sha256 'ef30...'."
         <category: 'diamond entries'>
-        ^'#(#''parley-index'' 1 #name ''c'' #version ''3.0.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-3.0.0.star'' #sha256 ''ef30''))', self newline
+        ^'#(#''parley-index'' 1 #name ''c'' #version ''3.0.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-3.0.0.star'' #sha256 ''ef30000000000000000000000000000000000000000000000000000000000000''))', self newline
     ]
 
     SourceFixtures class >> populateDiamondIn: aDirPath [
@@ -174,7 +187,7 @@ a clean run. Stateless; uniqueness comes from per-test labels.'>
         "A second well-formed entry also declaring c 2.4.0 (different
          sha) — the duplicate-(name, version) fixture."
         <category: 'offending files'>
-        ^'#(#''parley-index'' 1 #name ''c'' #version ''2.4.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-2.4.0.star'' #sha256 ''dead''))', self newline
+        ^'#(#''parley-index'' 1 #name ''c'' #version ''2.4.0'' #summary '''' #author '''' #license '''' #fileIns #(''C.st'') #dependencies #() #archive #(''c-2.4.0.star'' #sha256 ''dead000000000000000000000000000000000000000000000000000000000000''))', self newline
     ]
 
     SourceFixtures class >> lateEntryDContents [
