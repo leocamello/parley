@@ -1,7 +1,7 @@
 "Parley — CLI: the package-manager verbs over everything beneath.
  Spec: docs/design/execution-and-cli.md §4; issue #8 S10-S19.
  An orchestration answering a value: run: dispatches the argv
- grammar (init | resolve | install | update | exec <script> |
+ grammar (init | resolve | install | update [<pkg>] | exec <script> |
  publish <dir> | why <pkg> | tree | check) and answers an immutable
  CliResult. The CLI never
  prints, never terminates the image, and never touches a process
@@ -22,7 +22,17 @@
  repairs itself), then the settled Installer (cache hits skip fetch),
  then ExecutionScope register. update ignores any existing lock:
  install keeps a valid pin; update is the verb that moves it. All
- wordings pinned in RED (issue #8)."
+ wordings pinned in RED (issue #8).
+
+ update <pkg> (Doc E §4.1, Sprint 12 — the second declared exception
+ on this class): moves ONE package and leaves the rest of the lock
+ where it is, by resolving the ordinary way against a snapshot
+ narrowed to hold every other pin (IndexSnapshot>>holding:, Doc C
+ §2.2). The resolver is untouched — a selective update is a normal
+ resolution of a smaller world. Its three diagnoses are all exit 1;
+ already-newest is a success with a line saying so; install and
+ register run exactly as update does. Wordings pinned in RED
+ (issue #14)."
 
 Namespace current: Parley.
 
@@ -76,6 +86,8 @@ construction; zero public setters.'>
             ifTrue: [^self publish: (anArgvArray at: 2)].
         (verb = 'why' and: [anArgvArray size = 2 and: [source notNil]])
             ifTrue: [^self why: (anArgvArray at: 2)].
+        (verb = 'update' and: [anArgvArray size = 2 and: [source notNil]])
+            ifTrue: [^self update: (anArgvArray at: 2)].
         (anArgvArray size = 1 and: [source notNil]) ifTrue: [
             verb = 'resolve' ifTrue: [^self resolve].
             verb = 'install' ifTrue: [^self install].
@@ -127,6 +139,63 @@ construction; zero public setters.'>
          valid pin; update is the verb that moves it."
         <category: 'verbs'>
         ^self installResolution: (self resolveAndLock: self loadManifest)
+    ]
+
+    update: aName [
+        "Move ONE package and leave the rest of the lock where it is
+         (Doc E §4.1, Sprint 12): resolve the ordinary way against the
+         source's snapshot narrowed to hold every OTHER pin at its
+         locked version (Doc C §2.2), rewrite the lock byte-stably,
+         then install and register exactly as update does. Pins that
+         did not move are byte-identical — the property that makes the
+         diff reviewable.
+
+         The three diagnoses, all exit 1: no lock (the inspection
+         verbs' line — there is nothing to hold selectively when
+         nothing is pinned, and the repair is resolve, the verb that
+         writes a FIRST lock); a package not pinned (one line, the why
+         precedent and the why wording); and held pins making the move
+         impossible — the settled ConflictReport narration PRECEDED by
+         one line naming that the other pins were held, because the
+         resolver answered truthfully about a world with few candidates
+         but cannot know why the world was small (provenance stays at
+         the CLI, §8 decision 46). A conflict writes nothing.
+
+         Already at the newest version its constraints allow is a
+         SUCCESS with a line saying so, exit 0, the lock rewritten to
+         identical bytes — the resolve-with-no-dependencies precedent:
+         a verb that prints nothing reads as a verb that did nothing."
+        <category: 'verbs'>
+        | pinned held outcome result |
+        pinned := self pinnedResolution.
+        pinned isNil ifTrue: [^self reportMissingLock].
+        (pinned packageNames includes: aName) ifFalse: [
+            ^CliResult
+                lines: (Array with: aName printString,
+                    ' is not pinned in parley.lock')
+                exitCode: 1].
+        held := Dictionary new.
+        pinned packageNames do: [:each |
+            each = aName ifFalse: [
+                held at: each put: (pinned versionOf: each)]].
+        outcome := (Resolver strategy: BacktrackingStrategy new)
+            resolve: self loadManifest
+            against: (source snapshot holding: held).
+        outcome isResolution ifFalse: [
+            ^CliResult
+                lines: (Array with: self heldPinsLine),
+                    (self linesOf: outcome printString)
+                exitCode: 1].
+        self writeLock: outcome.
+        result := self installResolution: outcome.
+        (result exitCode = 0
+            and: [(outcome versionOf: aName) = (pinned versionOf: aName)])
+            ifTrue: [
+                ^CliResult
+                    lines: (Array with: (self alreadyNewestLineFor: aName
+                        version: (outcome versionOf: aName)))
+                    exitCode: 0].
+        ^result
     ]
 
     exec: aScriptPath [
@@ -624,7 +693,7 @@ construction; zero public setters.'>
         ^CliResult
             lines: (Array
                 with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
-                with: 'verbs: init | resolve | install | update | exec <script> | publish <dir> | why <pkg> | tree | check'
+                with: 'verbs: init | resolve | install | update [<pkg>] | exec <script> | publish <dir> | why <pkg> | tree | check'
                 with: 'flags: --source <dir>  index entries in a local directory'
                 with: '       --git <repo>    index entries in a git repository')
             exitCode: 2
@@ -657,6 +726,23 @@ construction; zero public setters.'>
          project (pinned in RED)."
         <category: 'private'>
         ^'no dependencies to resolve - wrote parley.lock'
+    ]
+
+    heldPinsLine [
+        "Private — the sentence update <pkg> prepends to a conflict
+         under held pins (pinned in RED, issue #14): it names what was
+         held and the verb that moves everything. The narration that
+         follows is the resolver's own value, unmodified."
+        <category: 'private'>
+        ^'the other pins were held at their locked versions - run parley update to move everything'
+    ]
+
+    alreadyNewestLineFor: aName version: aVersion [
+        "Private — the pinned already-newest success line (pinned in
+         RED, issue #14)."
+        <category: 'private'>
+        ^aName, ' ', aVersion printString,
+            ' is already the newest version its constraints allow - wrote parley.lock'
     ]
 
     reportConflict: aReport [

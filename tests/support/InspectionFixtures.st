@@ -244,9 +244,13 @@ and the S13 line-split sender tree.'>
          verbs join it. ExecFixtures usageLines is re-pinned to match
          in GREEN, together with the CLI change — re-pinning it in RED
          would fail every settled usage law against a CLI that has not
-         moved yet."
+         moved yet. Re-pinned again at Sprint 12 (issue #14) when
+         update gained its optional package — the same sanctioned
+         GREEN re-pin, in the same increment as the CLI usage change;
+         SelectiveUpdateFixtures usageVerbsLine pinned the new
+         rendering in that sprint's RED."
         <category: 'pinned wordings'>
-        ^'verbs: init | resolve | install | update | exec <script> | publish <dir> | why <pkg> | tree | check'
+        ^'verbs: init | resolve | install | update [<pkg>] | exec <script> | publish <dir> | why <pkg> | tree | check'
     ]
 
     "---- the malformed-digest lock (S10, Doc B §5.3) ----"

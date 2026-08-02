@@ -9,7 +9,7 @@
 Namespace current: Parley.
 
 Object subclass: IndexSnapshot [
-    | packages retirements |
+    | packages retirements held |
 
     <comment: 'An immutable in-memory index snapshot. packages maps a
 package name to the ordered collection of its (version, sha256,
@@ -54,7 +54,50 @@ construction is class-side; no operation mutates a built snapshot.'>
                 ifAbsentPut: [OrderedCollection new])
                 add: (Array
                     with: (tuple at: 2)
-                    with: (tuple at: 3))]
+                    with: (tuple at: 3))].
+        held := Dictionary new
+    ]
+
+    holding: aDictionary [
+        "Answer a NEW snapshot narrowed to offer, for every name in
+         aDictionary (name -> Version), exactly the held version — the
+         Doc C §2.2 derivation behind parley update <pkg>. The receiver
+         is not mutated: like every domain operation, this answers a
+         new instance (Architecture §1.5), sharing the immutable
+         release and retirement records.
+
+         The narrowing lives here and nowhere else: the resolver
+         selects only from what versionsOf: offers, so a selective
+         update is a normal resolution of a smaller world — no strategy
+         or ledger change, which is what hands a future PubGrubStrategy
+         selective update for free (§8 decision 46).
+
+         A held pin outranks a retirement (§8 decision 46): a retired
+         held version is offered anyway, because the §2.1 filter
+         answers what a FRESH resolution may pick and a held pin is
+         being kept, not picked. But narrowing can only offer what the
+         snapshot can DESCRIBE (§8 decision 47): a held version this
+         snapshot holds no record for is offered as nothing at all,
+         because offering it would let update write a lock tuple with
+         an empty digest — manufactured corruption. The describing
+         accessors are untouched either way: an existing lock must
+         keep verifying and installing exactly as before."
+        <category: 'narrowing'>
+        ^self class new
+            setPackages: packages
+            retirements: retirements
+            held: aDictionary
+    ]
+
+    setPackages: aPackagesDictionary retirements: aRetirementsDictionary held: aHeldDictionary [
+        "Private — initialization of a narrowed derivation from
+         holding:. The built record dictionaries are shared (nothing
+         ever mutates them); the held map is copied so a caller
+         mutating its argument afterwards cannot reach inside."
+        <category: 'private'>
+        packages := aPackagesDictionary.
+        retirements := aRetirementsDictionary.
+        held := aHeldDictionary copy
     ]
 
     versionsOf: aName [
@@ -67,8 +110,19 @@ construction is class-side; no operation mutates a built snapshot.'>
          in a conflict derivation, and needs no special case anywhere in
          the search loop. The other accessors below still answer for it,
          because an existing lock must keep installing — excluded from
-         fresh resolution, never from fetch."
+         fresh resolution, never from fetch.
+
+         A HELD NAME IS OFFERED AS EXACTLY ITS HELD VERSION (Doc C
+         §2.2) — bypassing the retirement filter (held beats retired,
+         §8 decision 46) but bounded by describability (§8 decision
+         47): a held version with no release record here is offered as
+         nothing. The filter lives in this accessor and never in the
+         search loop."
         <category: 'accessing'>
+        (held includesKey: aName) ifTrue: [
+            ^(self recordOf: aName version: (held at: aName)) isNil
+                ifTrue: [#()]
+                ifFalse: [Array with: (held at: aName)]].
         ^((packages at: aName ifAbsent: [^#()])
             reject: [:rec | self isRetired: aName version: (rec at: 1)])
                 collect: [:rec | rec at: 1]
