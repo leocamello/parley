@@ -46,6 +46,17 @@
      change that could break it.
  Every other law in this file fails against the pre-sprint tree.
 
+ SPRINT 12 ADDS THE NARROWING LAWS HERE (issue #14; Doc C §2.2). The
+ holding: filter and the retirement filter are the same accessor's
+ behavior — versionsOf: is where both live — and held-beats-retired is
+ literally a law about their interaction, so the laws share this file
+ rather than starting a parallel snapshot suite. The four additions
+ (the new-value law, the describing-accessors law, held-beats-retired,
+ and the OPERATOR-AMENDED describability law of §8 decision 47) all
+ consume IndexSnapshot>>holding:, which does not exist against the
+ pre-sprint tree, so each fails in RED as a doesNotUnderstand — a
+ valid red, not a pass.
+
  Every fixture path is under tmp/, unique per test, removed recursively
  in tearDown; the developer image is never mutated. Exactly ONE law
  here spawns — testGitIndexSourceInheritsRetirementUntouched, through
@@ -312,6 +323,120 @@ and GitIndexSource inheriting all of it untouched.'>
             (DirectorySource on: index) snapshot].
         self assert: problems asArray
             = RetirementFixtures malformedMixProblems
+    ]
+
+    "---- the Sprint 12 narrowing laws (Doc C §2.2, §8 decision 46) ----"
+
+    testHoldingAnswersANewSnapshotAndLeavesTheReceiverAlone [
+        "THE NEW-VALUE LAW (the S9 half). holding: is a derivation in
+         the shape VersionConstraint established: an operation
+         answering a new instance (Architecture §1.5). The narrowed
+         snapshot offers exactly the held version for the held name;
+         the RECEIVER still offers every version afterwards; and
+         unheld packages are unaffected in both. A mutating
+         implementation would pass most of this sprint's laws and
+         violate structural immutability — so immutability is
+         asserted, never assumed."
+        | snapshot held narrowed |
+        snapshot := ResolverFixtures satisfiableDiamondSnapshot.
+        held := Dictionary new.
+        held at: 'c' put: (self version: '1.5.0').
+        narrowed := snapshot holding: held.
+        self assert: (self versionStringsIn: narrowed of: 'c')
+            = (Array with: '1.5.0')
+            description: 'the narrowed snapshot does not offer exactly the held version'.
+        self assert: (self versionStringsIn: snapshot of: 'c')
+            = (Array with: '1.5.0' with: '2.4.0' with: '3.0.0')
+            description: 'holding: mutated its receiver'.
+        self assert: (self versionStringsIn: narrowed of: 'a')
+            = (Array with: '1.0.0').
+        self assert: (self versionStringsIn: snapshot of: 'a')
+            = (Array with: '1.0.0')
+    ]
+
+    testHoldingLeavesTheDescribingAccessorsUntouched [
+        "A held pin must still describe itself (Doc C §2.2):
+         dependenciesOf:version: and sha256For:version: answer through
+         the narrowing unchanged — for the held name, for the versions
+         narrowing removed from offer, and for unheld packages."
+        | snapshot held narrowed deps |
+        snapshot := ResolverFixtures satisfiableDiamondSnapshot.
+        held := Dictionary new.
+        held at: 'c' put: (self version: '1.5.0').
+        narrowed := snapshot holding: held.
+        self assert: (narrowed sha256For: 'c' version: (self version: '1.5.0'))
+            = (snapshot sha256For: 'c' version: (self version: '1.5.0')).
+        self assert: (narrowed sha256For: 'c' version: (self version: '2.4.0'))
+            = (snapshot sha256For: 'c' version: (self version: '2.4.0'))
+            description: 'narrowing stopped describing a version it removed from offer'.
+        deps := narrowed dependenciesOf: 'a' version: (self version: '1.0.0').
+        self assert: deps size = 1.
+        self assert: deps first name = 'c'
+    ]
+
+    testAHeldPinThatIsRetiredIsStillOffered [
+        "HELD BEATS RETIRED (§8 decision 46 — a RULING, not an
+         oversight). The §2.1 retirement filter answers what a FRESH
+         resolution may pick; a held pin is not being picked, it is
+         being KEPT. So the narrowed snapshot offers the retired held
+         version anyway — while the same receiver, unheld, still
+         excludes it, and the retirement reason still answers through
+         the narrowing so check can keep reporting it."
+        | snapshot held narrowed |
+        snapshot := RetirementFixtures snapshotWithRetiredJson032.
+        held := Dictionary new.
+        held at: 'kernel-json' put: (self version: '0.3.2').
+        narrowed := snapshot holding: held.
+        self assert: (self versionStringsIn: narrowed of: 'kernel-json')
+            = (Array with: '0.3.2')
+            description: 'the retirement filter overrode the held pin'.
+        self assert: (self versionStringsIn: snapshot of: 'kernel-json')
+            = (Array with: '0.3.1')
+            description: 'holding: disturbed the receiver''s retirement filter'.
+        self assert: (narrowed retirementReasonFor: 'kernel-json'
+            version: (self version: '0.3.2'))
+                = RetirementFixtures json032Reason
+            description: 'the retirement reason stopped answering through the narrowing'
+    ]
+
+    testHoldingOffersNothingForAVersionTheSnapshotCannotDescribe [
+        "OPERATOR AMENDMENT at the Sprint 12 red review (§8 decision 47,
+         Doc C §2.2). 'Offers exactly the held version' is bounded by a
+         release the snapshot HOLDS A RECORD FOR. When the index no
+         longer publishes the held version at all — the state an index
+         owner leaves behind by DELETING an old entry, which this
+         sprint's own S8 fixture is built on — narrowing must offer
+         NOTHING for that name rather than a version it cannot
+         describe.
+
+         The defect this forbids is not cosmetic: sha256For: answers ''
+         and dependenciesOf: answers #() for a release the snapshot
+         never saw, so offering it lets a selective update write a lock
+         tuple with an EMPTY DIGEST — a file the Sprint 11 lock
+         boundary rejects. update would have manufactured the
+         corruption check exists to catch.
+
+         This is not a retreat from held-beats-retired above, and one
+         property separates them: a RETIRED release is still fully
+         described, so it can be kept; a DELETED one is not described
+         at all, so it cannot. Held-beats-retired governs what may be
+         PICKED; this law governs what can be WRITTEN DOWN."
+        | snapshot held narrowed |
+        snapshot := ResolverFixtures satisfiableDiamondSnapshot.
+        held := Dictionary new.
+        held at: 'c' put: (self version: '9.9.9').
+        narrowed := snapshot holding: held.
+        self assert: (self versionStringsIn: narrowed of: 'c') isEmpty
+            description: 'narrowing offered a version the snapshot cannot describe'.
+        self assert: (narrowed sha256For: 'c' version: (self version: '9.9.9'))
+            = ''
+            description: 'the undescribed held version acquired a digest'.
+        self assert: (self versionStringsIn: snapshot of: 'c')
+            = (Array with: '1.5.0' with: '2.4.0' with: '3.0.0')
+            description: 'holding: mutated its receiver'.
+        self deny: (self resolve: ResolverFixtures diamondRoot
+            against: narrowed) isResolution
+            description: 'a deleted held pin resolved instead of conflicting - the lock would carry an empty digest'
     ]
 
     testGitIndexSourceInheritsRetirementUntouched [
