@@ -186,3 +186,40 @@ Ranked, with the trigger each would need. Nothing here was half-built.
    comment survives, so nothing is lost — but the clause reads oddly. No fixture
    covers it and none was invented; recorded so the next reader of
    `lastClauseEndFrom:to:` knows it was seen rather than missed.
+
+## Close-out rulings (Gate B)
+
+Each item above was ruled at the close-out review. Recorded here so the section's
+disposition is not left to be reconstructed from the item text, which was written
+before the rulings existed.
+
+1. **The doc narrows; store rollback is not scheduled.** Doc B §2.1's "the
+   fetch-and-verify and the registration either all land or none do" over-claims:
+   the store is content-addressed and hash-verified, so an orphaned archive is not
+   observable project state, and the failure mode `PinVerification` exists to
+   report — a manifest naming what the lock does not pin — is exactly what the
+   shipped rollback prevents and what the store cannot manufacture. Scheduling
+   store rollback would add machinery to erase something inert and re-usable. The
+   sentence becomes: the manifest and lock move together or not at all; fetched
+   archives may remain in the content-addressed store, where they are inert until
+   a lock pins them. **Operator-side, at staging**, with a §8 note under decision
+   49 so the ruling carries a number.
+2. **Leave the refusal as it is; not scheduled.** It already names the repair, which
+   is what the operator needs. Naming which of six recognizer conditions failed
+   would grow the recognizer's diagnostic surface — the "general parser" slope this
+   sprint declared out of scope. Revisit only if real usage shows operators
+   confused.
+3. **Carried gap, named and ranked.** "Impossible" versus "impossible *while the
+   others are held*" goes onto `docs/roadmap.md` §3 as a candidate carried gap, the
+   same treatment Sprint 12 gave its own: named, ranked, picked up when a sprint
+   touches that ground. The likely fix is cheap — re-resolve without holding, and
+   when that succeeds say the held pins are the reason and name `parley update`.
+   **Operator-side.**
+4. **Already correctly deferred.** Confirmed at close-out: the `parley remove` /
+   constraint-replacement row landed in `docs/roadmap.md` §3 at staging (commit
+   `d6c658d`) with its staged reason and its trigger intact. Nothing further owed.
+5. **Accepted, with a law owed.** The trailing-comment behavior is correct and
+   stays. The debt is that it is *unpinned*: **the next sprint that touches the
+   editor owes it a fixture and a law, before any change to the insertion logic.**
+   An unpinned-but-recorded oddity is fine short-term; changing insertion with no
+   law over this case is not.
