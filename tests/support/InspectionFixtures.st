@@ -250,7 +250,7 @@ and the S13 line-split sender tree.'>
          SelectiveUpdateFixtures usageVerbsLine pinned the new
          rendering in that sprint's RED."
         <category: 'pinned wordings'>
-        ^'verbs: init | resolve | install | update [<pkg>] | exec <script> | publish <dir> | why <pkg> | tree | check'
+        ^'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
     ]
 
     "---- the malformed-digest lock (S10, Doc B §5.3) ----"

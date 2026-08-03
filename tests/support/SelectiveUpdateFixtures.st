@@ -698,7 +698,7 @@ labels.'>
          match in GREEN, together with the CLI change (the Sprint 11
          precedent)."
         <category: 'pinned wordings'>
-        ^'verbs: init | resolve | install | update [<pkg>] | exec <script> | publish <dir> | why <pkg> | tree | check'
+        ^'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
     ]
 
     SelectiveUpdateFixtures class >> selectiveUsageLines [

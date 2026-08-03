@@ -367,7 +367,7 @@ stream close', SourceFixtures newline
         <category: 'pinned wordings'>
         ^Array
             with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
-            with: 'verbs: init | resolve | install | update [<pkg>] | exec <script> | publish <dir> | why <pkg> | tree | check'
+            with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
     ]

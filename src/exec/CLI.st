@@ -1,7 +1,8 @@
 "Parley — CLI: the package-manager verbs over everything beneath.
  Spec: docs/design/execution-and-cli.md §4; issue #8 S10-S19.
  An orchestration answering a value: run: dispatches the argv
- grammar (init | resolve | install | update [<pkg>] | exec <script> |
+ grammar (init | resolve | install | update [<pkg>] |
+ add <pkg> <constraint> | exec <script> |
  publish <dir> | why <pkg> | tree | check) and answers an immutable
  CliResult. The CLI never
  prints, never terminates the image, and never touches a process
@@ -32,7 +33,30 @@
  resolution of a smaller world. Its three diagnoses are all exit 1;
  already-newest is a success with a line saying so; install and
  register run exactly as update does. Wordings pinned in RED
- (issue #14)."
+ (issue #14).
+
+ add <pkg> <constraint> (Doc B §2.1, Doc E §4.1, Sprint 13 — the third
+ declared exception on this class): declares a new dependency in
+ Package.st and moves the project to it in one operation. The edit is a
+ TEXTUAL INSERTION into a cascade the settled ManifestEditor
+ recognizes, verified by re-loading through ManifestFile load:, and
+ rolled back on any refusal — because Package.st is executable
+ Smalltalk the author owns and Parley never re-renders what it did not
+ write (§8 decision 49). It then resolves against a snapshot holding
+ EVERY existing pin (Doc C §2.2, the third application after
+ retirement and selective update), rewrites the lock byte-stably, and
+ installs and registers exactly as update does.
+
+ add is ATOMIC: every diagnosis restores the original Package.st and
+ the lock as it stood, so a failed add leaves a project byte-identical
+ to how it started. Its four diagnoses are all exit 1; adding what is
+ already declared identically is an idempotent success. Wordings
+ pinned in RED (issue #15).
+
+ The deleted-held-pin diagnosis is SHARED by add and update <pkg>: a
+ pin the index no longer publishes narrated as an ordinary version
+ conflict, which is sound under §8 decision 47 and misleading, because
+ the real defect is a missing index entry."
 
 Namespace current: Parley.
 
@@ -88,6 +112,9 @@ construction; zero public setters.'>
             ifTrue: [^self why: (anArgvArray at: 2)].
         (verb = 'update' and: [anArgvArray size = 2 and: [source notNil]])
             ifTrue: [^self update: (anArgvArray at: 2)].
+        (verb = 'add' and: [anArgvArray size = 3 and: [source notNil]])
+            ifTrue: [^self add: (anArgvArray at: 2)
+                constraint: (anArgvArray at: 3)].
         (anArgvArray size = 1 and: [source notNil]) ifTrue: [
             verb = 'resolve' ifTrue: [^self resolve].
             verb = 'install' ifTrue: [^self install].
@@ -166,7 +193,7 @@ construction; zero public setters.'>
          identical bytes — the resolve-with-no-dependencies precedent:
          a verb that prints nothing reads as a verb that did nothing."
         <category: 'verbs'>
-        | pinned held outcome result |
+        | pinned held narrowed deleted outcome result |
         pinned := self pinnedResolution.
         pinned isNil ifTrue: [^self reportMissingLock].
         (pinned packageNames includes: aName) ifFalse: [
@@ -174,13 +201,13 @@ construction; zero public setters.'>
                 lines: (Array with: aName printString,
                     ' is not pinned in parley.lock')
                 exitCode: 1].
-        held := Dictionary new.
-        pinned packageNames do: [:each |
-            each = aName ifFalse: [
-                held at: each put: (pinned versionOf: each)]].
+        held := self heldVersionsOf: pinned except: aName.
+        narrowed := source snapshot holding: held.
+        deleted := self deletedHeldPinLineIn: held against: narrowed.
+        deleted notNil ifTrue: [
+            ^CliResult lines: (Array with: deleted) exitCode: 1].
         outcome := (Resolver strategy: BacktrackingStrategy new)
-            resolve: self loadManifest
-            against: (source snapshot holding: held).
+            resolve: self loadManifest against: narrowed.
         outcome isResolution ifFalse: [
             ^CliResult
                 lines: (Array with: self heldPinsLine),
@@ -196,6 +223,110 @@ construction; zero public setters.'>
                         version: (outcome versionOf: aName)))
                     exitCode: 0].
         ^result
+    ]
+
+    add: aName constraint: aConstraintString [
+        "Declare a new dependency in Package.st and move the project to
+         it in one operation (Doc E §4.1, Sprint 13).
+
+         The edit is a textual insertion into a cascade the settled
+         ManifestEditor recognizes, because Package.st is executable
+         Smalltalk the author owns and the manifest is a lossy
+         projection of it: re-rendering the file from the model would
+         silently substitute a different program that happens to build
+         an equal manifest, and would damage the most careful authors
+         worst (§8 decision 49). It is then VERIFIED SEMANTICALLY —
+         re-loaded through the settled ManifestFile load: and compared
+         against the manifest loaded before — because Parley already
+         owns the reader that decides what a Package.st means.
+
+         Resolution runs against a snapshot holding EVERY existing pin
+         (Doc C §2.2): adding one dependency is not a licence to move
+         the ones already there, for the reason update <pkg> does not
+         move them. Then the lock is rewritten byte-stably and install
+         and register run exactly as update does.
+
+         The verb is ATOMIC. Every refusal below, every failed reload
+         and every failed resolution restores the original Package.st
+         and the lock as it stood, so a failed add leaves the project
+         byte-identical to how it started. The alternative — a manifest
+         naming a dependency the lock does not pin — is exactly the
+         state PinVerification exists to call broken, and it would have
+         been manufactured by the tool.
+
+         Its four diagnoses, all exit 1 and none of them exit 70: no
+         Package.st (the settled missing-manifest line, §8 decision 31 —
+         signaled by load: so the sentence keeps one definition); a
+         shape the editor cannot recognize (one line naming the file and
+         THE EXACT TEXT TO PASTE); already declared with a DIFFERENT
+         constraint (one line naming the existing one — changing a
+         constraint is an edit, and a verb that silently overwrote one
+         would be a different verb wearing this name); and a held pin
+         the index no longer publishes, the diagnosis shared with
+         update <pkg>. A conflict under the held pins answers the
+         settled ConflictReport narration preceded by the held-pins
+         line, exactly as update <pkg> answers it.
+
+         Already declared with the IDENTICAL constraint is a success
+         with a line saying so, exit 0, the file and lock byte-identical
+         — and the pipeline still runs (§8 decision 48: the report may
+         narrow, the contract may not). Idempotence is what makes add
+         safe to put in a script. The comparison is TEXTUAL: add never
+         parses a constraint itself, which leaves the settled
+         ManifestBuilder the single judge of a spelling and keeps
+         ConstraintFormatError's declared ground — never signaled out of
+         a verb — true."
+        <category: 'verbs'>
+        | original editor declared before pinned held narrowed deleted lock after |
+        (File name: self packagePath) exists ifFalse: [
+            "The settled missing-manifest diagnosis, defined once in
+             ManifestFile: load: signals it and the boundary answers
+             exit 1. It never returns."
+            ^self loadManifest].
+        original := self packageContents.
+        editor := ManifestEditor on: original.
+        editor isRecognized ifFalse: [
+            ^CliResult
+                lines: (Array with: (self unrecognizedManifestLineFor: aName
+                    constraint: aConstraintString))
+                exitCode: 1].
+        declared := editor constraintFor: aName.
+        (declared notNil and: [declared ~= aConstraintString]) ifTrue: [
+            ^CliResult
+                lines: (Array with: (self alreadyDeclaredLineFor: aName
+                    constraint: declared))
+                exitCode: 1].
+        before := self loadManifest.
+        pinned := self pinnedResolution.
+        held := self heldVersionsOf: pinned except: nil.
+        narrowed := source snapshot holding: held.
+        deleted := self deletedHeldPinLineIn: held against: narrowed.
+        deleted notNil ifTrue: [
+            ^CliResult lines: (Array with: deleted) exitCode: 1].
+        lock := self lockContents.
+        declared notNil ifTrue: [
+            | idempotent |
+            idempotent := self addResolving: before against: narrowed
+                restoring: original lock: lock.
+            idempotent exitCode = 0 ifFalse: [^idempotent].
+            ^CliResult
+                lines: (Array with: (self alreadyDeclaredSuccessLineFor: aName
+                    constraint: aConstraintString))
+                exitCode: 0].
+        self writePackage: (editor
+            textWithDependency: aName constraint: aConstraintString).
+        after := [self loadManifest]
+            on: ManifestError
+            do: [:e |
+                self restore: original lock: lock.
+                ^CliResult lines: e problems exitCode: 1].
+        (self manifest: after adds: aName to: before) ifFalse: [
+            self restore: original lock: lock.
+            ^CliResult
+                lines: (Array with: self editVerificationLine)
+                exitCode: 1].
+        ^self addResolving: after against: narrowed
+            restoring: original lock: lock
     ]
 
     exec: aScriptPath [
@@ -420,6 +551,110 @@ construction; zero public setters.'>
             on: ExecutionError
             do: [:e | ^CliResult lines: (Array with: e messageText) exitCode: 1].
         ^self reportPins: anOutcome
+    ]
+
+    "---- add's shared machinery (Doc B §2.1, Doc C §2.2) ----"
+
+    addResolving: aManifest against: aSnapshot restoring: anOriginalText lock: aLockText [
+        "Private — add's tail: resolve against the narrowed world,
+         rewrite the lock byte-stably, then install and register exactly
+         as update does.
+
+         ANY nonzero outcome restores the project first. A conflict
+         answers the settled ConflictReport narration preceded by the
+         held-pins line — the resolver answered truthfully about a world
+         with few candidates but cannot know WHY the world was small,
+         and the verb had that context (§8 decision 46)."
+        <category: 'private-add'>
+        | outcome result |
+        outcome := (Resolver strategy: BacktrackingStrategy new)
+            resolve: aManifest against: aSnapshot.
+        outcome isResolution ifFalse: [
+            self restore: anOriginalText lock: aLockText.
+            ^CliResult
+                lines: (Array with: self heldPinsLine),
+                    (self linesOf: outcome printString)
+                exitCode: 1].
+        self writeLock: outcome.
+        result := self installResolution: outcome.
+        result exitCode = 0
+            ifFalse: [self restore: anOriginalText lock: aLockText].
+        ^result
+    ]
+
+    manifest: aNewManifest adds: aName to: anOldManifest [
+        "Private — the semantic verification (Doc B §2.1): the reloaded
+         manifest declares aName and is OTHERWISE EQUAL to the one
+         loaded before the edit — same name, version, fileIns order and
+         every pre-existing dependency. A textual edit that is not
+         checked by the reader that owns the meaning is a hope."
+        <category: 'private-add'>
+        aNewManifest name = anOldManifest name ifFalse: [^false].
+        aNewManifest version = anOldManifest version ifFalse: [^false].
+        aNewManifest fileIns asArray = anOldManifest fileIns asArray
+            ifFalse: [^false].
+        aNewManifest dependencies size
+            = (anOldManifest dependencies size + 1) ifFalse: [^false].
+        anOldManifest dependencies do: [:dep |
+            (aNewManifest dependencies includes: dep) ifFalse: [^false]].
+        ^(aNewManifest dependencies
+            detect: [:dep | dep name = aName]
+            ifNone: [nil]) notNil
+    ]
+
+    restore: anOriginalText lock: aLockTextOrNil [
+        "Private — put the project back exactly as add found it: the
+         manifest bytes, and the lock as it stood (removed when there
+         was none). The content-addressed store is deliberately not
+         undone — a hash-verified archive is inert, re-used on the next
+         run, and never observable as project state."
+        <category: 'private-add'>
+        | file |
+        self writePackage: anOriginalText.
+        file := File name: self lockPath.
+        aLockTextOrNil isNil
+            ifTrue: [file exists ifTrue: [file remove]]
+            ifFalse: [self write: aLockTextOrNil to: self lockPath]
+    ]
+
+    heldVersionsOf: aResolution except: aName [
+        "Private — name -> Version for every pinned package other than
+         aName; a nil aName holds them all. The Doc C §2.2 narrowing
+         input, shared by update <pkg> (which frees the package it
+         moves) and add (which frees nothing, because adding one
+         dependency is not a licence to move the others)."
+        <category: 'private-add'>
+        | held |
+        held := Dictionary new.
+        aResolution isNil ifTrue: [^held].
+        aResolution packageNames do: [:each |
+            each = aName ifFalse: [
+                held at: each put: (aResolution versionOf: each)]].
+        ^held
+    ]
+
+    deletedHeldPinLineIn: aHeldDictionary against: aSnapshot [
+        "Private — the first held pin, in sorted name order, the
+         narrowed snapshot can offer nothing for; nil when every held
+         pin is describable.
+
+         §8 decision 47 made this state SOUND — narrowing offers a held
+         version only when the snapshot holds a record for it, because
+         offering one it cannot describe would write a lock tuple with
+         an empty digest, manufacturing the corruption check exists to
+         catch. What it left behind was an ordinary unsatisfiable
+         narrowed world: the held-pins line plus a ConflictReport, which
+         reads as a version conflict when the real defect is that the
+         index owner deleted an entry. Both verbs that hold pins answer
+         this one sentence instead — and on add it matters most, where
+         the operator has just added something and would reasonably
+         blame their own addition."
+        <category: 'private-add'>
+        aHeldDictionary keys asSortedCollection do: [:name |
+            (aSnapshot versionsOf: name) isEmpty ifTrue: [
+                ^self deletedHeldPinLineFor: name
+                    version: (aHeldDictionary at: name)]].
+        ^nil
     ]
 
     pinnedOrFreshResolution [
@@ -685,6 +920,37 @@ construction; zero public setters.'>
             ensure: [stream close]
     ]
 
+    packageContents [
+        "Private — the working directory's Package.st, as bytes. The
+         operator's own file: read whole so add can put it back."
+        <category: 'private'>
+        ^(File name: self packagePath) contents
+    ]
+
+    lockContents [
+        "Private — the lock's bytes, or nil when the project has none;
+         what add restores on any failure."
+        <category: 'private'>
+        | file |
+        file := File name: self lockPath.
+        ^file exists ifTrue: [file contents] ifFalse: [nil]
+    ]
+
+    writePackage: aString [
+        "Private — replace Package.st with aString. The only place any
+         verb writes the operator's manifest after init."
+        <category: 'private'>
+        self write: aString to: self packagePath
+    ]
+
+    write: aString to: aPath [
+        "Private — aString as the complete contents of aPath."
+        <category: 'private'>
+        | stream |
+        stream := (File name: aPath) writeStream.
+        [stream nextPutAll: aString] ensure: [stream close]
+    ]
+
     "---- results ----"
 
     usage [
@@ -693,7 +959,7 @@ construction; zero public setters.'>
         ^CliResult
             lines: (Array
                 with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
-                with: 'verbs: init | resolve | install | update [<pkg>] | exec <script> | publish <dir> | why <pkg> | tree | check'
+                with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
                 with: 'flags: --source <dir>  index entries in a local directory'
                 with: '       --git <repo>    index entries in a git repository')
             exitCode: 2
@@ -743,6 +1009,58 @@ construction; zero public setters.'>
         <category: 'private'>
         ^aName, ' ', aVersion printString,
             ' is already the newest version its constraints allow - wrote parley.lock'
+    ]
+
+    unrecognizedManifestLineFor: aName constraint: aConstraintString [
+        "Private — the shape refusal (pinned in RED, issue #15). It
+         names the file AND THE EXACT TEXT TO PASTE, because a refusal
+         that does not say what to type has cost the operator more than
+         it saved. Recognize or refuse is the settled grammar of every
+         boundary in the tool: fail-stop, never fail-wrong, and name the
+         repair (§8 decisions 31 and 44)."
+        <category: 'private'>
+        ^self packagePath,
+            ': no single Parley define: cascade to edit - add this clause by hand: dependency: ''',
+            aName, ''' constraint: ''', aConstraintString, ''''
+    ]
+
+    alreadyDeclaredLineFor: aName constraint: aConstraintString [
+        "Private — the different-constraint refusal (pinned in RED),
+         naming the constraint already in the file."
+        <category: 'private'>
+        ^aName printString, ' is already declared with constraint ',
+            aConstraintString printString,
+            ' - changing a constraint is an edit, not an add: change it in Package.st by hand'
+    ]
+
+    alreadyDeclaredSuccessLineFor: aName constraint: aConstraintString [
+        "Private — the idempotent success line (pinned in RED): the
+         update <pkg> already-newest precedent, because a verb that
+         prints nothing reads as a verb that did nothing."
+        <category: 'private'>
+        ^aName, ' ', aConstraintString,
+            ' is already declared in Package.st - wrote parley.lock'
+    ]
+
+    deletedHeldPinLineFor: aName version: aVersion [
+        "Private — the diagnosis add and update <pkg> SHARE for a held
+         pin the index no longer publishes (pinned in RED, issue #15).
+         The repair named is parley update: the one verb that holds
+         nothing and re-resolves, so it is the verb that can move off a
+         pin whose entry is gone."
+        <category: 'private'>
+        ^'parley.lock pins ', aName printString, ' at ',
+            aVersion printString,
+            ', which the index no longer publishes - run parley update to move off it'
+    ]
+
+    editVerificationLine [
+        "Private — the refusal when the reload disagrees with the edit
+         (pinned in RED). The operator is never left a half-edited
+         file."
+        <category: 'private'>
+        ^self packagePath,
+            ': the edited manifest did not load as the edit intended - Package.st was restored unchanged'
     ]
 
     reportConflict: aReport [
