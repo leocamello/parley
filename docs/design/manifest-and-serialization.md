@@ -180,6 +180,19 @@ The third schema, and the answer to "where does a retirement signal live" (§8 d
 
 **Contents-not-filename identity applies** (Doc C §1, Sprint 4). A retirement record is any file in the index whose artifact carries the tag — the scan dispatches on the tag it read, never on the filename — and an index may hold several, merged. This is the same rule that already lets an entry file be named anything.
 
+### 5.6 Version-listing schema (`#'parley-listing'`, format 1) — Sprint 14
+
+The fourth schema: the artifact that lets a sparse index (Doc F §7) answer "which versions of this package exist" without enumerating the index. One key, versions as strings, each parsing through the settled `Version fromString:`:
+
+```smalltalk
+#(#'parley-listing' 1
+  #versions #('1.0.0' '1.1.0'))
+```
+
+`versions` sorted ascending by version (§5.4 rule 3's spirit: order is meaningless, canonical form demands sorting); §5.1's grammar, §5.4's rendering rules, and the one-artifact-per-file rule all apply unchanged. The listing is the one **mutable** artifact in the family — a publish appends a version — which is why it is a separate file rather than a key inside any entry (the §5.5 argument verbatim: entries are content-addressed and immutable; the listing is an assertion the index owner maintains *about* the package).
+
+**No format-version bump; the whitelist grows by one.** Widening `IndexEntryReader class >> formatTags` is a **declared settled-class exception** (§7's standing rule: never a silent widening), and the rejection sentence grows in the same change by construction — `formatTagsText` renders it from the whitelist. The same one-directional cost as §5.5, stated plainly: a listing fed to a pre-Sprint-14 Parley is rejected as an unknown tag, the safe failure direction. The listing is consumed **only** by `SparseIndexSource` (Doc F §7.2); it never appears in a scanned index directory (Doc F §7.3's prohibition).
+
 ---
 
 ## 6. Two Ordering Rules (both deliberate — do not "fix" either)
@@ -196,7 +209,7 @@ The third schema, and the answer to "where does a retirement signal live" (§8 d
 Serialization does **not** live on the builder or the manifest. The writer/reader are a dedicated pair owning the micro-format for both schemas (index + lock, distinguished by tag).
 
 - `IndexEntryWriter` — `write: aManifest on: aStream` / `writeLock: aResolution on: aStream`, applying §5.4 exactly.
-- `IndexEntryReader` — `readFrom: aStream` → parsed structure → `LibraryManifest fromIndexEntry:` / lock value / retirement record. Unknown format tag or unsupported format version is a clear error (forward-evolution point). The whitelist is `#'parley-index'`, `#'parley-lock'` and — from Sprint 10 — `#'parley-retired'` (§5.5); adding a tag is a **declared settled-class exception**, never a silent widening, because "unknown tag is an error" is what makes the forward-evolution point real.
+- `IndexEntryReader` — `readFrom: aStream` → parsed structure → `LibraryManifest fromIndexEntry:` / lock value / retirement record. Unknown format tag or unsupported format version is a clear error (forward-evolution point). The whitelist is `#'parley-index'`, `#'parley-lock'`, from Sprint 10 `#'parley-retired'` (§5.5), and from Sprint 14 `#'parley-listing'` (§5.6); adding a tag is a **declared settled-class exception**, never a silent widening, because "unknown tag is an error" is what makes the forward-evolution point real.
 
 **The rejection message must name every tag the whitelist holds** (Sprint 10 RED review). It reads `unknown format tag <X>: this Parley reads #'parley-index', #'parley-lock' and #'parley-retired' artifacts` — widening the whitelist without widening the sentence would make the forward-evolution point state something false, and this message is the *only* place an operator learns what this build accepts. No settled law pins its bytes (`MicroFormatTest` asserts only that it names the offending tag and differs from the version message), so the sentence stays free to grow with the whitelist — but it must grow **in the same change**.
 - **Round-trip identity law (SUnit, required):** *build → write → read = build* — the pair composes to the identity on manifests, verified in complete isolation (no builder, no resolver).

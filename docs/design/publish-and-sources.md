@@ -1,6 +1,6 @@
 # Parley Design — Publish & the Git Index Source
 
-> **Scope:** `Publisher`, `PublishError` (`src/publish/` — a NEW directory), `GitIndexSource` (`src/source/`), the archive-carrying `IndexEntryWriter` selector, the `CLI` `publish` verb, and the schema-shape entry validation folded in from the Sprint 4 ruling (`DirectorySource` scan). This is the Phase 4 opener (Sprint 7, issue #9). All classes in the `Parley` namespace; structural immutability applies throughout (class-side construction; zero public setters; no value equality on the new classes — the decision-23 precedent). `RegistrySource` is **not** in this document or this phase: it is deferred entirely with registry hosting (§8 decision 27).
+> **Scope:** `Publisher`, `PublishError` (`src/publish/` — a NEW directory), `GitIndexSource` (`src/source/`), the archive-carrying `IndexEntryWriter` selector, the `CLI` `publish` verb, the schema-shape entry validation folded in from the Sprint 4 ruling (`DirectorySource` scan), and — from Sprint 14 — `SparseIndexSource` (§7, `src/source/`). This is the Phase 4 opener (Sprint 7, issue #9). All classes in the `Parley` namespace; structural immutability applies throughout (class-side construction; zero public setters; no value equality on the new classes — the decision-23 precedent). `RegistrySource` is **not** in this document or this phase: it is deferred entirely with registry hosting (§8 decision 27).
 
 Publishing closes the authoring loop: the manifest an author wrote with the Doc B §2 vocabulary becomes a static index entry plus a toolchain-built archive that any `PackageSource` can serve and any Sprint 5/6 consumer can install and execute. The trust boundary (architecture §2.2) is untouched: publish runs on the **author's own machine over the author's own manifest** — the one `Package.st` evaluation context that has always been sanctioned — and its product is exactly the static, literals-only artifact every other machine consumes.
 
@@ -102,3 +102,53 @@ The retirements collected are handed to the snapshot (Doc C §2.1), which is whe
 - **`CLI`:** `publish <dir>` success line and exit codes; the refusal surfacing as lines exit `1`; `publish` without a directory answering usage exit `2` (**passes in red** — the settled CLI already answers usage for unknown shapes — declared).
 - **End-to-end (the sprint's exit):** author A publishes into a directory; author B's working dir depends on the published package; `install` + `exec` prove the class visible in B's curated child — **the ecosystem loop closes**. A second e2e leg resolves the same published index through a `GitIndexSource` clone.
 - **Hygiene:** every fixture path (working dirs, destinations, repos, caches, stores, targets) under `tmp/`, unique per test, removed recursively in tearDown; `tmp/` empty or absent after a clean run; the developer image never mutated; no network, ever — git operates on local paths only.
+
+## 7. `SparseIndexSource` — per-package metadata over a process seam (Sprint 14, §8 decision 50)
+
+A `PackageSource` whose index is served one package at a time — the shape crates.io migrated *to* and Hex.pm has always served — so a client fetches only the packages a resolution can reach, never the whole index. The transport is a process seam exactly as git is: `curl -sfS <url> -o <file>` through the settled `ProcessRunner`, which makes the whole source provable offline against a static directory tree over `file://`. No HTTP is implemented in Smalltalk, and no law ever contacts a network.
+
+**The purity contract is untouched — the one I/O moment is a closure (§8 decision 50).** A sparse index cannot enumerate its packages, so `snapshot` walks instead of scanning: seed with the root manifest's declared names union the lock's pinned names when a lock exists; fetch each reachable package's version listing and the entries it names; read the names those entries declare; repeat to fixpoint; then answer one complete immutable `IndexSnapshot` over the reachable closure, before resolution begins. The resolver never learns this source exists. A name the closure never reached is indistinguishable from a package the index does not publish — decision 47's describability line governs it unchanged, so a listing miss for a declared name is an ordinary empty candidate set, never an error.
+
+### 7.1 The index layout
+
+One directory per package under the base, holding a version listing plus the settled artifacts, byte-identical to what `publish` writes:
+
+```
+<base>/<name>/versions.st                 the listing (§7.2)
+<base>/<name>/<name>-<version>.st         the settled index entry (§2, Doc B §5.2)
+<base>/<name>/<name>-<version>.star       the archive
+```
+
+`<base>` is any URL scheme curl accepts; the laws use `file://` absolute paths only. Entry identity remains contents-not-filename (Sprint 4) for the *scanned* artifacts — the entry bytes are exactly the §2 writer's, and the scan dispatches on tags as always. The listing is different and legitimately so: it is located by constructed URL — a fetch, not a scan — which is filename-as-address, the same way a package's directory is.
+
+### 7.2 The listing — the fourth deserialization boundary
+
+`versions.st` is one literal array in the house micro-format, the fourth schema — **defined in Doc B §5.6**, where the other three schemas live; this section owns only its consumption:
+
+```
+#'parley-listing' 1 #versions #('1.0.0' '1.1.0')
+```
+
+It is read ONLY by `IndexEntryReader readFrom:` — which makes `SparseIndexSource` the **fourth sender** and the fourth row of `CommandLine class >> deserializationBoundaries`; the drift law and the exact-enumeration guard (§8 decisions 35, 38, 43) move in the same commit, and the row arrives with its malformed-input law as the table's contract requires. Consuming the new tag means widening `IndexEntryReader class >> formatTags` — a **declared settled-class exception on `IndexEntryReader`** (Doc B §7's standing rule), whose rejection sentence grows in the same change by construction (`formatTagsText` renders it from the whitelist). A malformed listing — wrong tag, missing `#versions`, a non-String member, an unparseable version — is **one problem naming the file and the defect**, batched into the one `SourceError` (§4 conventions, unchanged).
+
+### 7.3 The source
+
+- `SparseIndexSource class >> base: aBaseUrl cache: aCacheDir runner: aProcessRunner` — pathname-passive construction (no I/O, no process); holds an inner `DirectorySource` over the cache's flat entries directory, the `GitIndexSource` composition applied a second time.
+- `snapshot` — the §8 decision 50 closure, then the inner source's `snapshot` over the fetched entries. Listings are re-fetched every snapshot (they are the one mutable artifact — a publish appends to them); entry fetches are skipped on a cache hit, because releases are immutable (§1 step 1). Retirement records ride in the entries directory as they do everywhere else and reach the snapshot through the settled §4.2 dispatch, untouched. **Listings never land in the scanned entries directory — a prohibition, not an implication:** the settled scan rejects any artifact that is not index-or-retired with a wording pinned byte-for-byte by two settled laws (`DirectorySourceTest`, `SchemaValidationTest`), so a listing inside the scan would turn every snapshot into a `SourceError` and fail both. Listings are cached beside the entries directory, never in it.
+- **The curl grounds, declared closed:** exit `0` with the bytes in the `-o` file is a hit; exit `37` (`file://` miss) and exit `22` (`-f` on an HTTP error response) are a miss; **any other** nonzero exit is one `SourceError` problem carrying the exact command line and exit code — the `GitIndexSource` transport-failure precedent verbatim. A missing *listing* is the undescribed-name case above; a missing *entry that a listing names* is an index defect, one problem naming both files, batched.
+- `versionsOf:`, `manifestFor:version:` — pure delegation to the inner `DirectorySource`.
+- `fetch:version:` — the metadata/archive split holds: resolution consumed listings and entries only, and the archive is fetched here, at install time, into the cache and handed on for the settled hash verification (Doc D). A cache-hit archive is not re-fetched.
+
+### 7.4 The cache and the flag
+
+- `CommandLine` gains `--index <base>` as the **third row of `sourceFlags`** with its builder message — a declared settled-class exception on `CommandLine`, its first; the flag drift law is what forces this row to exist the moment the class ships, which is that law doing its job. The usage lines gain the flag; the verbs line is unchanged.
+- The cache lives at `<workingDir>/.parley/index/<sha256 of the base URL>/` — the `--git` convention (Doc E §4.2) applied to the second remote source, listings beside a flat `entries/` directory the inner `DirectorySource` scans.
+
+### 7.5 SUnit requirements for this section
+
+- **The closure:** a transitive dependency (root → a → b, with b appearing in no manifest the operator wrote) is reached, fetched and resolvable; a package the closure cannot reach is **never fetched** (proved by counting the runner's curl invocations); the closure seeded from a lock reaches every pinned name; a dependency cycle in the metadata terminates at fixpoint.
+- **The grounds:** hit, `file://` miss, and the error ground (a runner answering an undeclared exit code becomes the pinned one-problem `SourceError`) — each proved offline; a listing miss for a declared name resolves to the ordinary empty-candidate conflict, never a crash; an entry a listing names that is absent is the pinned index-defect problem.
+- **The boundary:** every malformed-listing kind is one pinned problem batched in sorted-filename order beside malformed entries; the `deserializationBoundaries` drift law passes with the fourth row and its per-boundary law present.
+- **Determinism (§7 of AGENTS.md, unchanged):** the same tree over `file://` answers an identical `Resolution` and a byte-identical lockfile; a second `snapshot` over an unchanged tree agrees with the first on every observable — `versionsOf:`, `dependenciesOf:version:` and `sha256For:version:` across the closure (`IndexSnapshot` implements no value equality, and decision 23 is the standing precedent against adding it casually — the obligation is stated in messages the class already answers).
+- **The split:** archives are untouched until `fetch:version:` (count the curl invocations again); a fetched archive is hash-verified by the settled installer path; a cache-hit archive spawns nothing.
+- **Hygiene:** every base tree and cache under `tmp/`, unique per test, removed in tearDown; no network, ever.

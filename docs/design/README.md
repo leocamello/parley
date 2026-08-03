@@ -29,7 +29,7 @@ mean the same thing. This table is the map.
 | **C** | [`resolver.md`](resolver.md) | The pure resolver, `ConstraintLedger` provenance, `BacktrackingStrategy`, conflict narration, the `PackageSource` protocol, and the **snapshot contract** — §2.1 retirement filtering and §2.2 held-pin narrowing, both of which the resolver never learns about | Sprint 2 |
 | **D** | [`installer.md`](installer.md) | `Sha256`, the content-addressed `ContentStore`, `Installer`, the `gst-package` registration plan | Sprint 5 |
 | **E** | [`execution-and-cli.md`](execution-and-cli.md) | `ProcessRunner`, `ExecutionScope` (the curated child `gst`), `ManifestFile`, `CLI`, `CommandLine` and the diagnosis boundary, `LockError` and the lock/authoring blame boundaries, the shipped binary, the `why`/`tree`/`check` inspection verbs | Sprint 6 |
-| **F** | [`publish-and-sources.md`](publish-and-sources.md) | The publish pipeline, the composed `package.xml`, schema-shape and value-shape validation, `GitIndexSource` | Sprint 7 |
+| **F** | [`publish-and-sources.md`](publish-and-sources.md) | The publish pipeline, the composed `package.xml`, schema-shape and value-shape validation, `GitIndexSource`, `SparseIndexSource` (§7 — the sparse-index client and its pre-fetch closure) | Sprint 7 |
 
 ## Why the filenames are not letter-prefixed
 
