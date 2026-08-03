@@ -107,7 +107,7 @@ A violation is one `LockError` problem naming the lock path, the defect, and `pa
 
   After the edit it resolves against a snapshot narrowed to **hold every existing pin** (Doc C §2.2 — the third application of the trick, after retirement and selective `update`): adding a dependency should not silently move the ones already there, for the same reason `update <pkg>` does not. Then the lock is rewritten byte-stably and `install` + `register` run exactly as `update` does.
 
-  **`add` is atomic** (Doc B §2.1): the manifest, the lock, the store and the registration all move or none do. Every diagnosis below restores the original `Package.st` byte-for-byte and writes no lock.
+  **`add` is atomic** (Doc B §2.1): the manifest and the lock move together, or neither moves. Every diagnosis below restores the original `Package.st` byte-for-byte and leaves the lock as it stood. A fetched archive may remain in the content-addressed store, inert until a lock pins it — Doc B §2.1 states why that is outside the claim rather than an exception to it.
 
   Its diagnoses, all exit `1` and none of them exit `70`:
 

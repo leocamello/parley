@@ -202,8 +202,11 @@ before the rulings existed.
    store rollback would add machinery to erase something inert and re-usable. The
    sentence becomes: the manifest and lock move together or not at all; fetched
    archives may remain in the content-addressed store, where they are inert until
-   a lock pins them. **Operator-side, at staging**, with a §8 note under decision
-   49 so the ruling carries a number.
+   a lock pins them. **Landed** in Doc B §2.1, in Doc E §4.1 (which repeated the
+   same wide claim and would otherwise have drifted), and as a narrowing note
+   under §8 decision 49 — the same shape as decisions 43 and 45: a claim that
+   cannot be made is narrowed in writing, not faked. It reopens if the store ever
+   becomes observable as state.
 2. **Leave the refusal as it is; not scheduled.** It already names the repair, which
    is what the operator needs. Naming which of six recognizer conditions failed
    would grow the recognizer's diagnostic surface — the "general parser" slope this
