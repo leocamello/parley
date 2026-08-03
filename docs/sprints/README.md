@@ -21,6 +21,11 @@ number is the total axiomatic laws green at that sprint's close.
 | [06](sprint-06-notes.md) | `ExecutionScope` + CLI — the process seam, the curated child image, all five verbs | [#8](https://github.com/leocamello/parley/issues/8) | `af8782d` | 356 |
 | [07](sprint-07-notes.md) | Publish + `GitIndexSource` — `Publisher`, the second real source, the ecosystem loop | [#9](https://github.com/leocamello/parley/issues/9) | `09d2307` | 409 |
 | [08](sprint-08-notes.md) | The diagnosis boundary — `CommandLine`, exit codes that never lie, the law-guarded binary | [#10](https://github.com/leocamello/parley/issues/10) | `4ef95a5` | 461 |
+| [09](sprint-09-notes.md) | The blame boundary — `LockError`, the authoring boundary in `define:`, every source reachable | [#11](https://github.com/leocamello/parley/issues/11) | `f48ac59` | 500 |
+| [10](sprint-10-notes.md) | Retirement — the `#'parley-retired'` schema, the snapshot filter, lock body-shape validation | [#12](https://github.com/leocamello/parley/issues/12) | `c15c2c5` | 539 |
+| [11](sprint-11-notes.md) | The inspection verbs — `why`/`tree`/`check`, `SchemaShape`, the hex-digest grounds | [#13](https://github.com/leocamello/parley/issues/13) | `1a8a251` | 585 |
+| [12](sprint-12-notes.md) | Selective `update <pkg>` — `IndexSnapshot>>holding:`, move one and hold the rest | [#14](https://github.com/leocamello/parley/issues/14) | `a899ca8` | 612 |
+| [13](sprint-13-notes.md) | `parley add` — `ManifestEditor`, one clause inserted and never a re-render | [#15](https://github.com/leocamello/parley/issues/15) | `d9b6fad` | 662 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a
