@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 13
-phase: green
+sprint: 14
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -64,3 +64,12 @@ scope-12: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # settled CLI. bin/ stays in scope (the binary is law-guarded from
 # Sprint 8 onward) even though no Sprint 13 scenario spawns it.
 scope-13: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-14 is identical to scope-13: Sprint 14 introduces no new src/
+# directory — Parley.SparseIndexSource lives in src/source/, which
+# scripts/run-tests.st already files in — so that script is unchanged.
+# Two declared settled-class exceptions this sprint: IndexEntryReader
+# (formatTags gains #'parley-listing') and CommandLine (the --index
+# sourceFlags row, the fourth deserializationBoundaries row, and the
+# usage flags: lines). bin/ stays in scope (the binary is law-guarded
+# from Sprint 8 onward) even though no Sprint 14 scenario spawns it.
+scope-14: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
