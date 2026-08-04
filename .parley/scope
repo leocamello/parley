@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 14
-phase: green
+sprint: 15
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -73,3 +73,29 @@ scope-13: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # usage flags: lines). bin/ stays in scope (the binary is law-guarded
 # from Sprint 8 onward) even though no Sprint 14 scenario spawns it.
 scope-14: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-15 is identical to scope-14: Sprint 15 introduces no new src/
+# directory — the publish layouts and --version land in src/exec/ and
+# src/publish/, and Parley.Parley (the version constant) lives in
+# src/manifest/, all of which scripts/run-tests.st already files in, so
+# that script is unchanged. Declared settled-class exceptions this
+# sprint: CommandLine (publishLayouts, --version, the fifth
+# deserializationBoundaries row, the usage lines), Publisher (the sparse
+# layout and the listing write), CLI (the --layout argv pass-through and
+# the decision-52 seedNames narrowing) and Parley.Parley (the version
+# constant). bin/ stays in scope — the wrapper is law-guarded from
+# Sprint 8 onward and S-level scenarios spawn it for --version.
+#
+# docs/method/ is NEW as of 3e4cd78. It is inside this regex because
+# docs/ always was — but it is NOT agent-writable. docs/method/
+# findings.md records what the PIPELINE got right and wrong, and you
+# are the subject of most of its entries as well as having no
+# cross-sprint memory to write them from; the human operator writes
+# it at Gate B. The pre-commit sentinel enforces paths, not
+# authorship, so it cannot express this and wrap-sprint.sh refuses
+# the wrap instead: staging anything under docs/method/ aborts with
+# "docs/method/ is operator-authored; unstage it." That refusal is
+# the rule working, not a harness bug — unstage and continue. If you
+# think a finding belongs in there, write it in the sprint notes or
+# say so on the issue and let the operator lift it. Everything else
+# under docs/ is yours as always.
+scope-15: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)

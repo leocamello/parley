@@ -156,3 +156,40 @@ It is read ONLY by `IndexEntryReader readFrom:` — which makes `SparseIndexSour
 - **Freshness across snapshots (the §3 growth precedent):** a version published upstream after a first `snapshot` is offered by a second — the listing was re-fetched — while the entries already cached are not fetched again (count the runner's curl invocations: one listing fetch, one fetch per *new* entry, zero per cached one).
 - **The split:** archives are untouched until `fetch:version:` (count the curl invocations again); a fetched archive is hash-verified by the settled installer path; a cache-hit archive spawns nothing.
 - **Hygiene:** every base tree and cache under `tmp/`, unique per test, removed in tearDown; no network, ever.
+
+## 8. Publishing into a sparse index (Sprint 15, §8 decision 53)
+
+Sprint 14 shipped the client half of a shared index; this is the producer half, and it is the gap between "package manager" and "ecosystem". `publish <dir>` writes the flat layout a `DirectorySource` scans. A sparse index is a different layout for a different consumer (§7.1), and the two are not interchangeable, so **the destination layout is stated by the operator and never inferred (§8 decision 53).**
+
+### 8.1 The flag, and why it is not an inference
+
+- `publish <dir> --layout <name>` — `flat` (the settled behaviour, and the default when the flag is absent) or `sparse`. An unrecognized value is a usage error at exit `2`, never a silent fallback.
+- The rows live in `CommandLine class >> publishLayouts`, a **declaration consumed twice** exactly as `sourceFlags` is: the wiring is built from it and a drift law reads the same rows, so a layout can never be lawful and unreachable — the defect `GitIndexSource` shipped with for a whole sprint (Doc E §4.2).
+- **Inference is refused for the settled reason.** Choosing the layout by looking at the destination's contents would make an empty directory ambiguous and a typo indistinguishable from intent — the same argument that makes `publish` refuse to *create* its destination (§1) and makes `--source` with `--git` a usage error rather than a silent preference. A valued flag also needs no new argv grammar: `valueOf:in:` already reads it.
+
+### 8.2 What a sparse publish writes
+
+Into `<dest>/<name>/`, byte-identical to what §7.1 specifies a client will fetch:
+
+```
+<dest>/<name>/versions.st                 the listing (Doc B §5.6)
+<dest>/<name>/<name>-<version>.st         the settled index entry (§2)
+<dest>/<name>/<name>-<version>.star       the archive
+```
+
+- **The listing is read before it is written.** Publishing into an index that already holds the package means loading `versions.st`, adding the new version, and re-rendering. That makes `Publisher` a sender of `IndexEntryReader readFrom:` and therefore the **fifth deserialization boundary** — a row in `CommandLine class >> deserializationBoundaries` arriving with its malformed-input law, as that table's contract requires. A malformed existing listing is one `PublishError` problem naming the file and the defect; **nothing is written**.
+- **Order is semantic, not lexical.** Versions render sorted by `Version` comparison, so `1.9.0` precedes `1.10.0`. Rendering is the settled §5.1/§5.4 grammar unchanged. Publishing the same set of versions in any order produces byte-identical listings.
+- **Re-publishing an existing `(name, version)` is the settled refusal** — one `PublishError` problem, nothing written, the listing unchanged, no process spawned. An index that already published a release does not silently get a second one.
+
+### 8.3 The producer cannot manufacture the state the client calls an index defect
+
+Doc F §7.5 rules that a listing naming an entry the index does not hold is an **index defect** — Sprint 14's S8, one `SourceError` problem naming both files. A publisher that appended to the listing before writing the entry, or that half-failed between them, would manufacture exactly that state.
+
+**So a sparse publish is atomic: the entry, the archive and the listing all move or none do** — the decision-49 shape applied to publish. Any refusal restores the destination byte-for-byte, and the listing is written **last**, after the entry and the archive are in place, so an interrupted publish leaves an index that is merely missing a release rather than one that lies about holding it. The exit criterion is mechanical: publish a package into a sparse tree, then resolve it through `SparseIndexSource` in the same test, offline over `file://`.
+
+### 8.4 SUnit requirements for this section
+
+- **The layout flag:** `--layout sparse` writes §8.2's tree; absent, `publish` writes the settled flat layout with **byte-identical output to Sprint 7's** (a settled-behaviour guard, not a new claim); an unrecognized value is usage at exit `2`; the `publishLayouts` drift law passes with both rows.
+- **The listing:** a first publish creates it; a second publish into the same package appends and re-renders; versions order semantically (`1.9.0` before `1.10.0`, asserted on bytes); the same versions published in either order give byte-identical files; a malformed existing listing is one pinned `PublishError` problem with nothing written.
+- **Atomicity:** every refusal leaves the destination byte-identical (compare the whole tree, not just the listing); no scenario can produce a listing naming an absent entry — asserted by scanning the published tree with the settled `SparseIndexSource` and requiring a clean snapshot.
+- **The loop closes:** author A publishes into a sparse tree with `--layout sparse`; author B resolves, locks, installs and `exec`s against it through `--index <base>` over `file://`, with a real toolchain-built `.star`. Offline, no network, every path under `tmp/`.
