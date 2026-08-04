@@ -52,6 +52,15 @@ until snapshot. Class-side construction; zero public setters.'>
         inner := DirectorySource on: aCacheDir
     ]
 
+    seededWith: someNames [
+        "Answer a source told that someNames matter (§8 decision 51).
+         A source that clones its whole index genuinely has nothing to
+         do with the information — self is the honest answer, not a
+         stub. No process runs here."
+        <category: 'source protocol'>
+        ^self
+    ]
+
     snapshot [
         "The source's one I/O moment, git moment included: refresh the
          checkout, then answer the inner source's sealed immutable

@@ -106,3 +106,113 @@ already-correct spec — the same discipline as the staging amendments `d815055`
 
 *Stage 5 continues below: "What was built", "Verification evidence", "Noted, not
 built", and the Gate B close-out rulings.*
+
+## What was built
+
+One new class, five bounded settled-class exceptions, and the sanctioned fixture
+re-pins — nothing else in `src/` moved.
+
+- **`Parley.SparseIndexSource`** (`src/source/SparseIndexSource.st`, new) — the
+  sparse-index client, the `GitIndexSource` composition applied a second time: an
+  inner `DirectorySource` over `<cache>/entries` and exactly one transport moment,
+  at `snapshot`. That moment is the **decision-50 closure**: walk the seed names to
+  fixpoint (each reachable package's listing, the entries it names, the names those
+  entries declare, repeat, with a visited set for cycle termination), then answer
+  the inner source's sealed immutable `IndexSnapshot`. `seededWith:` (decision 51)
+  answers a **new instance** holding the union of the seed sets — no I/O, receiver
+  unchanged. The curl grounds are closed: `0` hit, `37`/`22` miss, anything else one
+  `SourceError` naming the exact command line and exit code. A missing **listing**
+  is decision 47's ordinary undescribed name; a missing **entry a listing names** is
+  an index defect — one problem naming both files (Doc F §7.3). Listing problems and
+  missing-entry problems batch into one `SourceError` in sorted order. Listings are
+  cached in `<cache>/listings/`, **beside** the scanned entries directory, never in
+  it (S10); a listing is re-fetched every snapshot, a cached entry never (S15).
+  `fetch:version:` fetches the archive into the entries directory once — a cache
+  hit spawns nothing — then delegates to the inner source, so settled
+  missing-archive diagnosis and hash verification see exactly the fetched bytes.
+- **`IndexEntryReader`** (declared exception, staging) — `formatTags` grew by
+  `#'parley-listing'` (last), and the rejection sentence grew with it by
+  construction through `formatTagsText`; Doc B §7's illustrative message moved in
+  the same change.
+- **`CommandLine`** (declared exception, staging) — third `sourceFlags` row
+  (`'--index'`, `SparseIndexSource`, `#indexSourceOn:`); the builder puts the cache
+  at `<workingDir>/.parley/index/<sha256 of the base URL>/` (the `--git` convention
+  applied a second time); fourth `deserializationBoundaries` row
+  (`SparseIndexSource` / `'version listings'`).
+- **`CLI`** (declared exception, decision 51) — the usage header and `flags:` lines
+  gained `--index` (the `verbs:` line is byte-identical); private `seedNames`
+  gathers the manifest's declared names union the lock's pins **best-effort** (each
+  in a silent handler — every file already has a settled boundary owning its
+  diagnosis, and `resolve` with a corrupt lock stays exit 0 per the settled
+  `LockBoundaryTest` law); `seededSource` sends `seededWith:` unconditionally at
+  all six snapshot sites; `seededSourceAdding:` gives `add` its own name (S16). No
+  verb's wording, exit code, ordering or diagnosis moved.
+- **`DirectorySource` / `GitIndexSource`** (declared exceptions, decision 51) —
+  `seededWith: someNames [^self]`, the honest answer for sources that hold their
+  whole index. No other change; every settled scan law re-ran unchanged.
+- **Test-side re-pins (sanctioned, GREEN, same increment as the `CommandLine`
+  change)** — `ExecFixtures usageLines` (five lines), `ManifestEditFixtures
+  addUsageLines`, `SelectiveUpdateFixtures selectiveUsageLines`,
+  `LockBoundaryFixtures sourceFlagNames`/`sourceClassNames`, `LockSchemaFixtures
+  boundaryClassNames`/`boundaryFileFor:`/`probeSenderFileNames`, and
+  `BoundaryCoverageTest`'s two declared growth points (the SparseIndexSource
+  malformed-listing driver row; the sender-class oracle).
+
+New test files (Stage 3, reviewed at Gate A): `tests/support/SparseIndexFixtures.st`
+(fixtures, pinned wordings, `CountingProcessRunner` — records AND delegates to the
+settled `ProcessRunner`), `tests/laws/SparseIndexSourceTest.st` (23 laws; operator-
+amended at the flip), `tests/laws/IndexFlagTest.st` (8 laws),
+`tests/acceptance/Sprint14AcceptanceTest.st` (S1–S16, one selector each).
+
+## Verification evidence
+
+From `.parley/audit` (wrap re-run):
+
+```
+sprint: 14
+date: 2026-08-04T18:06:11Z
+toolchain: GNU Smalltalk version 3.2.5
+PARLEY-SEED: 20260718
+PARLEY-VERIFY: PASS seed=20260718 run=709 passed=709 failed=0 errors=0
+```
+
+Toolchain: `gst --version` → `GNU Smalltalk version 3.2.5`; `gst-package --version`
+→ `gst-package - GNU Smalltalk version 3.2.5`; `curl --version` → `curl 8.5.0
+(x86_64-pc-linux-gnu)`. Every URL in every law is a `file://` absolute path; no law
+contacts a network; `ProcessRunner` remains the only class that spawns.
+
+662 settled laws stayed green throughout. The two declared passes-in-red (the
+`--index` exclusivity laws) now pass for the mutual-exclusion reason — `--index` is
+a real flag and a usage error builds no source, proved on a `TrapRunner`. The
+traceability gate matched `testS1_`–`testS16_` to the issue's scenarios.
+
+**GREEN-time amendments to the (then-untracked) acceptance file, disclosed on #16
+(comment 5182819780):** S7's line selector matched the settled unquoted
+`Incompatibility` narration (pinned byte-for-byte by `TermIncompatibilityTest`), and
+S16's fixture published the probe star under its real name — probed toolchain fact:
+`gst-package` 3.2.5 rejects a staged `.star` whose file name does not match the
+`package.xml` name inside it. Neither weakens an assertion; both were probed with
+throwaway `gst -q` scripts and the answers pasted in the report.
+
+## Noted, not built
+
+- **Publishing into a sparse layout** — `publish <dir>` writes the flat directory
+  layout only; the listing-writing half is Sprint 15's release hardening, per the
+  issue's out-of-scope list.
+- **Cache pruning / size budget** — the `--index` cache is the second unpruned
+  cache, declared in the issue, not discovered later.
+- **Archive-miss wording of `fetch:version:`** — a transport miss (37/22) on an
+  archive fetch leaves the diagnosis to the inner source's settled missing-archive
+  problem rather than inventing a fourth transport wording. No law pins the sparse
+  spelling of that path; if an operator-facing wording is wanted, it is one problem
+  string and one law.
+- **Stage 1 checklist blind spot** (from Ambiguity #2, restated for Gate B): no
+  checklist item asks "which settled verbs does this change the meaning of without
+  changing their code?" — S16 exists because the decision-51 ruling walked past the
+  defect, not because a mechanism caught it.
+- **`seededWith:` on a future `PubGrubStrategy` swap** — nothing to do now; noted
+  that the seam is on the *source* protocol, so a strategy swap does not touch it.
+
+## Close-out
+
+Committed as `feat(source)` on `main`. HALTED for the Gate B close-out review.

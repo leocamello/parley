@@ -202,7 +202,7 @@ construction; zero public setters.'>
                     ' is not pinned in parley.lock')
                 exitCode: 1].
         held := self heldVersionsOf: pinned except: aName.
-        narrowed := source snapshot holding: held.
+        narrowed := self seededSource snapshot holding: held.
         deleted := self deletedHeldPinLineIn: held against: narrowed.
         deleted notNil ifTrue: [
             ^CliResult lines: (Array with: deleted) exitCode: 1].
@@ -299,7 +299,7 @@ construction; zero public setters.'>
         before := self loadManifest.
         pinned := self pinnedResolution.
         held := self heldVersionsOf: pinned except: nil.
-        narrowed := source snapshot holding: held.
+        narrowed := (self seededSourceAdding: aName) snapshot holding: held.
         deleted := self deletedHeldPinLineIn: held against: narrowed.
         deleted notNil ifTrue: [
             ^CliResult lines: (Array with: deleted) exitCode: 1].
@@ -396,7 +396,7 @@ construction; zero public setters.'>
             chain: manifest name, ' ', manifest version printString
             visited: (Set with: manifest name)
             resolution: resolution
-            snapshot: source snapshot
+            snapshot: self seededSource snapshot
             into: chains.
         ^CliResult
             lines: (chains asSortedCollection: [:a :b | a <= b]) asArray
@@ -421,7 +421,7 @@ construction; zero public setters.'>
             depth: 1
             seen: (Set with: manifest name)
             resolution: resolution
-            snapshot: source snapshot
+            snapshot: self seededSource snapshot
             into: lines.
         ^CliResult lines: lines asArray exitCode: 0
     ]
@@ -446,7 +446,7 @@ construction; zero public setters.'>
         problems := OrderedCollection new.
         problems addAll:
             (PinVerification of: manifest lock: resolution) problems.
-        snapshot := source snapshot.
+        snapshot := self seededSource snapshot.
         resolution packageNames do: [:name |
             | version reason |
             version := resolution versionOf: name.
@@ -872,7 +872,7 @@ construction; zero public setters.'>
         <category: 'private'>
         | outcome |
         outcome := (Resolver strategy: BacktrackingStrategy new)
-            resolve: aManifest against: source snapshot.
+            resolve: aManifest against: self seededSource snapshot.
         outcome isResolution ifTrue: [self writeLock: outcome].
         ^outcome
     ]
@@ -892,6 +892,51 @@ construction; zero public setters.'>
     ]
 
     "---- collaborating paths and values ----"
+
+    seededSource [
+        "Private — the source told which names matter (§8 decision
+         51): seededWith: is sent unconditionally at every snapshot
+         site, and each source answers per its own nature — the
+         scanning sources answer self, the sparse source a new seeded
+         instance. The CLI supplies the seeds because the source must
+         never read Package.st or parley.lock."
+        <category: 'private'>
+        ^source seededWith: self seedNames
+    ]
+
+    seededSourceAdding: aName [
+        "Private — the add verb's seeded source: add snapshots BEFORE
+         it edits Package.st, so the added name is in neither file the
+         seed set is otherwise built from and must be seeded
+         explicitly (issue #16 S16)."
+        <category: 'private'>
+        | names |
+        names := self seedNames.
+        names add: aName.
+        ^source seededWith: names
+    ]
+
+    seedNames [
+        "Private — the decision-51 seed set: the manifest's declared
+         dependency names union the lock's pinned names, gathered
+         BEST-EFFORT. Each file has a settled boundary that owns its
+         diagnosis (the missing-manifest line, the lock boundary), and
+         seed gathering must never pre-empt it: a file that cannot be
+         read here contributes nothing, and the verb itself diagnoses
+         it — resolve with a corrupt lock stays exit 0 (Doc E §4.1)."
+        <category: 'private'>
+        | names |
+        names := Set new.
+        [(ManifestFile load: self packagePath) dependencies
+            do: [:each | names add: each name]]
+            on: Error do: [:e | nil].
+        [| pinned |
+         pinned := self pinnedResolution.
+         pinned notNil ifTrue: [
+            pinned packageNames do: [:each | names add: each]]]
+            on: Error do: [:e | nil].
+        ^names
+    ]
 
     loadManifest [
         "Private — the working directory's own Package.st through
@@ -958,10 +1003,11 @@ construction; zero public setters.'>
         <category: 'private'>
         ^CliResult
             lines: (Array
-                with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
+                with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
                 with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
                 with: 'flags: --source <dir>  index entries in a local directory'
-                with: '       --git <repo>    index entries in a git repository')
+                with: '       --git <repo>    index entries in a git repository'
+                with: '       --index <base>  index entries fetched per package from a sparse index')
             exitCode: 2
     ]
 

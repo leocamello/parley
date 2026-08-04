@@ -767,13 +767,14 @@ Parley define: [:pkg |
 
     ManifestEditFixtures class >> addUsageLines [
         "The full pinned usage block with the new verbs: line - the
-         other three lines are the settled ones, unchanged."
+         other lines are the settled ones, --index re-pinned at Sprint 14."
         <category: 'pinned wordings'>
         ^Array
-            with: 'usage: parley <verb> [--source <dir> | --git <repo>]'
+            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
             with: self usageVerbsLine
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
+            with: '       --index <base>  index entries fetched per package from a sparse index'
     ]
 ]
 

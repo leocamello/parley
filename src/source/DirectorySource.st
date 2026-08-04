@@ -40,6 +40,16 @@ and the install-time fetch:version: of Doc D §1.1.'>
         path := aPathString
     ]
 
+    seededWith: someNames [
+        "Answer a source told that someNames matter (§8 decision 51).
+         A source that reads its whole index genuinely has nothing to
+         do with the information — self is the honest answer, not a
+         stub — and answering it is what lets every call site send the
+         message unconditionally, with no kind-branching."
+        <category: 'source protocol'>
+        ^self
+    ]
+
     snapshot [
         "The source's one I/O moment: read every artifact file once, in
          sorted-filename order, and answer the sealed immutable

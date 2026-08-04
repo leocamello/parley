@@ -125,7 +125,8 @@ declares, and one malformed-input law per declared boundary.'>
             = LockSchemaFixtures probeSenderFileNames
             description: 'the src/ walk answered ', senders printString.
         self assert: LockSchemaFixtures readerSenderClassNames
-            = (Array with: 'CLI' with: 'DirectorySource')
+            = (Array with: 'CLI' with: 'DirectorySource'
+                with: 'SparseIndexSource')
     ]
 
     testTheEnumerationSurvivesALineSplitSender [
@@ -207,7 +208,7 @@ declares, and one malformed-input law per declared boundary.'>
          names are asserted against the declared names first, so a row
          added without a driver fails here rather than widening the
          claim silently."
-        | lockWork lockIndex indexWork badIndex authorWork authorIndex rows |
+        | lockWork lockIndex indexWork badIndex authorWork authorIndex sparseWork sparseBase rows |
         lockWork := self diamondWorkDir: 'boundary-lock-work'.
         lockIndex := self freshDir: 'boundary-lock-index'.
         LockSchemaFixtures
@@ -220,13 +221,27 @@ declares, and one malformed-input law per declared boundary.'>
         authorWork := self track: (LockBoundaryFixtures
             invalidDeclarationWorkDirNamed: 'boundary-author-work').
         authorIndex := self freshDir: 'boundary-author-index'.
+        sparseWork := self track: (SparseIndexFixtures
+            workDirNamed: 'boundary-sparse-work'
+            declaring: 'root-dep' constraint: '^1.0').
+        sparseBase := self track: (SparseIndexFixtures
+            baseTreeNamed: 'boundary-sparse-base').
+        SparseIndexFixtures
+            writeListing: SparseIndexFixtures wrongTagListingText
+            for: 'root-dep' in: sparseBase.
         rows := Array
             with: (Array with: 'CLI'
                 with: [self installIn: lockWork source: lockIndex])
             with: (Array with: 'DirectorySource'
                 with: [self resolveIn: indexWork source: badIndex])
             with: (Array with: 'ManifestFile'
-                with: [self resolveIn: authorWork source: authorIndex]).
+                with: [self resolveIn: authorWork source: authorIndex])
+            with: (Array with: 'SparseIndexSource'
+                with: [(CommandLine in: sparseWork
+                        runner: ProcessRunner new)
+                    run: (Array with: 'resolve' with: '--index'
+                        with: (SparseIndexFixtures
+                            baseUrlFor: sparseBase))]).
         self assert: (((rows collect: [:row | row at: 1])
             asSortedCollection: [:a :b | a <= b]) asArray)
                 = (LockSchemaFixtures namesOfBoundaryClassesIn:

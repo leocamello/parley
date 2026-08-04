@@ -247,17 +247,18 @@ uniqueness comes from per-test labels.'>
     "---- the deserialization-boundary table (Doc E §4.2) ----"
 
     LockSchemaFixtures class >> boundaryClassNames [
-        "The three declared boundaries, sorted. Two are senders of
-         IndexEntryReader readFrom: — the CLI's parley.lock read and the
-         DirectorySource scan (which, from this sprint, also reads
+        "The four declared boundaries, sorted. Three are senders of
+         IndexEntryReader readFrom: — the CLI's parley.lock read, the
+         DirectorySource scan (which, from Sprint 10, also reads
          retirement records through the same sender, so the new schema
-         is covered the moment it exists). The third, ManifestFile, is
+         is covered the moment it exists) and, from Sprint 14, the
+         SparseIndexSource listing read. The fourth, ManifestFile, is
          declared alongside them because it reads an operator-editable
          file by a DIFFERENT mechanism (file-in, not the reader) and is
          exactly the kind of boundary a reader-anchored enumeration would
          otherwise miss."
         <category: 'boundary table'>
-        ^#('CLI' 'DirectorySource' 'ManifestFile')
+        ^#('CLI' 'DirectorySource' 'ManifestFile' 'SparseIndexSource')
     ]
 
     LockSchemaFixtures class >> boundaryFileFor: aClassName [
@@ -270,6 +271,7 @@ uniqueness comes from per-test labels.'>
         aClassName = 'DirectorySource'
             ifTrue: [^'index entries and retirement records'].
         aClassName = 'ManifestFile' ifTrue: [^'Package.st'].
+        aClassName = 'SparseIndexSource' ifTrue: [^'version listings'].
         ^nil
     ]
 
@@ -380,7 +382,7 @@ uniqueness comes from per-test labels.'>
          the SAME code path over a fabricated tree under tmp/.
 
          PROBED against the toolchain: the walk answers
-         ('exec/CLI.st' 'source/DirectorySource.st'), while
+         probeSenderFileNames, while
          (File name: 'src') files answers (). probeSenderFileNames
          records that answer, and
          testTheEnumerationSeesTheRealSenders holds this method to it."
@@ -469,7 +471,8 @@ uniqueness comes from per-test labels.'>
          future sender lands, this list and the table both have to move,
          which is the point."
         <category: 'drift law'>
-        ^#('exec/CLI.st' 'source/DirectorySource.st')
+        ^#('exec/CLI.st' 'source/DirectorySource.st'
+            'source/SparseIndexSource.st')
     ]
 
     LockSchemaFixtures class >> undeclaredSendersIn: aTable [

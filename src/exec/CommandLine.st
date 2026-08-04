@@ -138,6 +138,8 @@ equality (the decision-23 precedent).'>
                 with: #directorySourceOn:)
             with: (Array with: '--git' with: GitIndexSource
                 with: #gitSourceOn:)
+            with: (Array with: '--index' with: SparseIndexSource
+                with: #indexSourceOn:)
     ]
 
     "---- the declared deserialization boundaries (Doc E §4.2) ----"
@@ -165,7 +167,9 @@ equality (the decision-23 precedent).'>
          senders are the CLI's parley.lock read (§4.1) and the
          DirectorySource scan (Doc F §4/§4.1/§4.2) — which from Sprint
          10 also reads retirement records through that same sender, so
-         the new schema is covered the moment it exists. ManifestFile is
+         the new schema is covered the moment it exists — and, from
+         Sprint 14, the SparseIndexSource listing read (Doc F §7.2).
+         ManifestFile is
          declared alongside them because it reads an operator-editable
          file by a DIFFERENT mechanism (file-in, not the reader) and is
          precisely the boundary a reader-anchored enumeration would
@@ -179,11 +183,13 @@ equality (the decision-23 precedent).'>
          row a boundary rather than a reader: a row that cannot name the
          operator's file does not belong here."
         <category: 'deserialization boundaries'>
-        ^Array
+        ^(Array
             with: (Array with: CLI with: 'parley.lock')
             with: (Array with: DirectorySource
                 with: 'index entries and retirement records')
-            with: (Array with: ManifestFile with: 'Package.st')
+            with: (Array with: ManifestFile with: 'Package.st')),
+            (Array with: (Array with: SparseIndexSource
+                with: 'version listings'))
     ]
 
     CommandLine class >> sourceFlagNames [
@@ -367,6 +373,22 @@ equality (the decision-23 precedent).'>
             runner: runner
     ]
 
+    indexSourceOn: aBaseUrl [
+        "Private — the '--index <base>' builder (Sprint 14): the --git
+         convention applied to the second remote source. The cache
+         lives under the working directory, keyed through the settled
+         Sha256 of the base URL — any URL becomes one deterministic
+         filesystem-safe name. The cache ROOT is created here; the
+         layout inside it is the source's own business, at its one I/O
+         moment."
+        <category: 'private-wiring'>
+        self ensureDirectory: self indexCacheRoot.
+        ^SparseIndexSource
+            base: aBaseUrl
+            cache: (self indexCachePathFor: aBaseUrl)
+            runner: runner
+    ]
+
     createStateDirectories [
         "Private — the run's one construction moment. Construction
          stays pathname-passive; the state directories appear when a
@@ -405,6 +427,16 @@ equality (the decision-23 precedent).'>
     gitCachePathFor: aRepoPath [
         <category: 'private-wiring'>
         ^self gitCacheRoot, '/', (Sha256 hexDigestOf: aRepoPath)
+    ]
+
+    indexCacheRoot [
+        <category: 'private-wiring'>
+        ^self parleyDir, '/index'
+    ]
+
+    indexCachePathFor: aBaseUrl [
+        <category: 'private-wiring'>
+        ^self indexCacheRoot, '/', (Sha256 hexDigestOf: aBaseUrl)
     ]
 
     "---- the undiagnosed shape ----"

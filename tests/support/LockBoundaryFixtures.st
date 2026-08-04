@@ -355,8 +355,7 @@ uniqueness comes from per-test labels.'>
          File>>files answers regular files only, and src/source/ holds
          nothing but .st files. Probed against the toolchain before this
          fixture was written — (File name: 'src/source') files answers
-         three entries: DirectorySource.st, GitIndexSource.st and
-         SourceError.st. (Contrast CommandLineFixtures
+         the .st entries: the *Source classes and SourceError.st. (Contrast CommandLineFixtures
          srcSubdirectoryNames, which enumerates DIRECTORIES and must use
          namesDo: for exactly that reason.)
 
@@ -379,7 +378,7 @@ uniqueness comes from per-test labels.'>
         "The flags the table declares, sorted — the oracle for the
          grammar half of Doc E §4.2."
         <category: 'drift law'>
-        ^#('--git' '--source')
+        ^#('--git' '--index' '--source')
     ]
 
     LockBoundaryFixtures class >> sourceClassNames [
@@ -387,7 +386,7 @@ uniqueness comes from per-test labels.'>
          *Source class must appear; a class inside a named directory
          that no flag builds is exactly the GitIndexSource gap."
         <category: 'drift law'>
-        ^#('DirectorySource' 'GitIndexSource')
+        ^#('DirectorySource' 'GitIndexSource' 'SparseIndexSource')
     ]
 
     LockBoundaryFixtures class >> namesOfSourceClassesIn: aFlagTable [

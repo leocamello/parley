@@ -60,7 +60,8 @@ third-party content ever reaches a compiler pathway.'>
 
     IndexEntryReader class >> formatTags [
         "The whitelist: every format tag this Parley reads (Doc B §7).
-         #'parley-retired' joined it at Sprint 10 (Doc B §5.5) as a
+         #'parley-retired' joined it at Sprint 10 (Doc B §5.5) and
+         #'parley-listing' at Sprint 14 (Doc B §5.6), each as a
          DECLARED settled-class exception — adding a tag is never a
          silent widening, because 'unknown tag is an error' is what
          makes the forward-evolution point real.
@@ -71,7 +72,7 @@ third-party content ever reaches a compiler pathway.'>
          in the same change, which is the rule the Sprint 10 RED review
          ruled (Doc B §7)."
         <category: 'reading'>
-        ^#(#'parley-index' #'parley-lock' #'parley-retired')
+        ^#(#'parley-index' #'parley-lock' #'parley-retired' #'parley-listing')
     ]
 
     IndexEntryReader class >> formatTagsText [
