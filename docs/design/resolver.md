@@ -6,13 +6,14 @@
 
 ## 1. `PackageSource` (polymorphic sources — Cargo's `Source` model)
 
-The resolver never knows where packages live. Protocol, implemented by `DirectorySource`, `GitIndexSource`, `RegistrySource`:
+The resolver never knows where packages live. Protocol, implemented by `DirectorySource`, `GitIndexSource`, `SparseIndexSource`, `RegistrySource`:
 
 ```smalltalk
 versionsOf: aPackageName                 "collection of Version"
 manifestFor: aPackageName version: aVersion
     "index-entry data (via IndexEntryReader) — NEVER a Package.st evaluation"
 fetch: aPackageName version: aVersion    "archive retrieval — install time ONLY"
+seededWith: someNames                    "answer a source told which names matter (§1.2)"
 snapshot                                 "the immutable IndexSnapshot of §2"
 ```
 
@@ -27,6 +28,20 @@ A directory of index-entry files, read entirely at `snapshot` time:
 - **Hashes:** a release's `sha256` is taken from the entry's `#archive` field (`#(<file> #sha256 '<hash>')`); an empty `#archive #()` — today's `IndexEntryWriter` output — yields `''`, exactly the `IndexSnapshot` "absent" convention. Real hashing arrives with the installer/publish work.
 - **Errors:** problems are batched into one `SourceError` (the `ManifestError problems` style — a `problems` array of human-readable strings in sorted-filename order): a file that does not parse as a literal artifact (carrying the reader's positioned reason), a file whose artifact is not a `#'parley-index' 1` entry, a duplicate (name, version) across files, a **§5.2 schema-shape violation** (Sprint 7, closing the Sprint 4 ruled gap — full contract in [publish-and-sources.md](publish-and-sources.md) §4), or a missing/unreadable directory. A directory that scans clean but empty answers an empty snapshot — resolution then fails as an ordinary `#noVersions` `ConflictReport`, a value, never a source error.
 - **Fetch:** `fetch:version:` answers the raw bytes of the archive file named by the entry's `#archive` field, resolved relative to the source directory; problems (unknown (package, version), `#archive #()`, missing/unreadable archive file) signal a one-problem `SourceError` — full contract in [installer.md](installer.md) §1.1 (this was a stub through Sprint 4). The metadata/archive split holds by construction: resolution consumes the snapshot value, so the fetch path cannot be touched mid-resolution.
+
+### 1.2 `seededWith:` — a source is told what matters, it never reads the project (Sprint 14, §8 decision 51)
+
+A scanning source reads its whole index, so it needs no hint about which packages a project cares about. A **sparse** source cannot: §8 decision 50 makes `snapshot` a transitive pre-fetch closure, and a closure needs a seed. `seededWith: someNames` is where that seed enters, and it is on the protocol rather than on one class so that no caller ever asks which kind of source it holds.
+
+```smalltalk
+seededWith: someNames    "answer a source told that someNames matter"
+```
+
+- **`DirectorySource` and `GitIndexSource` answer `self`.** Not a stub: a source that reads its entire index genuinely has nothing to do with the information. Answering `self` is the honest implementation, and it is what lets every call site send the message unconditionally.
+- **`SparseIndexSource` answers a new instance** holding the seeds (structural immutability, the §2.2 `holding:` shape — an operation answers a new value, the receiver is unchanged), and its `snapshot` walks the closure from them.
+- **The caller is the `CLI`**, and that placement is forced. The seed set is *the root manifest's declared names union the lock's pinned names* (decision 50), and the `CLI` is the only object holding both at the moment `snapshot` is sent — it has already loaded the manifest and already read the lock through the settled Doc E §4.1 boundary. Anywhere else, the seeds could only be obtained by reading `Package.st` or `parley.lock` a second time, which duplicates a settled deserialization boundary and gives the same malformed file two diagnoses. **The source therefore never reads the project**, and a `PackageSource` can never signal `ManifestError` or `LockError` out of `snapshot`.
+- **`add` seeds the name it is adding.** `add <name> <constraint>` takes its snapshot *before* it edits `Package.st` (the edit must be rollback-able, so it happens as late as possible), then resolves the post-edit manifest against that snapshot. A scanning source never noticed, because it holds the whole index either way. A sparse source would never have fetched the added name's listing — it is in neither the manifest nor the lock — and §8 decision 47 would turn the miss into an ordinary `#noVersions` conflict, so the verb would fail always and blame the package. The name being added is part of what matters to this invocation, so it is part of the seed.
+- **Polymorphism, never a kind-check.** No `isKindOf:`, and no `respondsTo:` either — that is a kind-check spelled differently. The resolver still never learns which source fed it, and the purity contract of §2 is untouched: `seededWith:` performs no I/O, answering a source that has not yet read anything.
 
 ## 2. The Snapshot & Purity Contract
 
