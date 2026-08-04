@@ -35,6 +35,17 @@ if [[ "$PHASE" != "green" ]]; then
   exit 1
 fi
 
+# docs/method/ is operator-authored: the findings file grades the pipeline, and the
+# agent is the subject of most of its entries as well as having no cross-sprint
+# memory to write them from. The scope regex admits docs/, so the sentinel cannot
+# express this — the wrap refuses instead. This pipeline mechanizes its
+# conventions rather than trusting them.
+if git diff --cached --name-only | grep -q '^docs/method/'; then
+  echo "🛑 Wrap aborted: docs/method/ is operator-authored; unstage it." >&2
+  echo "   Method findings are written by the human operator at Gate B." >&2
+  exit 1
+fi
+
 # Scenario <-> test traceability gate: every numbered scenario Sn declared in
 # the milestone tracking issue must map to at least one acceptance test whose
 # selector contains 'Sn' (convention: testS3_...). Hard block on gaps.
