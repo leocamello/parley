@@ -215,4 +215,51 @@ throwaway `gst -q` scripts and the answers pasted in the report.
 
 ## Close-out
 
-Committed as `feat(source)` on `main`. HALTED for the Gate B close-out review.
+Committed as `feat(source)` on `main`. **Gate B passed** — issue #16 closed, commit
+`d54b490`, 709 laws.
+
+**Verified independently, not accepted.** `./scripts/verify-sprint.sh` re-run by the
+operator: `PARLEY-VERIFY: PASS seed=20260718 run=709 passed=709 failed=0 errors=0`,
+agreeing with `.parley/audit` on seed, counts and date. The commit touches exactly
+the five declared exceptions and nothing else in `src/`.
+
+**Both disclosed RED-file amendments were re-derived from the settled tree rather
+than taken on trust, and both are accepted as corrections, not weakenings.** S7's
+reviewed spelling (`no version of 'ghost'`, quoted) is one the settled
+`Incompatibility` narration never produces — `TermIncompatibilityTest.st:160` pins
+`no version of a satisfies >=9.0.0 <10.0.0`, unquoted — so the law as reviewed was
+unsatisfiable without touching settled resolver output that no exception covers.
+The assertion still requires the `#noVersions` narration naming `ghost`, and both
+`deny:` guards (no undiagnosed-line prefix, no `curl` leak) survive intact. **The
+operator missed this at Gate A**; the agent found it by probing and disclosed it,
+which is the protocol working. S16's rename from `newdep` to `parley-probe` is
+forced by the toolchain fact that `gst-package` 3.2.5 rejects a staged `.star` whose
+filename does not match the internal `package.xml` name; the regression guarded is
+name-agnostic, the `init` template declares no dependency, so the added name is
+still in neither the manifest nor the lock and the law still discriminates.
+`BoundaryCoverageTest` grew additively at the two points its own comments declare as
+growth points — a third sender-class name and a fourth driver row — which is the
+decision-38 drift law doing its job, not a settled law being bent.
+
+**One close-out ruling, not flagged by the agent: [§8 decision 52](../design/architecture.md#8-decision-log).**
+`CLI >> seedNames` gathers the seed set best-effort, and it is *right* to — `resolve`
+must ignore a corrupt lock (Doc E §4.1) and the missing-manifest sentence belongs to
+`ManifestFile` (decision 31). But both catches take `Error` rather than the two
+declared boundary errors they defer to, so a programming error inside seed gathering
+leaves not an exception but a **silently empty or partial seed set**. Under a
+scanning source that is invisible; under `--index` it is decision 47's describability
+line, and the verb answers a `#noVersions` conflict **blaming the package** — the
+exact wrong-blame diagnosis S16 exists to prevent, arriving silently, on the one path
+no fixture exercises because every law's seed gathering succeeds. **Carried gap,
+unscheduled** — latent rather than live, since nothing in the gathering path signals
+outside `ManifestError` and `LockError` today. No consumer constraint. The fix is two
+identifiers plus one law; the trigger is the next sprint that touches seeding or the
+CLI's error taxonomy.
+
+**The Stage 1 blind spot recorded above (Ambiguity #2) is carried forward as the
+sprint's most useful finding.** Decision 52 is its second instance in one sprint: both
+defects live in a *settled* class whose behaviour the new surface changed without
+changing its code, and in both the observable symptom is a confident, wrong,
+package-blaming conflict. S16 caught the first because a ruling walked past it, and
+the second was caught by a close-out read rather than by a law. That is twice that the
+mechanism was luck.
