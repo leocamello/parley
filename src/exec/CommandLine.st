@@ -142,6 +142,83 @@ equality (the decision-23 precedent).'>
                 with: #indexSourceOn:)
     ]
 
+    "---- the declared publish layouts (Doc F §8.1, §8 decision 53) ----"
+
+    CommandLine class >> publishLayouts [
+        "The layout -> spec table for publish: each row is the name the
+         operator states and the Publisher layout spec it selects.
+
+         THE LAYOUT IS STATED, NEVER INFERRED (§8 decision 53). Reading
+         the destination to guess would make an EMPTY directory
+         ambiguous — a brand-new index, the commonest case, is exactly
+         the one with no evidence to read — and would turn a mistyped
+         path into a successful publish into the wrong shape rather
+         than an error. That is the same failure publish already
+         refuses when it declines to CREATE a destination that is not
+         there, and the same one the flag grammar refuses when --source
+         with --git is a usage error instead of a silent preference. An
+         unrecognized value is a usage error at exit 2, never a
+         fallback.
+
+         A DECLARATION CONSUMED TWICE, exactly as sourceFlags is: the
+         wiring looks a row up by name, and the drift law drives a real
+         publish through every row — so a layout can never be lawful
+         and unreachable, which is the defect GitIndexSource shipped
+         with for a whole sprint.
+
+         The spec belongs to the Publisher, where the methods it names
+         live; this table declares which layouts EXIST, and asking for
+         the spec rather than restating it is what keeps the two from
+         drifting apart. flat is first because it is the default."
+        <category: 'publish layouts'>
+        ^Array
+            with: (Array with: 'flat' with: Publisher flatLayout)
+            with: (Array with: 'sparse' with: Publisher sparseLayout)
+    ]
+
+    "---- the version answer (Doc E §4.2, issue #17 S12/S13) ----"
+
+    CommandLine class >> versionFlag [
+        "The one valueless flag Parley recognizes, declared here so the
+         grammar has exactly one exception and it has a name."
+        <category: 'version'>
+        ^'--version'
+    ]
+
+    CommandLine class >> versionLine [
+        "What parley --version prints: the tool, then its version from
+         the single definition on the authoring gateway. Only the tool
+         name is spelled here; the version is never restated."
+        <category: 'version'>
+        ^'parley ', Parley version
+    ]
+
+    CommandLine class >> publishLayoutFlag [
+        "The flag that states the layout. A VALUED flag rather than a
+         bare --sparse switch is deliberate: valueOf:in: already reads
+         --flag <value> pairs, so the settled argv grammar needs no new
+         shape."
+        <category: 'publish layouts'>
+        ^'--layout'
+    ]
+
+    CommandLine class >> defaultPublishLayout [
+        "The layout publish writes when the flag is absent: flat, so
+         every settled publish keeps its byte-identical output."
+        <category: 'publish layouts'>
+        ^self publishLayoutNamed: 'flat'
+    ]
+
+    CommandLine class >> publishLayoutNamed: aName [
+        "The declared row for aName, or nil when the table declares
+         none — which the caller answers as usage, never as a
+         fallback."
+        <category: 'publish layouts'>
+        self publishLayouts do: [:row |
+            (row at: 1) = aName ifTrue: [^row]].
+        ^nil
+    ]
+
     "---- the declared deserialization boundaries (Doc E §4.2) ----"
 
     CommandLine class >> deserializationBoundaries [
@@ -168,7 +245,14 @@ equality (the decision-23 precedent).'>
          DirectorySource scan (Doc F §4/§4.1/§4.2) — which from Sprint
          10 also reads retirement records through that same sender, so
          the new schema is covered the moment it exists — and, from
-         Sprint 14, the SparseIndexSource listing read (Doc F §7.2).
+         Sprint 14, the SparseIndexSource listing read (Doc F §7.2),
+         and from Sprint 15 the Publisher's read of the listing it is
+         about to rewrite (Doc F §8.2): publishing into an index that
+         already holds the package means loading its versions.st
+         first, which makes the producer a boundary exactly as the
+         consumer is. The same file kind, read from opposite ends of
+         the ecosystem, each naming it the way ITS operator can act
+         on.
          ManifestFile is
          declared alongside them because it reads an operator-editable
          file by a DIFFERENT mechanism (file-in, not the reader) and is
@@ -189,7 +273,9 @@ equality (the decision-23 precedent).'>
                 with: 'index entries and retirement records')
             with: (Array with: ManifestFile with: 'Package.st')),
             (Array with: (Array with: SparseIndexSource
-                with: 'version listings'))
+                with: 'version listings')
+                with: (Array with: Publisher
+                    with: 'version listings'))
     ]
 
     CommandLine class >> sourceFlagNames [
@@ -243,6 +329,11 @@ equality (the decision-23 precedent).'>
         <category: 'private'>
         | args |
         args := self withoutLeadingMarker: anArgvArray.
+        "Answered ahead of verb dispatch and BEFORE any state
+         directory is created: asking a tool its version is not
+         running a command in a project, so it needs no working
+         directory and must leave none behind."
+        (self isVersionRequest: args) ifTrue: [^self versionResult].
         "The source flags are mutually exclusive: both given is a usage
          error, because silently preferring one would make a typo look
          like a working command. Checked before anything is created or
@@ -250,6 +341,35 @@ equality (the decision-23 precedent).'>
         (self sourceRowsIn: args) size > 1 ifTrue: [^self usageResult].
         self createStateDirectories.
         ^(self cliWithSourceIn: args) run: (self verbArgvIn: args)
+    ]
+
+    isVersionRequest: anArgvArray [
+        "Private — ONE DECLARED SPECIAL CASE, and deliberately not a
+         new grammar class.
+
+         The settled grammar reads --flag <value> pairs, and
+         valueOf:in: treats a TRAILING flag as not a flag: it travels
+         on to the settled CLI, which answers usage at exit 2. Several
+         settled laws rest on exactly that. --version carries no value,
+         and teaching the grammar that valueless flags are flags would
+         silently change what every one of those laws is testing
+         without touching a line of them — they would keep passing and
+         would no longer be about the same thing.
+
+         So the shape is recognized here, once, and narrowly: the whole
+         argv is the flag and nothing else. Anything longer travels on
+         as the unknown shape it is."
+        <category: 'private-grammar'>
+        ^anArgvArray size = 1
+            and: [(anArgvArray at: 1) = self class versionFlag]
+    ]
+
+    versionResult [
+        "Private — one line naming the tool and its version, exit 0.
+         The version half comes from Parley version, which is its one
+         definition (issue #17 S13)."
+        <category: 'private'>
+        ^CliResult lines: (Array with: self class versionLine) exitCode: 0
     ]
 
     usageResult [

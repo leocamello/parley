@@ -110,11 +110,19 @@ lines name the flag while the verbs: line is unchanged.'>
         "SparseIndexSource is the fourth sender of IndexEntryReader
          readFrom: (Doc F §7.2), so it is the fourth row, and the row
          names the operator-editable file it reads. A row that cannot
-         name the operator's file is not a boundary; it is a reader."
+         name the operator's file is not a boundary; it is a reader.
+
+         The enumeration gained Publisher at Sprint 15 (issue #17): the
+         producer reads the same listing this source does, so it is the
+         fifth row. Re-pinned in GREEN with the CommandLine change, the
+         Sprint 11/12/13/14 precedent — this law's own claim, that the
+         FOURTH row is SparseIndexSource paired with its file, is
+         unchanged and still asserted below."
         | rows sparseRows |
         rows := CommandLine deserializationBoundaries.
         self assert: (LockSchemaFixtures namesOfBoundaryClassesIn: rows)
-            = #('CLI' 'DirectorySource' 'ManifestFile' 'SparseIndexSource').
+            = #('CLI' 'DirectorySource' 'ManifestFile' 'Publisher'
+                'SparseIndexSource').
         sparseRows := rows select: [:row |
             (row at: 1) name asString = 'SparseIndexSource'].
         self assert: sparseRows size = 1.

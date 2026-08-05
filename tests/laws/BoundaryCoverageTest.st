@@ -126,7 +126,7 @@ declares, and one malformed-input law per declared boundary.'>
             description: 'the src/ walk answered ', senders printString.
         self assert: LockSchemaFixtures readerSenderClassNames
             = (Array with: 'CLI' with: 'DirectorySource'
-                with: 'SparseIndexSource')
+                with: 'Publisher' with: 'SparseIndexSource')
     ]
 
     testTheEnumerationSurvivesALineSplitSender [
@@ -208,7 +208,7 @@ declares, and one malformed-input law per declared boundary.'>
          names are asserted against the declared names first, so a row
          added without a driver fails here rather than widening the
          claim silently."
-        | lockWork lockIndex indexWork badIndex authorWork authorIndex sparseWork sparseBase rows |
+        | lockWork lockIndex indexWork badIndex authorWork authorIndex sparseWork sparseBase publishWork publishDest rows |
         lockWork := self diamondWorkDir: 'boundary-lock-work'.
         lockIndex := self freshDir: 'boundary-lock-index'.
         LockSchemaFixtures
@@ -229,7 +229,16 @@ declares, and one malformed-input law per declared boundary.'>
         SparseIndexFixtures
             writeListing: SparseIndexFixtures wrongTagListingText
             for: 'root-dep' in: sparseBase.
-        rows := Array
+        "The fifth boundary (Sprint 15): the Publisher reads the
+         listing it is about to rewrite, so a malformed versions.st in
+         the DESTINATION is driven through the real publish verb."
+        publishWork := self track: (PublishLayoutFixtures
+            workDirNamed: 'boundary-publish-work' version: '1.0.0').
+        publishDest := self freshDir: 'boundary-publish-dest'.
+        PublishLayoutFixtures
+            writeListing: SparseIndexFixtures wrongTagListingText
+            in: publishDest.
+        rows := (Array
             with: (Array with: 'CLI'
                 with: [self installIn: lockWork source: lockIndex])
             with: (Array with: 'DirectorySource'
@@ -241,7 +250,12 @@ declares, and one malformed-input law per declared boundary.'>
                         runner: ProcessRunner new)
                     run: (Array with: 'resolve' with: '--index'
                         with: (SparseIndexFixtures
-                            baseUrlFor: sparseBase))]).
+                            baseUrlFor: sparseBase))])),
+            (Array with: (Array with: 'Publisher'
+                with: [(CommandLine in: publishWork
+                        runner: RecordingRunner new)
+                    run: (PublishLayoutFixtures
+                        publishArgvTo: publishDest layout: 'sparse')])).
         self assert: (((rows collect: [:row | row at: 1])
             asSortedCollection: [:a :b | a <= b]) asArray)
                 = (LockSchemaFixtures namesOfBoundaryClassesIn:

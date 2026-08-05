@@ -703,14 +703,18 @@ labels.'>
 
     SelectiveUpdateFixtures class >> selectiveUsageLines [
         "The full pinned usage block with the new verbs: line — the
-         other lines are the settled ones, --index re-pinned at Sprint 14."
+         other lines are the settled ones, --index re-pinned at Sprint
+         14 and --layout at Sprint 15 (the flags: block grew; the
+         verbs: line did not, because --layout is a flag on a settled
+         verb)."
         <category: 'pinned wordings'>
-        ^Array
+        ^(Array
             with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
             with: self usageVerbsLine
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
-            with: '       --index <base>  index entries fetched per package from a sparse index'
+            with: '       --index <base>  index entries fetched per package from a sparse index'),
+            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
     ]
 ]
 

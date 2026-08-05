@@ -247,18 +247,27 @@ uniqueness comes from per-test labels.'>
     "---- the deserialization-boundary table (Doc E §4.2) ----"
 
     LockSchemaFixtures class >> boundaryClassNames [
-        "The four declared boundaries, sorted. Three are senders of
+        "The five declared boundaries, sorted. Four are senders of
          IndexEntryReader readFrom: — the CLI's parley.lock read, the
          DirectorySource scan (which, from Sprint 10, also reads
          retirement records through the same sender, so the new schema
-         is covered the moment it exists) and, from Sprint 14, the
-         SparseIndexSource listing read. The fourth, ManifestFile, is
-         declared alongside them because it reads an operator-editable
-         file by a DIFFERENT mechanism (file-in, not the reader) and is
-         exactly the kind of boundary a reader-anchored enumeration would
-         otherwise miss."
+         is covered the moment it exists), from Sprint 14 the
+         SparseIndexSource listing read, and from Sprint 15 the
+         Publisher's read of the listing it is about to rewrite (Doc F
+         §8.2 — publishing into an index that already holds the package
+         means reading its versions.st first). The fifth, ManifestFile,
+         is declared alongside them because it reads an
+         operator-editable file by a DIFFERENT mechanism (file-in, not
+         the reader) and is exactly the kind of boundary a
+         reader-anchored enumeration would otherwise miss.
+
+         The two listing readers are the same file kind read from
+         opposite ends of the ecosystem, and each names it the way ITS
+         operator can act on: the client by base-relative URL path, the
+         publisher by the destination path the author typed."
         <category: 'boundary table'>
-        ^#('CLI' 'DirectorySource' 'ManifestFile' 'SparseIndexSource')
+        ^#('CLI' 'DirectorySource' 'ManifestFile' 'Publisher'
+            'SparseIndexSource')
     ]
 
     LockSchemaFixtures class >> boundaryFileFor: aClassName [
@@ -272,6 +281,7 @@ uniqueness comes from per-test labels.'>
             ifTrue: [^'index entries and retirement records'].
         aClassName = 'ManifestFile' ifTrue: [^'Package.st'].
         aClassName = 'SparseIndexSource' ifTrue: [^'version listings'].
+        aClassName = 'Publisher' ifTrue: [^'version listings'].
         ^nil
     ]
 
@@ -471,8 +481,8 @@ uniqueness comes from per-test labels.'>
          future sender lands, this list and the table both have to move,
          which is the point."
         <category: 'drift law'>
-        ^#('exec/CLI.st' 'source/DirectorySource.st'
-            'source/SparseIndexSource.st')
+        ^#('exec/CLI.st' 'publish/Publisher.st'
+            'source/DirectorySource.st' 'source/SparseIndexSource.st')
     ]
 
     LockSchemaFixtures class >> undeclaredSendersIn: aTable [

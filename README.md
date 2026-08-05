@@ -8,20 +8,33 @@ The language is called Smalltalk — casual conversation. A **parley** is the fo
 
 ## Status
 
-**Pre-alpha, and the core loop works end to end.** An author can publish a package into an index; a consumer can resolve it, install it, and execute code against it in a curated child image — every step driven through the shipped `bin/parley` binary, and proven that way by the test suite. What is *not* here yet: registry hosting, prerelease versions, yank/retire, and index signing. Interfaces may still move.
+**v1.0, and the loop closes in both directions.** An author can publish a package into an index — flat, or the per-package sparse layout a client reads without ever downloading the whole index — and a consumer can resolve it, install it, and execute code against it in a curated child image, over a local directory, a git checkout or a `file://`/HTTP base. Every step is driven through the shipped `bin/parley` binary and proven that way by the test suite. What is *not* here yet: **registry hosting**, **prerelease versions**, **index signing**, and a `parley retire` verb (retirement *records* are honoured — a retired release is excluded from fresh resolution and reported by `parley check` — but the index owner writes the record by hand).
 
 ## Commands
 
 ```
-parley init        Create a new package with a Package.st manifest
-parley install     Resolve, fetch, and register dependencies
-parley resolve     Resolve dependencies and write the lockfile
-parley update      Re-resolve, ignoring the existing lockfile
-parley exec        Run a program inside a curated, resolved environment
-parley publish     Build the archive and land a release in an index
+parley init                     Create a new package with a Package.st manifest
+parley resolve                  Resolve dependencies and write the lockfile
+parley install                  Resolve, fetch, and register dependencies
+parley update [<pkg>]           Re-resolve ignoring the lockfile — or move one package
+parley add <pkg> <constraint>   Declare a dependency and move the project onto it
+parley publish <dir>            Build the archive and land a release in an index
+parley exec <script>            Run a program inside a curated, resolved environment
+parley why <pkg>                Explain what put a package in the lockfile
+parley tree                     Show the pinned dependency graph
+parley check                    Verify the lockfile against the manifest and the index
+parley --version                Print the version, and nothing else
 ```
 
-`--source <dir>` selects a directory index, and `--git <repo>` a git repository of index entries, for the verbs that need one. The two are mutually exclusive. Parley's state for a project lives beside that project, under `<working-dir>/.parley/`.
+Three flags select the index for the verbs that need one, and they are mutually exclusive — giving two is a usage error rather than a silent preference, because a typo should not look like a working command:
+
+```
+--source <dir>    index entries in a local directory
+--git <repo>      index entries in a git repository (cloned once, pulled --ff-only)
+--index <base>    index entries fetched per package from a sparse index
+```
+
+Parley's state for a project lives beside that project, under `<working-dir>/.parley/` — never beside the process's current directory. There is nothing to activate and nothing global.
 
 ### Exit codes
 
@@ -35,6 +48,28 @@ Parley never answers a backtrace, and no failing command ever exits `0`:
 | `70` | a defect in **Parley**, not in your project. One line, never a dump. Please report it. |
 
 The split between `1` and `70` is deliberate and law-enforced: a script checking `$?` can tell "your input is wrong" from "the tool is broken".
+
+## Publishing a package
+
+`parley publish <dir>` builds the archive with `gst-package` from your own manifest and lands a release in the index directory you give it. An index is a directory you own — a folder, a git repository you push, a path behind any web server. There is no hosted registry to sign up for.
+
+The destination has two shapes, and **you state which one you are writing**:
+
+```sh
+parley publish ../my-index                    # flat (the default)
+parley publish ../my-index --layout sparse    # per-package
+```
+
+| Layout | What it writes | Who reads it |
+| --- | --- | --- |
+| `flat` | `<dir>/<name>-<version>.st` and `.star`, side by side | `--source`, `--git` |
+| `sparse` | `<dir>/<name>/` holding `versions.st`, the entry and the archive | `--index` |
+
+The layout is **stated, never inferred from the destination**: a brand-new index is empty and carries no evidence to read, so guessing would turn a mistyped path into a successful publish into the wrong shape. An unrecognized `--layout` value is a usage error at exit `2`, never a fallback to the default.
+
+Two rules hold in both layouts. **Releases are immutable** — publishing a `(name, version)` the index already holds is refused, and nothing is written. **A refusal leaves the destination as it found it**: the entry and the archive land before `versions.st` is rewritten, so an interrupted sparse publish leaves an index that is merely missing a release rather than one that claims to hold a release it does not have.
+
+`parley publish` needs no index flag: publishing produces index entries, it does not consume them.
 
 ## Using an installed package
 

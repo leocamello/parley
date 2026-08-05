@@ -20,6 +20,28 @@ creates a fresh ManifestBuilder, evaluates the author''s one-argument
 block with it, and answers the built immutable manifest. Shadows the
 Parley namespace binding inside the namespace itself (issue #3).'>
 
+    Parley class >> version [
+        "THE version of Parley, defined exactly once (issue #17 S13).
+
+         It is the first thing every bug report needs, and a version
+         that can drift between the constant and what the tool prints
+         drifts precisely when it matters. So parley --version composes
+         its line from this method and no law compares that line
+         against a second literal.
+
+         It lives on the authoring gateway because that is the one
+         class every path already reaches — the wrapper, the CLI and a
+         filed-in Package.st alike — and inventing a class to hold one
+         string would be a manager object with a single field.
+
+         1.0.0 is the release this sprint completes: v1.0 is the
+         complete, honest, local-and-git package manager whose client
+         already speaks the registry protocol, and it ships when the
+         code is done rather than when a service is."
+        <category: 'release'>
+        ^'1.0.0'
+    ]
+
     Parley class >> define: aBlock [
         "Evaluate aBlock with a fresh ManifestBuilder and answer the
          immutable LibraryManifest built from its declarations. The

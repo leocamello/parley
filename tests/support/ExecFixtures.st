@@ -359,19 +359,24 @@ stream close', SourceFixtures newline
     "---- pinned CLI wordings (posted on issue #8) ----"
 
     ExecFixtures class >> usageLines [
-        "The pinned usage answer: five lines, exit code 2. The verbs:
+        "The pinned usage answer: SIX lines, exit code 2. The verbs:
          line gained the three inspection verbs at Sprint 11 (issue
          #13) and update's optional package at Sprint 12 (issue #14);
          the header and flags: lines gained --index at Sprint 14
-         (issue #16) — each re-pin sanctioned at its RED review,
-         extending the settled block rather than replacing it."
+         (issue #16); the flags: block gained --layout at Sprint 15
+         (issue #17), while the verbs: line did NOT move, because
+         --layout is a flag on a settled verb and no verb moves this
+         sprint — each re-pin sanctioned at its RED review and applied
+         in GREEN with the class change, extending the settled block
+         rather than replacing it."
         <category: 'pinned wordings'>
-        ^Array
+        ^(Array
             with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
             with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
-            with: '       --index <base>  index entries fetched per package from a sparse index'
+            with: '       --index <base>  index entries fetched per package from a sparse index'),
+            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
     ]
 
     ExecFixtures class >> initSuccessLines [

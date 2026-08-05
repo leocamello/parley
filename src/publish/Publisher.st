@@ -21,7 +21,7 @@
 Namespace current: Parley.
 
 Object subclass: Publisher [
-    | manifest workingDir destDir runner |
+    | manifest workingDir destDir layout runner |
 
     <comment: 'The publish pipeline over four immutably held
 collaborators: the already-loaded LibraryManifest, the working
@@ -35,21 +35,71 @@ setters; no value equality.'>
         "Answer a publisher of aManifest, whose fileIns live in
          aWorkingDir, into the index directory aDestDir, spawning only
          through aProcessRunner. Pathname-passive: nothing is read,
-         written or spawned here."
+         written or spawned here.
+
+         The settled four-collaborator constructor, unchanged in
+         meaning: it publishes into the FLAT layout, which is what it
+         always did and what publish still writes when no --layout is
+         stated (§8 decision 53)."
+        <category: 'instance creation'>
+        ^self
+            manifest: aManifest
+            in: aWorkingDir
+            to: aDestDir
+            layout: self flatLayout
+            runner: aProcessRunner
+    ]
+
+    Publisher class >> manifest: aManifest in: aWorkingDir to: aDestDir layout: aLayout runner: aProcessRunner [
+        "The same publisher over a stated destination LAYOUT (Doc F
+         §8): aLayout is one of the specs below, and the destination
+         shape is a PARAMETER of one pipeline — never a subclass and
+         never a kind-check. Pathname-passive as always."
         <category: 'instance creation'>
         ^self new
             setManifest: aManifest
             workingDir: aWorkingDir
             destDir: aDestDir
+            layout: aLayout
             runner: aProcessRunner
     ]
 
-    setManifest: aManifest workingDir: aWorkingDir destDir: aDestDir runner: aProcessRunner [
+    "---- the layout specs (Doc F §8.1) ----"
+
+    Publisher class >> flatLayout [
+        "The settled layout a DirectorySource scans: releases land
+         directly in the destination and no listing is maintained.
+
+         A LAYOUT IS THREE MESSAGES, and they are the three questions
+         a destination shape actually answers: where the release
+         lands, what must be sound before anything is built, and what
+         else the layout maintains once the release is down. The
+         Publisher performs them — a table lookup, never a branch on
+         which layout it holds.
+
+         The names live HERE, where the methods live, and
+         CommandLine class >> publishLayouts declares which layouts
+         exist by asking for them: one definition, consumed twice."
+        <category: 'layouts'>
+        ^#(#flatReleaseDir #noListingProblems #writeNoListing)
+    ]
+
+    Publisher class >> sparseLayout [
+        "The per-package layout a SparseIndexSource reads (Doc F
+         §7.1): the release lands in <dest>/<name>/ beside a
+         versions.st listing, which is read before the build and
+         rewritten LAST, after the entry and the archive are down."
+        <category: 'layouts'>
+        ^#(#sparseReleaseDir #sparseListingProblems #writeSparseListing)
+    ]
+
+    setManifest: aManifest workingDir: aWorkingDir destDir: aDestDir layout: aLayout runner: aProcessRunner [
         "Private — initialization from the class-side constructor."
         <category: 'private'>
         manifest := aManifest.
         workingDir := aWorkingDir.
         destDir := aDestDir.
+        layout := aLayout.
         runner := aProcessRunner
     ]
 
@@ -82,7 +132,7 @@ setters; no value equality.'>
         "Run the §1 pipeline and answer the landed archive's sha256 hex
          digest; signal one PublishError on any problem."
         <category: 'publishing'>
-        | destination missing code |
+        | destination missing listing code |
         destination := File name: destDir.
         (destination exists and: [destination isDirectory]) ifFalse: [
             ^PublishError signalProblems:
@@ -92,6 +142,12 @@ setters; no value equality.'>
                 (Array with: self refusalProblem)].
         missing := self missingFileInProblems.
         missing isEmpty ifFalse: [^PublishError signalProblems: missing].
+        "The layout's own pre-flight, BEFORE anything is staged: a
+         malformed existing listing costs the author a message and
+         nothing else, so the destination is byte-identical after the
+         refusal (Doc F §8.2)."
+        listing := self perform: (layout at: 2).
+        listing isEmpty ifFalse: [^PublishError signalProblems: listing].
         self stage.
         code := runner run: self buildCommand.
         code = 0 ifFalse: [
@@ -157,13 +213,24 @@ setters; no value equality.'>
     land [
         "Private — digest the star the toolchain built, land the
          archive bytes and the published entry under the Doc B §5.2
-         storage convention, then remove the stage. Archives are opaque
-         bytes: they are copied, never parsed, never unpacked."
+         storage convention, then whatever else the layout maintains,
+         then remove the stage. Archives are opaque bytes: they are
+         copied, never parsed, never unpacked.
+
+         THE ORDER IS THE MECHANISM (Doc F §8.3). Doc F §7.5 rules
+         that a listing naming an entry the index does not hold is an
+         INDEX DEFECT, and the client diagnoses it. So the archive and
+         the entry land FIRST and the listing is written LAST: an
+         interrupted publish leaves an index that is merely missing a
+         release rather than one that lies about holding it. The
+         producer must not be able to manufacture the state its own
+         consumer reports."
         <category: 'private-staging'>
         | bytes digest stream |
         bytes := (File name: self stageDir, '/', manifest name, '.star')
             contents.
         digest := Sha256 hexDigestOf: bytes.
+        self ensureReleaseDir.
         self write: bytes toFile: self archivePath.
         stream := (File name: self entryPath) writeStream.
         [IndexEntryWriter
@@ -172,8 +239,142 @@ setters; no value equality.'>
             sha256: digest
             on: stream]
                 ensure: [stream close].
+        self perform: (layout at: 3).
         self removeStage.
         ^digest
+    ]
+
+    ensureReleaseDir [
+        "Private — the directory the layout lands releases in, created
+         only now: a refusal earlier in the pipeline must leave the
+         destination exactly as it found it, and a package directory
+         created before the build would be published state a failure
+         left behind."
+        <category: 'private-staging'>
+        (File name: self releaseDir) exists
+            ifFalse: [Directory create: self releaseDir]
+    ]
+
+    "---- the listing (Doc B §5.6, written here for the first time) ----"
+
+    noListingProblems [
+        "Private — the flat layout maintains no listing, so it has
+         nothing to read and nothing to complain about."
+        <category: 'private-listing'>
+        ^#()
+    ]
+
+    writeNoListing [
+        "Private — and nothing to write. A layout answers all three
+         questions; answering one of them with silence is what makes
+         the flat layout a row in the table rather than a special
+         case in the pipeline."
+        <category: 'private-listing'>
+        ^self
+    ]
+
+    sparseListingProblems [
+        "Private — THE FIFTH DESERIALIZATION BOUNDARY (Doc E §4.2,
+         §8 decisions 35/38/43): publishing into an index that already
+         holds the package means READING its versions.st, which makes
+         this class a sender of IndexEntryReader readFrom: and
+         therefore a declared row of
+         CommandLine class >> deserializationBoundaries. A malformed
+         existing listing is ONE problem naming the file and the
+         defect, and nothing is written."
+        <category: 'private-listing'>
+        | problems |
+        problems := OrderedCollection new.
+        self listingVersionsInto: problems.
+        ^problems asArray
+    ]
+
+    writeSparseListing [
+        "Private — the read-modify-write: the existing listing is
+         loaded, this release's version added, and the whole
+         re-rendered. It runs LAST in land, after the entry and the
+         archive are down. The listing is already known sound — the
+         same read refused the publish before anything was staged."
+        <category: 'private-listing'>
+        | versions |
+        versions := Set new.
+        (self listingVersionsInto: OrderedCollection new)
+            do: [:each | versions add: each].
+        versions add: manifest version.
+        self write: (self renderListing: versions) toFile: self listingPath
+    ]
+
+    renderListing: someVersions [
+        "Private — the Doc B §5.6 artifact through the §5.1 grammar and
+         the §5.4 rendering rules: sorted by VERSION comparison, so
+         1.9.0 precedes 1.10.0 and the same set of versions renders
+         identically whatever order it was published in. Sorting the
+         strings is the obvious implementation and the wrong one:
+         '1.10.0' precedes '1.9.0' lexically. Versions render through
+         Version printString, always three components (§5.4 rule 4)."
+        <category: 'private-listing'>
+        | out |
+        out := WriteStream on: String new.
+        out nextPutAll: '#(#''parley-listing'' 1 #versions #('.
+        ((someVersions asSortedCollection: [:a :b | a <= b]) asArray)
+            do: [:each |
+                out nextPut: $'; nextPutAll: each printString; nextPut: $']
+            separatedBy: [out nextPut: $ ].
+        out nextPutAll: '))'; nextPut: Character nl.
+        ^out contents
+    ]
+
+    listingVersionsInto: problems [
+        "Private — the listing read, validated ground by ground and
+         answering the Versions it names. An absent listing is the
+         ordinary first publish of a package: no listing, no versions,
+         no problem. Every defect is one problem naming the file and
+         the defect, in the grammar the settled SparseIndexSource uses
+         for the same file — same reader, same sentences, each boundary
+         naming the file the way ITS operator can act on it.
+
+         The settled Version fromString: and SchemaShape are consumed,
+         never re-implemented: they stay the single definition of what
+         parses and what a schema string is."
+        <category: 'private-listing'>
+        | file entry versions |
+        versions := OrderedCollection new.
+        file := File name: self listingPath.
+        file exists ifFalse: [^versions].
+        entry := [IndexEntryReader readFrom: (ReadStream on: file contents)]
+            on: IndexEntryParseError, IndexEntryFormatError
+            do: [:e |
+                problems add: self listingLabel, ': ', e messageText.
+                ^OrderedCollection new].
+        (entry at: 1) = #'parley-listing' ifFalse: [
+            problems add: self listingLabel, ': wrong artifact tag ',
+                (entry at: 1) printString,
+                ' - a version listing holds #''parley-listing'' 1 artifacts'.
+            ^OrderedCollection new].
+        (entry size >= 4 and: [(entry at: 3) = #versions]) ifFalse: [
+            problems add: self listingLabel, ': missing schema key #versions'.
+            ^OrderedCollection new].
+        (entry at: 4) do: [:each |
+            (SchemaShape isString: each) ifFalse: [
+                problems add: self listingLabel, ': #versions member ',
+                    each printString, ' is not a version string'.
+                ^OrderedCollection new].
+            [versions add: (Version fromString: each)]
+                on: VersionFormatError
+                do: [:e |
+                    problems add: self listingLabel, ': #versions ',
+                        each printString, ' does not parse as a version'.
+                    ^OrderedCollection new]].
+        ^versions
+    ]
+
+    listingLabel [
+        "Private — how a PublishError names the listing: by the
+         destination path the AUTHOR typed, which is the spelling they
+         can act on. The client names the same file by its
+         base-relative URL path, for the same reason."
+        <category: 'private-listing'>
+        ^self listingPath
     ]
 
     removeStage [
@@ -226,14 +427,43 @@ setters; no value equality.'>
         ^self releaseName, '.star'
     ]
 
+    releaseDir [
+        "Private — where this layout lands a release. A table lookup:
+         the layout says which message answers it, and this class never
+         branches on which layout it is holding."
+        <category: 'private-paths'>
+        ^self perform: (layout at: 1)
+    ]
+
+    flatReleaseDir [
+        "Private — the settled layout lands releases directly in the
+         destination, which is what a DirectorySource scans."
+        <category: 'private-paths'>
+        ^destDir
+    ]
+
+    sparseReleaseDir [
+        "Private — the sparse layout lands them in <dest>/<name>/,
+         which is what a client addresses by constructed URL (Doc F
+         §7.1). The name comes from the manifest, so decision 26's
+         name equality holds here exactly as it does in package.xml."
+        <category: 'private-paths'>
+        ^destDir, '/', manifest name
+    ]
+
     archivePath [
         <category: 'private-paths'>
-        ^destDir, '/', self archiveFileName
+        ^self releaseDir, '/', self archiveFileName
     ]
 
     entryPath [
         <category: 'private-paths'>
-        ^destDir, '/', self releaseName, '.st'
+        ^self releaseDir, '/', self releaseName, '.st'
+    ]
+
+    listingPath [
+        <category: 'private-paths'>
+        ^self releaseDir, '/versions.st'
     ]
 ]
 

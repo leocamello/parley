@@ -108,6 +108,14 @@ construction; zero public setters.'>
             ifTrue: [^self exec: (anArgvArray at: 2)].
         (verb = 'publish' and: [anArgvArray size = 2])
             ifTrue: [^self publish: (anArgvArray at: 2)].
+        "publish <dir> --layout <name> (Doc F §8.1). The flag travels
+         here unchanged: CommandLine consumes only the SOURCE flags, so
+         the layout arrives in the verb argv and this verb reads it. An
+         unrecognized value is usage, never a fallback."
+        (verb = 'publish' and: [anArgvArray size = 4
+            and: [(anArgvArray at: 3) = CommandLine publishLayoutFlag]])
+                ifTrue: [^self publish: (anArgvArray at: 2)
+                    layoutNamed: (anArgvArray at: 4)].
         (verb = 'why' and: [anArgvArray size = 2 and: [source notNil]])
             ifTrue: [^self why: (anArgvArray at: 2)].
         (verb = 'update' and: [anArgvArray size = 2 and: [source notNil]])
@@ -343,12 +351,37 @@ construction; zero public setters.'>
     ]
 
     publish: aDestDir [
+        "Publish into the destination index directory in the DEFAULT
+         layout — flat, which is what publish always wrote and what it
+         still writes when no --layout is stated (§8 decision 53)."
+        <category: 'verbs'>
+        ^self publish: aDestDir layout: CommandLine defaultPublishLayout
+    ]
+
+    publish: aDestDir layoutNamed: aLayoutName [
+        "Publish into aDestDir in the STATED layout. An unrecognized
+         name is a usage error at exit 2 and never a silent fallback:
+         a fallback would publish into the wrong shape and call it
+         success, which is the failure §8 decision 53 refuses. The
+         table decides; this verb never branches on the name.
+
+         Usage is answered BEFORE the manifest is loaded — a mistyped
+         layout is wrong whatever the project looks like."
+        <category: 'verbs'>
+        | row |
+        row := CommandLine publishLayoutNamed: aLayoutName.
+        row isNil ifTrue: [^self usage].
+        ^self publish: aDestDir layout: row
+    ]
+
+    publish: aDestDir layout: aLayoutRow [
         "Publish the working directory's own package into the
          destination index directory (Doc F §5): load the manifest,
-         then run the Publisher pipeline. Success is one line naming
-         the package and version, exit 0; a PublishError's problems
-         become the lines, exit 1. No source collaborator is required —
-         publishing produces index entries, it does not consume them."
+         then run the Publisher pipeline in the row's layout. Success
+         is one line naming the package and version, exit 0; a
+         PublishError's problems become the lines, exit 1. No source
+         collaborator is required — publishing produces index entries,
+         it does not consume them."
         <category: 'verbs'>
         | manifest |
         manifest := self loadManifest.
@@ -356,6 +389,7 @@ construction; zero public setters.'>
             manifest: manifest
             in: workingDir
             to: aDestDir
+            layout: (aLayoutRow at: 2)
             runner: runner) publish]
                 on: PublishError
                 do: [:e | ^CliResult lines: e problems exitCode: 1].
@@ -923,18 +957,39 @@ construction; zero public setters.'>
          diagnosis (the missing-manifest line, the lock boundary), and
          seed gathering must never pre-empt it: a file that cannot be
          read here contributes nothing, and the verb itself diagnoses
-         it — resolve with a corrupt lock stays exit 0 (Doc E §4.1)."
+         it — resolve with a corrupt lock stays exit 0 (Doc E §4.1).
+
+         EACH CATCH NAMES THE BOUNDARY IT DEFERS TO, AND NOTHING ELSE
+         (§8 decision 52, cleared at its trigger). As first written
+         both caught Error, which also swallows what neither of them
+         anticipated — and what a swallowed error leaves behind is not
+         an exception but a silently PARTIAL SEED SET. Under a scanning
+         source that is invisible, because seededWith: answers self and
+         the whole index is read anyway. Under --index it is decision
+         47's describability line: the closure never fetches the names
+         that went missing, and the verb answers a #noVersions
+         ConflictReport BLAMING THE PACKAGE — the exact wrong-blame
+         diagnosis this seeding exists to prevent, arriving silently,
+         on a path no fixture exercises because every law's gathering
+         succeeds.
+
+         The rule, general beyond this site: a catch that exists to
+         defer to another boundary names that boundary's errors and no
+         others, so anything it did not anticipate reaches the settled
+         taxonomy and is reported as the software defect it is —
+         CommandLine's exit 70, never exit 0 and never a confident
+         wrong sentence."
         <category: 'private'>
         | names |
         names := Set new.
         [(ManifestFile load: self packagePath) dependencies
             do: [:each | names add: each name]]
-            on: Error do: [:e | nil].
+            on: ManifestError do: [:e | nil].
         [| pinned |
          pinned := self pinnedResolution.
          pinned notNil ifTrue: [
             pinned packageNames do: [:each | names add: each]]]
-            on: Error do: [:e | nil].
+            on: LockError do: [:e | nil].
         ^names
     ]
 
@@ -1007,7 +1062,8 @@ construction; zero public setters.'>
                 with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
                 with: 'flags: --source <dir>  index entries in a local directory'
                 with: '       --git <repo>    index entries in a git repository'
-                with: '       --index <base>  index entries fetched per package from a sparse index')
+                with: '       --index <base>  index entries fetched per package from a sparse index'),
+                (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
             exitCode: 2
     ]
 
