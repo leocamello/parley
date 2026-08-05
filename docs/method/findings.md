@@ -52,8 +52,10 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 16 | A documented guarantee ↔ what the code actually does | — | **Unforced** — F8 <sup>[i]</sup> |
 | 17 | `§8` decision entries ↔ the design docs citing them | — | **Unforced** <sup>[j]</sup> |
 | 18 | `docs/sprints/README.md` index rows ↔ the sprint notes files that exist | — | **Unforced** <sup>[k]</sup> |
+| 19 | New tests that **pass** in RED ↔ the sprint's declared passes-in-red list | runbook Gate A step 3 weak-test item, via the pass-count arithmetic | Procedural — F10 |
+| 20 | A carried gap's asserted **reachability** ↔ the runtime behaviour that would make it reachable | — | **Unforced** — F11 |
 
-**Seven mechanical, seven procedural, four unforced.**
+**Seven mechanical, eight procedural, five unforced.**
 
 - **[a]** Known-partial: textually spelled senders only, because 3.2.5 offers no reflective alternative (§8 decisions 38 corrected, 43).
 - **[b]** Written *because* `GitIndexSource` shipped lawful and unreachable for a whole sprint — nothing constructed it.
@@ -61,11 +63,11 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 - **[d]** Every `Parley` `Error` subclass must be in the diagnosed set or the declared undiagnosed list — **no third bucket**, coverage computed by handling as `on:do:` does.
 - **[e]** This pair is why usage re-pins land in GREEN with the code change rather than in RED.
 - **[f]** Adopted *after* the miss it records; four sprints of evidence since.
-- **[g]** Adopted at Sprint 14, **never yet run** — Sprint 15 is its first exercise. Recorded as untested, not as coverage.
+- **[g]** Adopted at Sprint 14. **Still untested after its first opportunity:** Sprint 15 introduced no new class at all, so the widened item was answered "n/a" rather than exercised. Recorded as untested, not as coverage — the opportunity is what expired, not the doubt.
 - **[h]** Both sides plain text and enumerable: the cheapest available drift law, unwritten. Open; scheduling is a Gate C question.
 - **[i]** Four instances (§8 decisions 43, 45, 49, 52), every one caught by a human reading. Not a drift-law candidate — comparing prose to behaviour is not a text walk.
-- **[j]** No finding raised it, and it has drifted before: the tracked log and the operator's copy diverged by four decisions, leaving tracked docs citing decisions a cloner could not resolve. The repair was a convention ("same commit as the doc change"), not a check. **Verified in sync at the time of writing** — 31 distinct decisions cited across tracked docs, all 31 resolve in §8.
-- **[k]** No finding raised it, and it went stale for five consecutive sprints; `a36337e` backfilled Sprints 09–13, its message reading *"The table stopped at Sprint 08."* Verified in sync at the time of writing — 15 rows, 15 files.
+- **[j]** No finding raised it, and it has drifted before: the tracked log and the operator's copy diverged by four decisions, leaving tracked docs citing decisions a cloner could not resolve. The repair was a convention ("same commit as the doc change"), not a check. **Verified in sync at the time of writing** — 31 distinct decisions cited across tracked docs, all 31 resolve in §8. **Re-verified at the Sprint 15 close-out:** 55 decisions defined, every citation across `docs/`, `.github/` and `AGENTS.md` resolves, no dangling reference. Two consecutive clean checks is not forcing — it is two clean checks.
+- **[k]** No finding raised it, and it went stale for five consecutive sprints; `a36337e` backfilled Sprints 09–13, its message reading *"The table stopped at Sprint 08."* Verified in sync at the time of writing — 15 rows, 15 files. **At the Sprint 15 close-out it was out of sync again** — 16 notes files, 15 rows — and was backfilled in the close-out commit. The row stays unforced, and it has now drifted twice; that it is caught at Gate B each time is the operator's checklist working, not the pair being forced.
 
 Rows 17 and 18 were found by walking the pipeline rather than the findings, and **both had
 already drifted** — which is the argument for walking it: *absence of a finding is not
@@ -89,7 +91,7 @@ check exists to prevent. A relational check needs a guard that it is comparing a
 > procedurally — and unsafe when nothing does.**
 
 **What this predicts.** Every miss recorded in this file came from a row that was unforced
-at the time. The four unforced rows are therefore the standing list of where the next one
+at the time. The five unforced rows are therefore the standing list of where the next one
 comes from — the same job `docs/roadmap.md` §1's deferral counters do for scheduling, and
 it should be read the same way: not as a backlog, but as the places where "nothing has
 gone wrong yet" is not evidence.
@@ -125,17 +127,20 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **6** |
-| — caught by a mechanism | **3** (F3, F4, F6) |
-| — caught by luck | **3** (F1, F2, F5) |
+| Defect-findings | **8** |
+| — caught by a mechanism | **4** (F3, F4, F6, F10) |
+| — caught by luck | **4** (F1, F2, F5, F11) |
 | Confirmation-findings (excluded from the ratio) | 3 (F7, F8, F9) |
 
-**The pipeline caught 3 of 6.**
+**The pipeline caught 4 of 8.**
 
-**The split is not random: all three misses are unforced rows of the inventory above** —
+**The split is not random: all four misses are unforced rows of the inventory above** —
 F1 (row 14, unforced until Sprint 14), F2 (row 13, unforced until Sprint 11), F5 (row 15,
-unforced still). All three catches are forced rows: F3 (row 8), F4 (row 9), F6 (row 10),
-every one of them procedural rather than mechanical.
+unforced still), F11 (row 20, unforced still). All four catches are forced rows: F3
+(row 8), F4 (row 9), F6 (row 10), F10 (row 19) — every one of them **procedural rather
+than mechanical**, now across eight findings and four sprints of evidence. This pipeline's
+mechanical gates have still never caught a defect in the product; what they catch is
+missing *declarations*, and what catches defects is a human working a checklist.
 
 That is the whole relationship between the two sections. **The tally says how often the
 pipeline was lucky; the inventory says where the luck will be needed next.** Read the
@@ -414,3 +419,87 @@ Sprint 13 (`d9b6fad`) and one shared diagnosis now serves both verbs.
 
 **Status.** Two worked examples. The runbook's Gate B/Gate C split — rank at discovery,
 schedule against the standing list — is what operationalizes it.
+
+---
+
+## F10 — In a phase whose whole point is failure, the tests that *pass* are the ones needing scrutiny
+
+**Rule (portable).** A red phase reports failures, and every reviewer's attention follows
+the report. But a red gate is satisfied by the suite failing *overall* — it says nothing
+about the tests that passed, and those are exactly the ones that cannot demonstrate
+red→green. A test passing in a red phase is either a declared regression guard or a defect,
+and **the reviewer cannot tell which without reconstructing the pass set**, which the gate
+does not print. Make the phase's inverted attention explicit: enumerate what passed, diff
+it against what was declared to pass, and treat an undeclared pass as a finding.
+
+**Evidence (Parley, Sprint 15, issue #17, Gate A, flip commit `6d5f166`).** Nine of the 47
+new tests passed in RED; five were declared. The undeclared four included
+`testAnUnrecognizedLayoutIsAUsageErrorAndNeverAFallback`, which asserted that
+`publish <dest> --layout nonsense` answers exit `2` — true on the pre-sprint tree for a
+reason having nothing to do with the value: `--layout` was not a flag at all, so *every*
+`--layout` invocation was exit `2`. The law would have kept passing had the flag never
+shipped, and could never have demonstrated red→green. Amended at Gate A to assert the
+recognized half beside it, read from the same `publishLayouts` table; it then moved from
+pass to error in red, and the suite went `passed=718 errors=6` → `passed=717 errors=7`.
+The other three undeclared passes were the settled trailing-flag guards, correct and
+described in the file's prose but absent from its declared list.
+
+**What caught it.** **Mechanism** — runbook Gate A step 3's weak-test item, reached through
+the pass-count arithmetic the Sprint 14 flip commit had already made a habit
+(`756 = 709 settled + 47 new`, `718 = 709 + 9 passing`, against 5 declared). The
+discrepancy is visible in the counts alone; identifying *which* four required diffing the
+files' selectors against the gate's `PARLEY-FAILURE`/`PARLEY-ERROR` lines by hand.
+
+**Change adopted.** Runbook §1 step 3 now carries the enumeration recipe rather than only
+the instruction — the check was already written down, and what was missing was the two
+commands that make it executable in seconds instead of by inspection. Left deliberately as
+a runbook step and **not** built into `verify-sprint.sh`: the gate's verdict is the suite's,
+and teaching it to know which tests are "new" would require it to know what a sprint is.
+
+**Status.** First instance. The row it adds to the inventory (19) is procedural and could
+be mechanical — both sides are enumerable — which makes it a candidate the same way row 15 is.
+
+---
+
+## F11 — Ranking a defect "unreachable" is a claim about the runtime, and reasoning is not probing
+
+**Rule (portable).** When a review ranks a known gap as latent, theoretical or
+unreachable, that ranking is doing real work: it is what defers the fix. But it is a claim
+about what the runtime *can* do, and it is almost always reached by reasoning over the
+error types the reviewer can think of — which enumerates the reviewer's imagination, not
+the runtime's behaviour. The same probe discipline that governs specs (F3) governs
+severity rankings. Name the probe that would make the gap reachable and run it, or record
+the ranking as **unprobed** so the next reader knows what kind of claim they inherited.
+
+**Evidence (Parley, Sprint 14 close-out `8156f94`, corrected at Sprint 15, commit
+`87a9e34`).** §8 decision 52 was ranked a carried gap on the strength of an explicit
+sentence: *"Not observable in the shipped tree, since nothing in the gathering path signals
+outside `ManifestError` and `LockError`."* That is false, and cheaply so. `CLI >>
+pinnedResolution` (`src/exec/CLI.st:692`) guards only
+`IndexEntryParseError, IndexEntryFormatError`; a `parley.lock` that is a **directory** —
+one `mkdir` away, an ordinary operator mistake — passes `File>>exists`, and `File>>contents`
+then signals a *kernel* `SystemExceptions.WrongClass` straight past that handler into
+`seedNames`' `on: Error`. On the pre-sprint tree, `resolve --index <base>` against such a
+project answered a `#noVersions` `ConflictReport` **blaming the package** — the confident
+wrong sentence the decision exists to prevent, shipped and ranked as unreachable.
+
+**What caught it.** **Luck.** The gap was scheduled for Sprint 15 on the roadmap's trigger
+("the next sprint that touches seeding or the CLI's error taxonomy"), and the agent then
+needed a *driver* for S14 — an error outside the two declared boundaries — and probed
+`File>>contents` on a directory to find one. Had it found a different driver, or had the
+decision been deferred one more sprint, the misranking would have stood unchallenged.
+Nothing in the pipeline compares a written ranking against the runtime; the ranking was
+never re-entered into any comparison after the sprint that produced it.
+
+**The finding underneath is about the operator, not the agent.** The bad ranking was
+written at Gate B by the reviewer, in the same entry that correctly diagnosed the defect
+and correctly stated the portable rule. Being right about the mechanism and wrong about the
+reach is the specific failure mode: the analysis is what produces the confidence that makes
+the reachability claim feel like part of it.
+
+**Change adopted.** Runbook §2 step 4 — a gap ranked latent must name the probe that would
+falsify the ranking, and either run it or mark the ranking unprobed. Cost is one command;
+this instance would have cost a `mkdir` and a `resolve`.
+
+**Status.** First instance. Kin to F3 (a spec asserting a mechanism the runtime lacks),
+one level up: F3 governs what the docs claim, F11 governs what the *reviews* claim.

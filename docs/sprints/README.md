@@ -27,6 +27,7 @@ number is the total axiomatic laws green at that sprint's close.
 | [12](sprint-12-notes.md) | Selective `update <pkg>` — `IndexSnapshot>>holding:`, move one and hold the rest | [#14](https://github.com/leocamello/parley/issues/14) | `a899ca8` | 612 |
 | [13](sprint-13-notes.md) | `parley add` — `ManifestEditor`, one clause inserted and never a re-render | [#15](https://github.com/leocamello/parley/issues/15) | `d9b6fad` | 662 |
 | [14](sprint-14-notes.md) | The sparse-index client — `SparseIndexSource`, the pre-fetch closure, `seededWith:` | [#16](https://github.com/leocamello/parley/issues/16) | `d54b490` | 709 |
+| [15](sprint-15-notes.md) | Publishing into a sparse index — `--layout`, the listing write, `--version`, the v1.0 line | [#17](https://github.com/leocamello/parley/issues/17) | `87a9e34` | 756 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a

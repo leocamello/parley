@@ -50,6 +50,15 @@ The agent has written the full test suite, satisfied the red gate, posted its **
    - **Scenario fidelity:** Given/When/Then of each issue scenario is what the test actually asserts (versions, constraints, exact pinned strings/bytes).
    - **Pinned artifacts:** verify exact-byte/exact-string pins against the specs yourself (e.g. constraint renderings against Doc A §3.5; position arithmetic in reader-rejection tests by counting characters).
    - **Weak tests:** any test that *passes* in red must be either a declared regression guard (fine) or a defect — a "passing for the wrong reason" test can never demonstrate red→green. Strengthen it (see step 5).
+
+     **Enumerate the pass set; do not eyeball it.** The gate prints failures, so the tests that matter in this phase are the ones it does *not* print, and the count alone will not tell you which. Two commands (findings F10, which is the Sprint 15 instance this recipe comes from):
+     ```bash
+     ./scripts/verify-sprint.sh 2>&1 | grep -oE 'PARLEY-(FAILURE|ERROR): Parley\.[A-Za-z0-9]+>>##.*' \
+       | sed "s/.*>>##//; s/'//g" | sort -u > /tmp/failing.txt
+     grep -hoE '^    test[A-Za-z0-9_]+' <the sprint's new test files> | sed 's/^ *//' | sort -u > /tmp/all.txt
+     comm -23 /tmp/all.txt /tmp/failing.txt     # every new test that PASSES in red
+     ```
+     Diff that against the declared passes-in-red list in the kickoff and the test files' headers. **An undeclared pass is a finding**, even when the test turns out to be a legitimate guard — the declaration is what makes a red-phase pass reviewable at all. Cross-check with the arithmetic: `passed` should equal the settled law count plus exactly the number of passes you can name.
    - **Derivations:** for pinned conflict-proof narrations, hand-trace the strategy semantics (selection order, collapse points, exhaustion order) to confirm the pinned lines are what the spec's reference shape actually produces.
 4. **Independently run the red gate:** `./scripts/verify-sprint.sh` — every test file loads (`PARLEY-TESTFILE` per file), zero parse errors, prior sprints' tests still pass, new failures are MNU/missing-behavior, overall suite FAILS.
 5. **Adjudicate the protocol decisions** against the design docs — approve, correct, or rule. Reviewer amendments to tests are allowed and are made directly by the operator, under one rule: **strengthen, never weaken**, and tell the agent (the amended version becomes the reviewed test). Re-run the gate after any amendment.
@@ -72,6 +81,8 @@ The agent has gone green, run `wrap-sprint.sh`, written `docs/sprints/sprint-<NN
 2. **Check the commit's file list** against the sprint scope; scrutinize any touched settled file against the issue's declared exceptions; verify any scope-file line in the commit was the operator's own edit (see conventions).
 3. **Review doc amendments** in the commit (if any) against what Stage 2 approved.
 4. **Rule on flagged open questions — diagnose and rank, but do NOT schedule.** The notes' "noted, not built" items are the important ones. Judge severity honestly: a soundness-class gap gets a ruling that names the defect, states the **consumer constraint** until it lands, and estimates what the fix costs. Record it in the close-out comment and, if design-level, in the decision log at [`docs/design/architecture.md` §8](../design/architecture.md#8-decision-log) — the single copy, never the master plan.
+
+   **A ranking of "latent" or "unreachable" is a claim about the runtime — probe it or mark it unprobed.** Deferring rests on the reachability claim, and that claim is normally reached by reasoning over the error types you can think of, which enumerates your imagination rather than the runtime's behaviour. So: **name the probe that would falsify the ranking, and either run it or write "unprobed" beside the ranking.** This is not optional carefulness — the Sprint 14 close-out ranked §8 decision 52 unreachable in a sentence (*"nothing in the gathering path signals outside `ManifestError` and `LockError`"*) and shipped a confident wrong diagnosis that was one `mkdir` away; Sprint 15 found it while hunting a test driver, by luck (findings F11). Cost of the probe that would have caught it: one `mkdir` and one `resolve`.
 
    **Assign no sprint number here.** Scheduling happens at Gate C (§3), reading `docs/roadmap.md` cold, and the split is deliberate. A carried gap is at its most persuasive in this gate — concrete, reproducible, small, and on screen — and the roadmap is nowhere in view. Three consecutive sprints (8, 9, 10) were scoped by the previous sprint's close-out finding rather than by the roadmap, every one of them defensibly, while the roadmap's own top priority was deferred twice. Nobody drifted; the roadmap simply never won a comparison it was never entered into. Write "**carried gap, unscheduled**" and let Gate C decide against the standing priorities.
 
