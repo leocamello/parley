@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 15
-phase: green
+sprint: 16
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -99,3 +99,19 @@ scope-14: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # say so on the issue and let the operator lift it. Everything else
 # under docs/ is yours as always.
 scope-15: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-16 is identical to scope-15: Sprint 16 introduces no new src/
+# directory and no new class at all. All four fixes land on the settled
+# CLI and CommandLine, both in src/exec/, which scripts/run-tests.st
+# already files in, so that script is unchanged. Declared settled-class
+# exceptions this sprint: CLI (the exec script precondition, the lock
+# readability check, and the checked held-pins line on add and
+# update <pkg>) and CommandLine (--help/-h/help recognized beside the
+# settled --version). bin/ stays in scope — the shipped binary is
+# law-guarded from Sprint 8 onward and S8-S10 spawn it for --help.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable,
+# exactly as scope-15 records: the pre-commit sentinel enforces paths
+# rather than authorship, so wrap-sprint.sh refuses the wrap instead
+# when anything under docs/method/ is staged. That refusal is the rule
+# working. Everything else under docs/ is the agent's as always.
+scope-16: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
