@@ -94,42 +94,110 @@ construction; zero public setters.'>
 
     "---- dispatch ----"
 
+    CLI class >> row: aGuardBlock verb: aSelector args: anIndexArray [
+        "Private — one dispatch row: a pure guard on (argv, has-source),
+         the verb selector it selects, and the argv indices its
+         arguments come from."
+        <category: 'dispatch'>
+        ^Array with: aGuardBlock with: aSelector with: anIndexArray
+    ]
+
+    CLI class >> verbRows [
+        "The argv grammar as a DECLARED TABLE (Doc E §4, Sprint 16 —
+         the fourth declared settled-class exception on this class).
+         Each row is a guard, the verb it selects, and where that verb's
+         arguments sit in the argv. The grammar itself is unchanged, verb
+         for verb and arity for arity; only its spelling moved.
+
+         A DECLARATION CONSUMED TWICE, exactly as sourceFlags,
+         publishLayouts and deserializationBoundaries are: run: performs
+         the matching row's verb, and verbRowFor:withSource: answers
+         whether any row matched AT ALL — which is the usage
+         determination, and which CommandLine needs BEFORE it creates a
+         state directory, because a command that refuses to run must
+         leave the filesystem as it found it (§8 decision 57). Two
+         parallel lists that happened to agree today would buy nothing
+         the first time a verb was added to only one of them.
+
+         Row order is the settled chain's order and stays significant
+         only where guards could overlap; publish's two shapes are
+         disjoint by arity. publish <dir> --layout <name> reads its own
+         flag because CommandLine consumes only the SOURCE flags, so the
+         layout arrives in the verb argv (Doc F §8.1); an unrecognized
+         value is usage inside the verb, never a fallback."
+        <category: 'dispatch'>
+        ^(Array
+            with: (self row: [:a :s | a size = 1 and: [(a at: 1) = 'init']]
+                verb: #init args: #())
+            with: (self row: [:a :s | a size = 2 and: [(a at: 1) = 'exec']]
+                verb: #exec: args: #(2))
+            with: (self row: [:a :s | a size = 2 and: [(a at: 1) = 'publish']]
+                verb: #publish: args: #(2))
+            with: (self row: [:a :s | a size = 4
+                    and: [(a at: 1) = 'publish'
+                    and: [(a at: 3) = CommandLine publishLayoutFlag]]]
+                verb: #publish:layoutNamed: args: #(2 4))
+            with: (self row: [:a :s | s and: [a size = 2
+                    and: [(a at: 1) = 'why']]]
+                verb: #why: args: #(2))),
+        (Array
+            with: (self row: [:a :s | s and: [a size = 2
+                    and: [(a at: 1) = 'update']]]
+                verb: #update: args: #(2))
+            with: (self row: [:a :s | s and: [a size = 3
+                    and: [(a at: 1) = 'add']]]
+                verb: #add:constraint: args: #(2 3))
+            with: (self row: [:a :s | s and: [a size = 1
+                    and: [(a at: 1) = 'resolve']]]
+                verb: #resolve args: #())
+            with: (self row: [:a :s | s and: [a size = 1
+                    and: [(a at: 1) = 'install']]]
+                verb: #install args: #())
+            with: (self row: [:a :s | s and: [a size = 1
+                    and: [(a at: 1) = 'update']]]
+                verb: #update args: #())),
+        (Array
+            with: (self row: [:a :s | s and: [a size = 1
+                    and: [(a at: 1) = 'tree']]]
+                verb: #tree args: #())
+            with: (self row: [:a :s | s and: [a size = 1
+                    and: [(a at: 1) = 'check']]]
+                verb: #check args: #()))
+    ]
+
+    CLI class >> verbRowFor: anArgvArray withSource: aBoolean [
+        "The row anArgvArray selects, or nil when it selects no verb at
+         all — an empty argv, an unknown verb, wrong arity, or a
+         source-requiring verb with no source. NIL IS THE USAGE
+         DETERMINATION, and it is the same one run: makes.
+
+         PURE, AND THAT IS PART OF THE CONTRACT: a function of the argv
+         and of whether a source was wired, reading no file, creating
+         nothing and spawning nothing. CommandLine asks it before any
+         state directory exists, and a determination that touched the
+         filesystem would be doing the verb's work before the verb."
+        <category: 'dispatch'>
+        anArgvArray isEmpty ifTrue: [^nil].
+        self verbRows do: [:row |
+            ((row at: 1) value: anArgvArray value: aBoolean)
+                ifTrue: [^row]].
+        ^nil
+    ]
+
     run: anArgvArray [
         "Dispatch the argv and answer a CliResult. Unknown input, a
          missing exec script, wrong arity, or a source-requiring verb
-         without a source answers the usage lines, exit 2."
+         without a source answers the usage lines, exit 2.
+
+         The dispatch is expressed in terms of the SELECTION, so the
+         usage determination has exactly one definition and CommandLine
+         can ask for it before it creates anything (see verbRows)."
         <category: 'running'>
-        | verb |
-        anArgvArray isEmpty ifTrue: [^self usage].
-        verb := anArgvArray at: 1.
-        (verb = 'init' and: [anArgvArray size = 1])
-            ifTrue: [^self init].
-        (verb = 'exec' and: [anArgvArray size = 2])
-            ifTrue: [^self exec: (anArgvArray at: 2)].
-        (verb = 'publish' and: [anArgvArray size = 2])
-            ifTrue: [^self publish: (anArgvArray at: 2)].
-        "publish <dir> --layout <name> (Doc F §8.1). The flag travels
-         here unchanged: CommandLine consumes only the SOURCE flags, so
-         the layout arrives in the verb argv and this verb reads it. An
-         unrecognized value is usage, never a fallback."
-        (verb = 'publish' and: [anArgvArray size = 4
-            and: [(anArgvArray at: 3) = CommandLine publishLayoutFlag]])
-                ifTrue: [^self publish: (anArgvArray at: 2)
-                    layoutNamed: (anArgvArray at: 4)].
-        (verb = 'why' and: [anArgvArray size = 2 and: [source notNil]])
-            ifTrue: [^self why: (anArgvArray at: 2)].
-        (verb = 'update' and: [anArgvArray size = 2 and: [source notNil]])
-            ifTrue: [^self update: (anArgvArray at: 2)].
-        (verb = 'add' and: [anArgvArray size = 3 and: [source notNil]])
-            ifTrue: [^self add: (anArgvArray at: 2)
-                constraint: (anArgvArray at: 3)].
-        (anArgvArray size = 1 and: [source notNil]) ifTrue: [
-            verb = 'resolve' ifTrue: [^self resolve].
-            verb = 'install' ifTrue: [^self install].
-            verb = 'update' ifTrue: [^self update].
-            verb = 'tree' ifTrue: [^self tree].
-            verb = 'check' ifTrue: [^self check]].
-        ^self usage
+        | row |
+        row := self class verbRowFor: anArgvArray withSource: source notNil.
+        row isNil ifTrue: [^self usage].
+        ^self perform: (row at: 2)
+            withArguments: ((row at: 3) collect: [:i | anArgvArray at: i])
     ]
 
     "---- the verbs ----"
@@ -201,7 +269,7 @@ construction; zero public setters.'>
          identical bytes — the resolve-with-no-dependencies precedent:
          a verb that prints nothing reads as a verb that did nothing."
         <category: 'verbs'>
-        | pinned held narrowed deleted outcome result |
+        | pinned held unheld narrowed deleted manifest outcome result |
         pinned := self pinnedResolution.
         pinned isNil ifTrue: [^self reportMissingLock].
         (pinned packageNames includes: aName) ifFalse: [
@@ -210,16 +278,23 @@ construction; zero public setters.'>
                     ' is not pinned in parley.lock')
                 exitCode: 1].
         held := self heldVersionsOf: pinned except: aName.
-        narrowed := self seededSource snapshot holding: held.
+        "The unheld snapshot is kept rather than re-taken: holding:
+         answers a NEW value and leaves the receiver answering every
+         version (the Doc C §2.2 purity law), so the same snapshot
+         serves the narrowed resolution and the decision-58 check below
+         without consuming the source twice."
+        unheld := self seededSource snapshot.
+        narrowed := unheld holding: held.
         deleted := self deletedHeldPinLineIn: held against: narrowed.
         deleted notNil ifTrue: [
             ^CliResult lines: (Array with: deleted) exitCode: 1].
+        manifest := self loadManifest.
         outcome := (Resolver strategy: BacktrackingStrategy new)
-            resolve: self loadManifest against: narrowed.
+            resolve: manifest against: narrowed.
         outcome isResolution ifFalse: [
             ^CliResult
-                lines: (Array with: self heldPinsLine),
-                    (self linesOf: outcome printString)
+                lines: (self conflictLinesFor: outcome
+                    manifest: manifest unheld: unheld)
                 exitCode: 1].
         self writeLock: outcome.
         result := self installResolution: outcome.
@@ -285,7 +360,7 @@ construction; zero public setters.'>
          ConstraintFormatError's declared ground — never signaled out of
          a verb — true."
         <category: 'verbs'>
-        | original editor declared before pinned held narrowed deleted lock after |
+        | original editor declared before pinned held unheld narrowed deleted lock after |
         (File name: self packagePath) exists ifFalse: [
             "The settled missing-manifest diagnosis, defined once in
              ManifestFile: load: signals it and the boundary answers
@@ -307,7 +382,8 @@ construction; zero public setters.'>
         before := self loadManifest.
         pinned := self pinnedResolution.
         held := self heldVersionsOf: pinned except: nil.
-        narrowed := (self seededSourceAdding: aName) snapshot holding: held.
+        unheld := (self seededSourceAdding: aName) snapshot.
+        narrowed := unheld holding: held.
         deleted := self deletedHeldPinLineIn: held against: narrowed.
         deleted notNil ifTrue: [
             ^CliResult lines: (Array with: deleted) exitCode: 1].
@@ -315,7 +391,7 @@ construction; zero public setters.'>
         declared notNil ifTrue: [
             | idempotent |
             idempotent := self addResolving: before against: narrowed
-                restoring: original lock: lock.
+                unheld: unheld restoring: original lock: lock.
             idempotent exitCode = 0 ifFalse: [^idempotent].
             ^CliResult
                 lines: (Array with: (self alreadyDeclaredSuccessLineFor: aName
@@ -334,20 +410,79 @@ construction; zero public setters.'>
                 lines: (Array with: self editVerificationLine)
                 exitCode: 1].
         ^self addResolving: after against: narrowed
-            restoring: original lock: lock
+            unheld: unheld restoring: original lock: lock
     ]
 
     exec: aScriptPath [
         "Run the script in the curated child; the CliResult carries
          the child's exit code and no lines of the CLI's own (the
-         child already streamed to the terminal)."
+         child already streamed to the terminal).
+
+         THE SCRIPT IS A PRECONDITION PARLEY CHECKS ITSELF, BEFORE ANY
+         PROCESS IS SPAWNED (Doc E §4.1, §8 decision 56, Sprint 16 —
+         the declared settled-class exception on this class). It is not
+         a retreat from §8 decision 45, which stands unchanged: the
+         child's exit code is still a faithful pass-through and Parley
+         still never claims to know whether a script that RAN
+         succeeded. It is the boundary BEFORE that one, and what makes
+         it necessary rather than tidy is that decision 45's documented
+         consumer constraint — a script whose success matters ends with
+         an explicit ObjectMemory quit: — is unavailable precisely
+         here: a file that does not exist cannot carry a guard, so
+         without this check no discipline an operator could adopt would
+         make parley exec typo.st fail."
         <category: 'verbs'>
         | code |
+        self requireRunnableScript: aScriptPath.
         code := (ExecutionScope
             on: (InstalledSet tuples: Dictionary new)
             target: target
             runner: runner) run: aScriptPath.
         ^CliResult lines: #() exitCode: code
+    ]
+
+    requireRunnableScript: aScriptPath [
+        "Private — §8 decision 56's second application: a boundary that
+         is about to hand a path to a process begins by requiring that
+         path to be a regular readable file, and answers its own
+         declared error naming it when it is not.
+
+         The shipped tool had no such boundary and 3.2.5 does not
+         supply one: gst answers exit 0 for a script argument that does
+         not exist, printing gst: Couldn't open file, and exit 0 for a
+         DIRECTORY argument printing nothing at all — a silent success
+         for work that never ran, in the one verb whose whole contract
+         is exit-code truthfulness.
+
+         The error is an ExecutionError, so the §4.2 boundary answers
+         it as one line at exit 1 with no new mechanism, and the
+         diagnosis stays inside the declared taxonomy like every other
+         '<path>: ...' sentence in the tool. Its command and exitCode
+         slots stay nil, which is the honest record: no command was
+         composed and no child had an exit code.
+
+         Deciding whether there is anything to run is the VERB's
+         business, not ExecutionScope's — the scope composes and runs
+         the curated child, and pushing the check down would make it
+         answer questions about the filesystem."
+        <category: 'private'>
+        | file |
+        file := File name: aScriptPath.
+        (file isFile and: [file isReadable]) ifTrue: [^self].
+        ^ExecutionError new signal: (self unrunnableScriptLineFor: aScriptPath)
+    ]
+
+    unrunnableScriptLineFor: aScriptPath [
+        "Private — the exec precondition refusal (pinned in RED, issue
+         #18), in the settled '<path>: ...' grammar every other
+         missing-file diagnosis uses. The tail states the CONSEQUENCE
+         rather than a remedy: nothing Parley could suggest fixes a path
+         only the operator knows the right spelling of, and a remedy it
+         had not checked would be the §8 decision 58 defect committed in
+         the sprint that fixes it. What the operator needs is the fact
+         that no work happened."
+        <category: 'private'>
+        ^aScriptPath, ': missing or unreadable script - nothing was run'
     ]
 
     publish: aDestDir [
@@ -589,16 +724,18 @@ construction; zero public setters.'>
 
     "---- add's shared machinery (Doc B §2.1, Doc C §2.2) ----"
 
-    addResolving: aManifest against: aSnapshot restoring: anOriginalText lock: aLockText [
+    addResolving: aManifest against: aSnapshot unheld: anUnheldSnapshot restoring: anOriginalText lock: aLockText [
         "Private — add's tail: resolve against the narrowed world,
          rewrite the lock byte-stably, then install and register exactly
          as update does.
 
          ANY nonzero outcome restores the project first. A conflict
-         answers the settled ConflictReport narration preceded by the
-         held-pins line — the resolver answered truthfully about a world
-         with few candidates but cannot know WHY the world was small,
-         and the verb had that context (§8 decision 46)."
+         answers the settled ConflictReport narration, preceded by the
+         held-pins line only when the check below has earned it — the
+         resolver answered truthfully about a world with few candidates
+         but cannot know WHY the world was small, and the verb had that
+         context (§8 decision 46) only if holding really was the
+         reason (§8 decision 58)."
         <category: 'private-add'>
         | outcome result |
         outcome := (Resolver strategy: BacktrackingStrategy new)
@@ -606,14 +743,48 @@ construction; zero public setters.'>
         outcome isResolution ifFalse: [
             self restore: anOriginalText lock: aLockText.
             ^CliResult
-                lines: (Array with: self heldPinsLine),
-                    (self linesOf: outcome printString)
+                lines: (self conflictLinesFor: outcome
+                    manifest: aManifest unheld: anUnheldSnapshot)
                 exitCode: 1].
         self writeLock: outcome.
         result := self installResolution: outcome.
         result exitCode = 0
             ifFalse: [self restore: anOriginalText lock: aLockText].
         ^result
+    ]
+
+    conflictLinesFor: aReport manifest: aManifest unheld: anUnheldSnapshot [
+        "Private — the conflict answer SHARED by add and update <pkg>
+         (§8 decision 58, Sprint 16 — the declared settled-class
+         exception on this class). One diagnosis, one wording, two
+         callers: the Sprint 13 precedent, and a wording that drifted
+         apart between them is the defect that precedent exists to
+         prevent.
+
+         A REMEDY LINE IS ASSERTED ONLY WHEN IT HAS BEEN CHECKED. Both
+         verbs resolve against a snapshot holding the existing pins, and
+         both used to print the held-pins line whenever that resolution
+         failed. Nothing checked whether holding was the reason, and the
+         commonest way to reach this path is a typo'd package name —
+         where holding is irrelevant, parley update cannot help, and the
+         instruction was printed ABOVE the real cause. A sentence naming
+         a cause asserts that cause, and this tool only makes claims it
+         has checked.
+
+         So the claim is checked: re-resolve the same manifest against
+         the UNHELD snapshot, and emit the line only if that resolution
+         succeeds. When it fails too, holding was never the cause — the
+         constraint is unsatisfiable outright — and the plain
+         ConflictReport is answered alone. The cost is one extra
+         resolution on a path that is already failing, and the SETTLED
+         resolver runs against the SETTLED snapshot: nothing here
+         teaches either of them about holding."
+        <category: 'private-add'>
+        ((Resolver strategy: BacktrackingStrategy new)
+            resolve: aManifest against: anUnheldSnapshot) isResolution
+                ifFalse: [^self linesOf: aReport printString].
+        ^(Array with: self heldPinsLine),
+            (self linesOf: aReport printString)
     ]
 
     manifest: aNewManifest adds: aName to: anOldManifest [
@@ -723,6 +894,7 @@ construction; zero public setters.'>
         | file entry shape value |
         file := File name: self lockPath.
         file exists ifFalse: [^nil].
+        self requireReadableLock.
         entry := [IndexEntryReader readFrom: (ReadStream on: file contents)]
             on: IndexEntryParseError, IndexEntryFormatError
             do: [:e | ^self signalLockProblem: e messageText].
@@ -735,6 +907,69 @@ construction; zero public setters.'>
         value := self lockValueProblemIn: entry.
         value notNil ifTrue: [^self signalLockProblem: value].
         ^Resolution fromLockEntry: entry
+    ]
+
+    requireReadableLock [
+        "Private — READABILITY IS CHECKED BEFORE SHAPE (Doc E §4.1,
+         §8 decision 56, Sprint 16 — the declared settled-class
+         exception on this class).
+
+         Every rejection ground below this one validates what the file
+         SAYS: is it a #'parley-lock' 1 artifact, does it parse, is the
+         digest 64 hex characters. All of them presumed the bytes could
+         be obtained at all, and on 3.2.5 that presumption is wrong in
+         a specific and reachable way: File>>exists answers TRUE for a
+         directory, and File>>contents on one signals a KERNEL
+         SystemExceptions.WrongClass, which is not a Parley error and
+         escapes the handler written for the declared ones. A
+         parley.lock that is a directory — a botched checkout, a volume
+         mount, a stray mkdir — therefore reached the §4.2 boundary
+         undiagnosed and was answered with exit 70: a kernel integer on
+         the operator's screen, and the offending file never named. A
+         boundary that validates what a file says has already claimed
+         the file could be read.
+
+         ABSENCE IS NOT UNREADABILITY, and the distinction is the whole
+         of the first line here. File>>isFile answers false for a path
+         that is simply not there exactly as it does for a directory, so
+         a check written as one predicate would turn every lockless
+         project into a lock defect and destroy the settled
+         'parley.lock is missing - run parley resolve to write it'
+         diagnosis — which names a different repair for a different
+         state. An absent lock is answered by the caller, as it always
+         was; only an unreadable one is refused here.
+
+         The repair is the two-step one that actually works, and it
+         departs from signalLockProblem: deliberately (ruled at the
+         Sprint 16 RED review). That method names parley update because
+         for a CORRUPT lock the advice is true by construction — update
+         is the one verb that never READS a lock. This state breaks the
+         construction: update's WRITE cannot succeed against a directory
+         either, which is why decision 56 refuses it at every verb
+         including update. Naming update here would answer the defect
+         with the verb that answers the same refusal, and would be
+         decision 58's own standard broken by the sentence next door.
+         Once the path is removed the lock is MISSING, not corrupt, and
+         resolve is the verb that writes a first one."
+        <category: 'private-lock'>
+        | file |
+        file := File name: self lockPath.
+        file exists ifFalse: [^self].
+        (file isFile and: [file isReadable]) ifTrue: [^self].
+        ^LockError signalProblems: (Array with: self unreadableLockLine)
+    ]
+
+    unreadableLockLine [
+        "Private — the readability diagnosis (pinned in RED, issue
+         #18), in the settled three-part lock shape: the path, the
+         defect, the repair. The defect names the PREDICATE that failed
+         rather than guessing which way it failed — a directory, a
+         device node, a file whose permissions deny the reader — because
+         one sentence covers all of them and none of them is a different
+         repair."
+        <category: 'private-lock'>
+        ^self lockPath,
+            ': not a regular readable file - remove it and run parley resolve to write a new one'
     ]
 
     "---- the third rejection ground: body shape (Doc E §4.1) ----"
@@ -902,9 +1137,27 @@ construction; zero public setters.'>
     resolveAndLock: aManifest [
         "Private — resolve fresh against the source's snapshot; a
          Resolution rewrites the lock, a ConflictReport writes
-         nothing."
+         nothing.
+
+         THE READABILITY CHECK IS OWED HERE TOO (§8 decision 56). This
+         is the path resolve and plain update take, and neither of them
+         READS the lock — resolve ignores a corrupt one because it is
+         about to overwrite it, and update never reads one at all. Both
+         nonetheless WRITE one, and that write cannot succeed against a
+         path that is not a regular file, so answering exit 0 would
+         claim a lock that was never written: the fail-wrong this whole
+         boundary exists to prevent.
+
+         resolve cannot delegate the check to seeding, either. seedNames
+         catches LockError by construction (§8 decision 52) and defers
+         to the boundary that owns the diagnosis, so the readability
+         error would be swallowed exactly as a corrupt one is — right
+         for a corrupt lock, wrong for this one. The Sprint 14 add
+         shape: a settled caller whose meaning changes without a line of
+         its code changing."
         <category: 'private'>
         | outcome |
+        self requireReadableLock.
         outcome := (Resolver strategy: BacktrackingStrategy new)
             resolve: aManifest against: self seededSource snapshot.
         outcome isResolution ifTrue: [self writeLock: outcome].

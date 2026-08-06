@@ -92,6 +92,14 @@ through the product.'>
     ]
 
     execResultIn: aWorkDir runner: aRunner [
+        "THE SCRIPT IS WRITTEN FIRST (Sprint 16, sanctioned at the RED
+         review of issue #18): from Doc E §4.1 and §8 decision 56 exec
+         refuses a path that is not an existing regular readable file
+         before any process is spawned, so S5 and S6 need a real script
+         to reach the seam the boundary is being observed through. No
+         assertion moves and the argv is unchanged."
+        SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
+            toFile: 'script.st' in: aWorkDir.
         ^(self commandLineIn: aWorkDir runner: aRunner)
             run: (Array with: 'exec' with: aWorkDir, '/script.st')
     ]

@@ -586,11 +586,23 @@ end-to-end loop that closes v1.0.'>
             dependencies: #() in: base.
         work := self track: (SparseIndexFixtures workDirNamed: 's15-s14-work'
             declaring: 'absent-pkg' constraint: '^1.0').
-        Directory create: work, '/parley.lock'.
-        result := self runIn: work
-            argv: (Array with: 'resolve' with: '--index'
-                with: (SparseIndexFixtures baseUrlFor: base))
-            runner: ProcessRunner new.
+        "THE DRIVER MOVED AT SPRINT 16, AND ONLY THE DRIVER (ruled on
+         issue #18). This scenario was driven by a parley.lock that was
+         a DIRECTORY — then the one operator state reaching the exit-70
+         branch. §8 decision 56 now diagnoses that state at exit 1 and
+         closed the equivalent ManifestFile hole with it, so no
+         filesystem state reaches the branch any more, by design: gst
+         swallows anything raised by filed-in manifest code, so a
+         boundary skipping its readability check was always the only
+         escape. Re-driving onto a surviving hole would make this
+         scenario depend on that hole staying open, which is how the
+         lock one survived two sprints. The claim is about what the
+         CATCH does with an error it did not anticipate, so the error is
+         injected at the seam the gathering reads through. Every
+         assertion below is the settled one."
+        result := (SeedFaultCommandLine in: work runner: ProcessRunner new)
+            run: (Array with: 'resolve' with: '--index'
+                with: (SparseIndexFixtures baseUrlFor: base)).
         self assert: result exitCode = 70
             description: 'the seed-gathering failure answered exit ',
                 result exitCode printString, ': ', result lines printString.

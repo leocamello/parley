@@ -81,8 +81,30 @@ one-problem ManifestError naming the path.'>
          batch. Both slots are cleared at entry, so no error and no
          manifest ever leaks from a previous load."
         <category: 'loading'>
-        | previous |
-        (File name: aPath) exists ifFalse: [
+        | file previous |
+        "THE PREDICATE IS BROUGHT INTO LINE WITH THE SENTENCE (Doc E §3
+         step 0, §8 decision 56, Sprint 16 — the declared settled-class
+         exception on this class). This step has read 'does not exist or
+         is not readable' since Sprint 8, and the diagnosis below has
+         promised 'missing or unreadable Package.st' for just as long,
+         while the code checked exists alone. The tool was asserting a
+         check it had not made — this sprint's own governing standard,
+         broken by a sentence written eight sprints before the standard
+         existed.
+
+         Probed against 3.2.5 at the Sprint 16 GREEN review: a
+         Package.st the reader lacks permission to open answers
+         internal error: FileError: could not open <path> - this is a
+         defect in Parley, not in your project, at exit 70, and a
+         DIRECTORY-shaped one answers the same with PrimitiveFailed.
+         Both are ordinary operator states — a bad umask, a root-owned
+         checkout, a stray mkdir — and both were answered by Parley
+         blaming itself. The predicate is now the one decision 56 gives
+         every file boundary, a regular readable file, and THE WORDING
+         DOES NOT MOVE: it was already telling the truth about what this
+         step was supposed to do."
+        file := File name: aPath.
+        (file isFile and: [file isReadable]) ifFalse: [
             ^ManifestError signalProblems: (Array with:
                 aPath, ': missing or unreadable Package.st - run parley init to write one')].
         recorded := nil.

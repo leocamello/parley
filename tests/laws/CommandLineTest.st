@@ -90,7 +90,20 @@ diagnosis boundary.'>
     execResultIn: aWorkDir runner: aRunner [
         "Run 'exec <script>' — the shortest verb path that reaches the
          one process seam, so the runner double's signal lands on the
-         boundary."
+         boundary.
+
+         THE SCRIPT IS WRITTEN FIRST (Sprint 16, sanctioned at the RED
+         review of issue #18). From Doc E §4.1 and §8 decision 56 the
+         verb refuses a script that is not an existing regular readable
+         file BEFORE any process is spawned, so a law that handed the
+         runner a path nobody ever wrote would answer the precondition
+         instead of reaching the boundary. It never reached it for the
+         right reason before either: these laws claim the boundary sees
+         what the seam raises, and a path that does not exist could not
+         have proved that. The fixture is restored, no assertion moves,
+         and the argv is unchanged."
+        SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
+            toFile: 'script.st' in: aWorkDir.
         ^(self commandLineIn: aWorkDir runner: aRunner)
             run: (Array with: 'exec' with: aWorkDir, '/script.st')
     ]

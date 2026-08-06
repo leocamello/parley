@@ -193,6 +193,17 @@ equality (the decision-23 precedent).'>
         ^'parley ', Parley version
     ]
 
+    CommandLine class >> helpFlags [
+        "The accepted spellings of ONE question (§8 decision 57,
+         Sprint 16). A user who guesses any of the three has asked the
+         same thing, so all three answer the same lines at the same exit
+         code — declared here, once, exactly as versionFlag declares its
+         own single spelling, so the grammar keeps one exception per
+         flag and each exception has a name."
+        <category: 'help'>
+        ^#('--help' '-h' 'help')
+    ]
+
     CommandLine class >> publishLayoutFlag [
         "The flag that states the layout. A VALUED flag rather than a
          bare --sparse switch is deliberate: valueOf:in: already reads
@@ -329,18 +340,51 @@ equality (the decision-23 precedent).'>
         <category: 'private'>
         | args |
         args := self withoutLeadingMarker: anArgvArray.
-        "Answered ahead of verb dispatch and BEFORE any state
-         directory is created: asking a tool its version is not
-         running a command in a project, so it needs no working
-         directory and must leave none behind."
+        "The two question flags are answered ahead of verb dispatch and
+         BEFORE any state directory is created (§8 decision 57): asking
+         a tool what it is or how to use it is not running a command in
+         a project, so neither needs a working directory and neither may
+         leave one behind."
         (self isVersionRequest: args) ifTrue: [^self versionResult].
+        (self isHelpRequest: args) ifTrue: [^self helpResult].
         "The source flags are mutually exclusive: both given is a usage
          error, because silently preferring one would make a typo look
          like a working command. Checked before anything is created or
          built, so a usage error touches nothing."
         (self sourceRowsIn: args) size > 1 ifTrue: [^self usageResult].
+        "AND NO OTHER USAGE ERROR CREATES PROJECT STATE EITHER (§8
+         decision 57, second half). The question flags were placed above
+         createStateDirectories because state created by a question is
+         state created by a question, and that reason covers every argv
+         that never reaches a verb — which the shipped ordering did not
+         honour: parley, parley nonsense and parley resolve each created
+         <cwd>/.parley/packages before answering the usage they were
+         always going to answer, so typing parley in any directory to
+         see what it does left a directory behind. A command that
+         refuses to run leaves the filesystem as it found it, which is
+         the rule publish already follows when it declines to create a
+         destination it refuses (Doc F §1)."
+        (self answersUsageFor: args) ifTrue: [^self usageResult].
         self createStateDirectories.
         ^(self cliWithSourceIn: args) run: (self verbArgvIn: args)
+    ]
+
+    answersUsageFor: anArgvArray [
+        "Private — whether this argv answers usage rather than running a
+         verb, asked of the SETTLED CLI's own determination so the two
+         can never disagree about what a verb is. Duplicating the verb
+         grammar here would be the drift sourceFlags, publishLayouts and
+         deserializationBoundaries each exist to prevent.
+
+         It is a function of the argv and of whether a source flag was
+         given — never of the source OBJECT, which is deliberate:
+         building a --git or --index source creates its cache root under
+         .parley/, so cliWithSourceIn: must stay BELOW
+         createStateDirectories, and a determination that needed the
+         built source could not run above it."
+        <category: 'private-grammar'>
+        ^(CLI verbRowFor: (self verbArgvIn: anArgvArray)
+            withSource: (self sourceRowsIn: anArgvArray) isEmpty not) isNil
     ]
 
     isVersionRequest: anArgvArray [
@@ -362,6 +406,38 @@ equality (the decision-23 precedent).'>
         <category: 'private-grammar'>
         ^anArgvArray size = 1
             and: [(anArgvArray at: 1) = self class versionFlag]
+    ]
+
+    isHelpRequest: anArgvArray [
+        "Private — the SECOND declared special case, recognized exactly
+         as narrowly as the first: the whole argv is one of the three
+         accepted spellings and nothing else. Anything longer travels on
+         to the settled CLI as the unknown shape it is, and a TRAILING
+         --help on a verb stays a usage error, because the settled
+         valueOf:in: treats a trailing flag as not a flag and several
+         settled laws rest on exactly that. Teaching the grammar that
+         valueless flags are flags would silently change what every one
+         of those laws is testing without touching a line of them."
+        <category: 'private-grammar'>
+        ^anArgvArray size = 1
+            and: [self class helpFlags includes: (anArgvArray at: 1)]
+    ]
+
+    helpResult [
+        "Private — the pinned usage lines at EXIT 0, which is the whole
+         point of §8 decision 57: the text was already printed for
+         --help, but at exit 2, so the first command a new user types
+         failed any set -e script or CI smoke check while --version
+         beside it succeeded. Same product, same kind of question, two
+         different answers.
+
+         The lines are the SETTLED CLI's own usage answer, taken from
+         usageResult rather than restated, so the question and the usage
+         error can never print two different texts and the pinned usage
+         block needs no re-pin: --help prints what is already there and
+         adds no line to it."
+        <category: 'private'>
+        ^CliResult lines: self usageResult lines exitCode: 0
     ]
 
     versionResult [

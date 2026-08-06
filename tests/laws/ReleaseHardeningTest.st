@@ -277,16 +277,23 @@ guards.'>
     "---- §8 decision 52: a best-effort read swallows only what it
           defers to (S14) ----"
 
-    unreadableLockWorkDirNamed: aLabel declaring: aName [
-        "A project whose parley.lock is a DIRECTORY: it exists, so the
-         seed gathering reads it, and the read raises a kernel error
-         outside both declared boundary errors. The one operator state
-         that reaches decision 52's path on the shipped tree."
-        | work |
-        work := self track: (SparseIndexFixtures workDirNamed: aLabel
-            declaring: aName constraint: '^1.0').
-        Directory create: work, '/parley.lock'.
-        ^work
+    seedFaultResultIn: aWorkDir base: aBaseDir [
+        "The decision-52 fault, injected AT THE SEAM (Sprint 16, ruled
+         on issue #18). This law was driven by a parley.lock that was a
+         DIRECTORY, which was then the one operator state reaching the
+         exit-70 branch; §8 decision 56 now diagnoses it at exit 1, and
+         closed the equivalent ManifestFile hole with it, so no
+         filesystem state reaches that branch any more — by design,
+         since gst swallows anything raised by filed-in manifest code.
+         Re-driving onto a surviving hole would make this law depend on
+         that hole staying open. The claim is about what the CATCH does
+         with an error it did not anticipate, so SeedFaultCLI raises one
+         at the exact read the gathering goes through, inside a real run
+         observed at the real boundary. ONLY THE DRIVER MOVED: every
+         assertion below is the settled one."
+        ^(SeedFaultCommandLine in: aWorkDir runner: ProcessRunner new)
+            run: (Array with: 'resolve' with: '--index'
+                with: (SparseIndexFixtures baseUrlFor: aBaseDir))
     ]
 
     testASeedGatheringFailureOutsideTheDeclaredBoundariesIsADefectNotAConflict [
@@ -301,12 +308,9 @@ guards.'>
         base := self track: (SparseIndexFixtures baseTreeNamed: 'seed-base').
         SparseIndexFixtures publish: 'other-pkg' version: '1.0.0'
             dependencies: #() in: base.
-        work := self unreadableLockWorkDirNamed: 'seed-work'
-            declaring: 'absent-pkg'.
-        result := self runIn: work
-            argv: (Array with: 'resolve' with: '--index'
-                with: (SparseIndexFixtures baseUrlFor: base))
-            runner: ProcessRunner new.
+        work := self track: (SparseIndexFixtures workDirNamed: 'seed-work'
+            declaring: 'absent-pkg' constraint: '^1.0').
+        result := self seedFaultResultIn: work base: base.
         self assert: result exitCode = 70
             description: 'a seed-gathering failure answered exit ',
                 result exitCode printString, ': ', result lines printString.

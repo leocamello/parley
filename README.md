@@ -24,7 +24,10 @@ parley why <pkg>                Explain what put a package in the lockfile
 parley tree                     Show the pinned dependency graph
 parley check                    Verify the lockfile against the manifest and the index
 parley --version                Print the version, and nothing else
+parley --help                   Print these usage lines, and nothing else
 ```
+
+Asking the tool a question is not an error. `parley --help`, `parley -h` and `parley help` are the same question and all three exit `0`, as `parley --version` does — and none of them creates project state, because a `.parley/` that appeared when you asked what a command does would be state created by a question. Failing to *say* what you want still is an error: `parley` with no arguments, an unknown verb, and a trailing `parley resolve --help` all exit `2`.
 
 Three flags select the index for the verbs that need one, and they are mutually exclusive — giving two is a usage error rather than a silent preference, because a typo should not look like a working command:
 
@@ -139,6 +142,19 @@ st> (Greeter greet: 'REPL') printNl.
 ```
 
 This is the closest thing to `python` inside an activated virtualenv, and it is the fastest way to explore a dependency you have just installed. The image path may be absolute, so the REPL works from any directory.
+
+### What `exec` checks before it runs anything
+
+`parley exec <script>` checks one thing itself, before anything is spawned: that `<script>` is a file it can read. A path that is missing — or that turns out to be a directory — is refused with one line at exit `1`, and no child process starts:
+
+```
+$ parley exec typo.st
+typo.st: missing or unreadable script - nothing was run
+$ echo $?
+1
+```
+
+Parley checks this rather than leaving it to the child because GNU Smalltalk 3.2.5 answers exit `0` for both cases — printing `gst: Couldn't open file` for the missing script, and nothing at all for the directory — and because the discipline described in the next section is unavailable here: a file that does not exist cannot carry a guard.
 
 ### One sharp edge
 

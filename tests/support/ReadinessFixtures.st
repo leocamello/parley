@@ -455,4 +455,66 @@ Stateless; uniqueness comes from per-test labels.'>
     ]
 ]
 
+CLI subclass: SeedFaultCLI [
+
+    <comment: 'The Sprint 16 re-driver for the two settled decision-52
+laws: a CLI whose lock read — one of the two reads seedNames gathers
+through — signals an error OUTSIDE the two boundaries that gathering
+defers to, so the narrowed catch has to let it past and the settled
+taxonomy has to answer it.
+
+WHY THE FAULT IS INJECTED RATHER THAN STAGED ON DISK. Those laws used
+to be driven by a parley.lock that was a DIRECTORY, which was then the
+one operator state reaching the exit-70 branch. §8 decision 56 closed
+it, and closed the equivalent hole in ManifestFile with it, so — since
+gst swallows anything raised by filed-in manifest code — no filesystem
+state reaches that branch any more, BY DESIGN. A law re-driven onto a
+surviving hole would be a law underwritten by a defect, and would keep
+passing exactly as long as the defect lived. The claim is about what
+the CATCH does with an error it did not anticipate, so the error is
+put there directly. An edge double, never domain.'>
+
+    pinnedResolution [
+        "Private — the injected fault, at the exact seam seedNames
+         gathers through. A plain Error is deliberately neither a
+         ManifestError nor a LockError: those are the two boundaries
+         the gathering defers to, and the whole claim is that anything
+         else reaches CommandLine's exit 70 rather than leaving a
+         silently partial seed set behind."
+        <category: 'private'>
+        ^self error: self class faultMessage
+    ]
+
+    SeedFaultCLI class >> faultMessage [
+        <category: 'accessing'>
+        ^'seed gathering met an error no boundary declared'
+    ]
+]
+
+CommandLine subclass: SeedFaultCommandLine [
+
+    <comment: 'The composition root that wires SeedFaultCLI, so the
+fault is raised inside a real run and observed at the real §4.2
+boundary — which is where exit 70 and the one-line diagnosis live, and
+therefore the only place the two laws can assert what they assert. An
+edge double, never domain.'>
+
+    cliWithSource: aPackageSource [
+        "Private — the settled wiring with the fault-injecting CLI in
+         place of the real one. The collaborators are restated rather
+         than delegated because the CLASS is the only thing that
+         changes and construction is where a class is chosen; every
+         path still comes from the inherited private accessors, so the
+         store and the target stay derived from the WORKING directory
+         exactly as the settled wiring laws require."
+        <category: 'private-wiring'>
+        ^SeedFaultCLI
+            in: workingDir
+            source: aPackageSource
+            store: (ContentStore on: self storePath)
+            target: self targetPath
+            runner: runner
+    ]
+]
+
 Namespace current: Smalltalk.

@@ -403,8 +403,24 @@ exec propagation — all over doubles, spawning nothing.'>
 
     "---- S18: exec propagates the child's exit code ----"
 
+    execScriptNamed: aBaseName [
+        "A REAL script at a tmp/ path, tracked for teardown, answering
+         that path (Sprint 16, sanctioned at the RED review of issue
+         #18). From Doc E §4.1 and §8 decision 56 exec refuses a path
+         that is not an existing regular readable file before any
+         process is spawned; a law proving that a child's exit code
+         passes through while naming a script nobody ever wrote was
+         never testing its claim. The path is unchanged, so the pinned
+         child command line below stays byte-identical."
+        (File name: 'tmp') exists ifFalse: [Directory create: 'tmp'].
+        SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
+            toFile: aBaseName in: 'tmp'.
+        ^self track: 'tmp/', aBaseName
+    ]
+
     testExecPropagatesTheChildsExitCodeThroughTheScope [
         | runner cli result |
+        self execScriptNamed: 'parley-cli-exec-script.st'.
         runner := RecordingRunner answering: 7.
         cli := self cliIn: 'tmp/parley-cli-exec-work'
             source: nil
