@@ -53,9 +53,10 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 17 | `§8` decision entries ↔ the design docs citing them | — | **Unforced** <sup>[j]</sup> |
 | 18 | `docs/sprints/README.md` index rows ↔ the sprint notes files that exist | — | **Unforced** <sup>[k]</sup> |
 | 19 | New tests that **pass** in RED ↔ the sprint's declared passes-in-red list | runbook Gate A step 3 weak-test item, via the pass-count arithmetic | Procedural — F10 |
-| 20 | A carried gap's asserted **reachability** ↔ the runtime behaviour that would make it reachable | — | **Unforced** — F11 |
+| 20 | A carried gap's asserted **reachability** ↔ the runtime behaviour that would make it reachable | runbook Gate B §2.4 probe-or-mark-unprobed | Procedural — F11, F12 <sup>[l]</sup> |
+| 21 | A boundary's stated diagnosis (its **sentence**) ↔ the predicate that boundary actually **checks** | — | **Unforced** — F12 <sup>[m]</sup> |
 
-**Seven mechanical, eight procedural, five unforced.**
+**Seven mechanical, nine procedural, five unforced.**
 
 - **[a]** Known-partial: textually spelled senders only, because 3.2.5 offers no reflective alternative (§8 decisions 38 corrected, 43).
 - **[b]** Written *because* `GitIndexSource` shipped lawful and unreachable for a whole sprint — nothing constructed it.
@@ -67,6 +68,8 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 - **[h]** Both sides plain text and enumerable: the cheapest available drift law, unwritten. Open; scheduling is a Gate C question.
 - **[i]** Four instances (§8 decisions 43, 45, 49, 52), every one caught by a human reading. Not a drift-law candidate — comparing prose to behaviour is not a text walk.
 - **[j]** No finding raised it, and it has drifted before: the tracked log and the operator's copy diverged by four decisions, leaving tracked docs citing decisions a cloner could not resolve. The repair was a convention ("same commit as the doc change"), not a check. **Verified in sync at the time of writing** — 31 distinct decisions cited across tracked docs, all 31 resolve in §8. **Re-verified at the Sprint 15 close-out:** 55 decisions defined, every citation across `docs/`, `.github/` and `AGENTS.md` resolves, no dangling reference. Two consecutive clean checks is not forcing — it is two clean checks.
+- **[l]** Forced at Sprint 15 by F11's adopted runbook change, and it **paid out at the very next close-out**: Sprint 16's "the next boundary added will be in the same blind spot" is a claim that the present is safe, and §2.4 required it probed. Six `chmod` calls, six defects (F12). Procedural, not mechanical — a reviewer working a checklist, which is what every catch in this file has been.
+- **[m]** The pair F12 names and the reason it was invisible for eight sprints: `ManifestFile`'s diagnosis said `missing or unreadable Package.st` from Sprint 8 while its predicate tested `exists` alone. Both sides are enumerable — the diagnosis literals are in `src/`, the boundaries are a list somebody can write — so this is a drift-law candidate, unlike [i]. **Scheduled: Sprint 17 converts it into a table with a law over it.** Until then, the only thing standing between a new boundary and this defect is a reviewer remembering.
 - **[k]** No finding raised it, and it went stale for five consecutive sprints; `a36337e` backfilled Sprints 09–13, its message reading *"The table stopped at Sprint 08."* Verified in sync at the time of writing — 15 rows, 15 files. **At the Sprint 15 close-out it was out of sync again** — 16 notes files, 15 rows — and was backfilled in the close-out commit. The row stays unforced, and it has now drifted twice; that it is caught at Gate B each time is the operator's checklist working, not the pair being forced.
 
 Rows 17 and 18 were found by walking the pipeline rather than the findings, and **both had
@@ -127,20 +130,28 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **8** |
-| — caught by a mechanism | **4** (F3, F4, F6, F10) |
+| Defect-findings | **9** |
+| — caught by a mechanism | **5** (F3, F4, F6, F10, F12) |
 | — caught by luck | **4** (F1, F2, F5, F11) |
 | Confirmation-findings (excluded from the ratio) | 3 (F7, F8, F9) |
 
-**The pipeline caught 4 of 8.**
+**The pipeline caught 5 of 9.**
 
 **The split is not random: all four misses are unforced rows of the inventory above** —
 F1 (row 14, unforced until Sprint 14), F2 (row 13, unforced until Sprint 11), F5 (row 15,
-unforced still), F11 (row 20, unforced still). All four catches are forced rows: F3
-(row 8), F4 (row 9), F6 (row 10), F10 (row 19) — every one of them **procedural rather
-than mechanical**, now across eight findings and four sprints of evidence. This pipeline's
-mechanical gates have still never caught a defect in the product; what they catch is
-missing *declarations*, and what catches defects is a human working a checklist.
+unforced still), F11 (row 20, unforced still). All five catches are forced rows: F3
+(row 8), F4 (row 9), F6 (row 10), F10 (row 19), F12 (row 20, forced by the change F11
+itself adopted) — every one of them **procedural rather than mechanical**, now across
+nine findings and five sprints of evidence. This pipeline's mechanical gates have still
+never caught a defect in the product; what they catch is missing *declarations*, and what
+catches defects is a human working a checklist.
+
+**F12 is the first time a change this file adopted went on to catch a later defect**, and
+it is the strongest evidence the file is worth keeping: F11's runbook change (probe a
+reachability claim or mark it unprobed) is precisely what turned "the next boundary added
+will be in the blind spot" into six probed, reproducible defects at Gate B. A finding
+that only describes is a memoir; a finding that changes a step and then catches something
+is a mechanism with a slow fuse.
 
 That is the whole relationship between the two sections. **The tally says how often the
 pipeline was lucky; the inventory says where the luck will be needed next.** Read the
@@ -503,3 +514,64 @@ this instance would have cost a `mkdir` and a `resolve`.
 
 **Status.** First instance. Kin to F3 (a spec asserting a mechanism the runtime lacks),
 one level up: F3 governs what the docs claim, F11 governs what the *reviews* claim.
+
+---
+
+## F12 — A rule is ruled once and applied to the instances that motivated it; the rest of its domain is a defect set, not a future risk
+
+**Rule (portable).** When a sprint states a general rule and fixes the instances that
+prompted it, the unfixed instances of that same rule are **already defects** — not
+"future risk", not "the next one added". Before the sprint closes, **enumerate the rule's
+whole domain and probe every member**, including the rule's *mirror image*: a rule stated
+for one direction (reading a file) does not cover the other (writing one), and the mirror
+is where the next instance lives. A ranking that describes only the *future* exposure of a
+rule is a reachability claim about the present, and F11 governs it.
+
+**Evidence (Parley, Sprint 16, commit `96ad6b2`, found at Gate B).** §8 decision 56 was
+ruled as a general rule — *"a boundary that reads a file begins by requiring that path to
+be a regular readable file"* — and applied to three boundaries: `parley.lock`, the `exec`
+script, and (mid-sprint, as a conformance gap) `ManifestFile`. The close-out ranked what
+remained as a *prospective* gap: *"the next file boundary added will be in the same blind
+spot."* Probed at Gate B against the shipped `bin/parley`, **six existing states were
+already in it**, every one answering `internal error: … - this is a defect in Parley, not
+in your project` at exit `70`:
+
+| State | Answer |
+| --- | --- |
+| read-only `parley.lock`, `resolve` | exit `70`, `FileError: could not open <path>` |
+| read-only project directory, `resolve` | exit `70`, `Permission denied` — **file never named** |
+| read-only `Package.st`, `add` | exit `70`, `FileError: could not open <path>` |
+| `init` into a read-only directory | exit `70`, `Permission denied` — **file never named** |
+| `publish` to a read-only destination | exit `70`, `Permission denied` — **file never named** |
+| unreadable index entry `.st` / `.star` | exit `70` — while `DirectorySource` already carries the sentence `missing or unreadable archive file` |
+
+Five of the six are the rule's **mirror**: decision 56 governs *reading*, and nothing in
+the tool governs *writing*. The sixth is the rule's own domain, unapplied — and it is the
+`ManifestFile` shape exactly, one boundary over: the sentence was already written and the
+predicate behind it was never made.
+
+**What caught it.** **Mechanism** — runbook §2.4, the step F11 itself put there. The
+close-out's phrasing ("the next boundary added") is a claim that the present is safe, and
+§2.4 requires such a claim to name its falsifying probe and run it. The probe was six
+`chmod` calls. Counted as a mechanism, but the weak kind: a checklist item a reviewer
+works, not a law that halts. No gate in this repository can see a boundary whose sentence
+is right and whose predicate is missing — that is **inventory row 21**, added by this
+finding and unforced, now with a measured cost rather than a hypothetical one.
+
+**The generative mistake is subtle and worth naming.** The agent did not miss the rule; it
+*stated* the rule correctly and even identified the blind spot in the abstract. What it
+did not do is turn its own general sentence into a list and walk it. A rule expressed as
+prose feels complete when it is written; a rule expressed as an enumerated table is
+complete only when every row is green. The sprint that generalizes a fix is exactly the
+sprint least likely to enumerate it, because the generalization already feels like the
+work.
+
+**Change adopted.** Runbook §2.4 gains a second clause: when a sprint's ruling is stated
+as a *general rule*, the close-out enumerates the rule's domain — including its mirror —
+and probes each member, or records the domain as unenumerated. Sprint 17 is staged to
+convert this particular domain into a table with a law over it, which is the only way row
+20 stops being unforced.
+
+**Status.** First instance. Kin to F5 (an enumeration is a copy of a rule, and copies
+drift) inverted: F5 is a written list drifting from reality, F12 is reality with no list
+written at all.
