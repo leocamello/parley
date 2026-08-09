@@ -1,0 +1,82 @@
+# Parley — the one gate, hosted.
+#
+# This workflow runs `scripts/verify-sprint.sh` and NOTHING ELSE. It observes
+# the loop; it never participates in it: no `wrap-sprint.sh`, no edit to
+# `.parley/scope`, no commit, no push, no `--reset`.
+#
+# WHY `--phase green` IS PASSED EXPLICITLY, AND MUST STAY THAT WAY.
+# `verify-sprint.sh` resolves the TDD phase from the `phase:` line of
+# `.parley/scope` unless an explicit `--phase` wins (script lines 57-70). During
+# a RED phase that file reads `phase: red`, and the red gate REQUIRES the suite
+# to fail. A workflow that let the script read the file would therefore report
+# failure for the whole of every red phase — days at a time, on `main` — and the
+# badge would be measuring the sprint's TDD state instead of the health of the
+# committed tree. The red gate is a local, human-reviewed gate; what CI checks is
+# the invariant that holds at every commit: the committed suite passes.
+#
+# ⏱ TOOLCHAIN CLOCK. Ubuntu 22.04 (`jammy`) is the last distro release packaging
+# the 3.2.5 baseline (`gnu-smalltalk` 3.2.5-1.3ubuntu1); it is absent from Ubuntu
+# 24.04+ and Debian bookworm+. When GitHub retires the `ubuntu-22.04` runner
+# label this needs a pinned container image or a cached source build — see
+# `docs/roadmap.md` §6 item 1, whose trigger is that announcement.
+
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: lint guardrails + axiomatic SUnit suite
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # zip, curl and git are present on GitHub's images; they are installed
+      # anyway so the suite's real dependencies are DECLARED rather than
+      # inherited from whatever the runner image happens to ship. The suite
+      # spawns all three: Publisher (zip via gst-package), SparseIndexSource
+      # (curl) and GitIndexSource (git).
+      - name: Install GNU Smalltalk 3.2.5 and the tools the suite spawns
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gnu-smalltalk zip curl git
+
+      # A silently different toolchain would make every later green a lie, so
+      # this fails loudly rather than proceeding. gst-package is checked
+      # separately: it is a distinct binary and the publish/install suites are
+      # useless without it.
+      - name: Assert the toolchain is the 3.2.5 baseline
+        run: |
+          gst --version 2>&1 | head -3
+          gst --version 2>&1 | grep -q '3\.2\.5' || {
+            echo "::error::gst is not 3.2.5 — the entire suite's claims are pinned to that baseline"
+            exit 1
+          }
+          command -v gst-package >/dev/null || {
+            echo "::error::gst-package is absent; the publish and install suites spawn it"
+            exit 1
+          }
+
+      # The default seed, which is the one every sprint's audit record cites.
+      - name: Verify (default seed)
+        run: ./scripts/verify-sprint.sh --phase green
+
+      # A suite that only ever runs one seed is not a randomized suite. This is
+      # a SEPARATE step so a seed-dependent failure is distinguishable at a
+      # glance from a deterministic one, and it is NOT continue-on-error: a law
+      # that holds at 20260718 and fails at 42 is a real defect.
+      - name: Verify (second seed — the randomized suites are not seed-shaped)
+        run: ./scripts/verify-sprint.sh --phase green --seed 42
