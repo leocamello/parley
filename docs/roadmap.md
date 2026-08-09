@@ -24,7 +24,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-*Nothing in flight — Sprint 17 closed 2026-08-09; the next sprint is staged at Gate C.*
+- **Sprint 18 — writing your first `Package.st`: the authoring boundary speaks Parley's voice.** Issue #20, staged at Gate C on 2026-08-09 against **847 laws**. **§2 item 2, staged undisplaced — the eighth consecutive sprint the ranking won on its own merits**, and item 2 of the seven holding the v1.0 tag. The authoring boundary is the only place in the tool where text reaches the terminal that Parley did not write: a malformed manifest prints an 11-line kernel backtrace carrying Parley's own source paths, and the authoring diagnoses are the only family that never names the file. `Parley.ManifestCapture` (`src/manifest/`) rebinds `Transcript` around **a block its caller supplies** and performs no file I/O of its own — so `ManifestFile` keeps the `FileStream fileIn:` decision 73 deliberately left unwrapped, keeps its seat in the decision-60 census, and **the census does not grow** ([decision 61](design/architecture.md#8-decision-log)). The capture is **evidence, not output**: discarded on success, mined for its file-and-line anchor on failure, never echoed ([decision 62](design/architecture.md#8-decision-log)). The **F13 carried gap rides along** as a genuine member of the same defect class — a diagnosis asserting a cause it never checked — with the state root's law driving the whole *shape*-space of a path rather than two permission states ([decision 74](design/architecture.md#8-decision-log)).
 
 ### Recently delivered
 
@@ -91,16 +91,28 @@ that nothing scheduled building. **A forward reference to an unscheduled thing i
 two-artifacts-disagreeing shape [§8 decision 60](design/architecture.md#8-decision-log) was ruled
 about**, so the fix is a slot rather than a memory.
 
-- **CI runs the one gate** — ⏱ *not started; **before Sprint 18**.* `scripts/verify-sprint.sh` is
+- **CI runs the one gate** — ⏱ *not started; **honoured at Sprint 18's Gate C**: it lands as one
+  `chore(ci):` commit immediately **before** the scope advance, so Sprint 18's first push is
+  observed.* Ruled rather than re-dated, because the commitment was to a date and re-dating a
+  written commitment is what §8 decision 60 was ruled about. **It is not folded into the sprint:**
+  the harness has never been sprint scope, and admitting it would make `verify-sprint.sh`'s own
+  scope sentinel police the file that runs it. `scripts/verify-sprint.sh` is
   the single verification entry point and it runs on one laptop. This project's central public
-  claim is *795 axiomatic laws, green, seeded, reproducible*, and today nothing lets a reader
+  claim is *847 axiomatic laws, green, seeded, reproducible*, and today nothing lets a reader
   check it — the one thing the method refuses to do anywhere else. Ubuntu 22.04 packages
   `gnu-smalltalk` **3.2.5-1.3ubuntu1**, the exact baseline (probed 2026-08-06; dropped from Ubuntu
   24.04+ and Debian bookworm+), so the whole of it is `runs-on: ubuntu-22.04` plus an apt line,
   an assertion that `gst --version` reports 3.2.5, `verify-sprint.sh --phase green`, and a second
   step on an explicit non-default seed — a suite that only ever runs one seed is not a randomized
   suite. **CI observes the loop and never participates in it:** it does not run `wrap-sprint.sh`,
-  edit `.parley/scope`, or push. **The first run is itself a probe** — whether the *distro* 3.2.5
+  edit `.parley/scope`, or push. **`--phase green` on `push` to `main` is safe across a red phase,
+  and that is a checked fact rather than a hope** (verified at Sprint 18's Gate C against
+  `62aee7a`): the red-phase test files are never committed — the phase-flip commit carries only
+  `.parley/scope` and any operator test amendments, and the sprint's tests reach `main` for the
+  first time inside the green wrap commit. So every state that exists on `main` is green, which is
+  exactly the claim CI is being asked to check. **The workflow therefore passes `--phase green`
+  explicitly and never reads `phase:` from `.parley/scope`** — a workflow that trusted the scope
+  file would go green by agreeing that a red phase is allowed to fail. **The first run is itself a probe** — whether the *distro* 3.2.5
   passes the suite the `/usr/local` source build passes is an open question, and a difference
   would be a portability defect found before the tag rather than after, which is most of CI's
   value. The drift law binding the workflow to `verify-sprint.sh` is **item 7's** (§8 decision
@@ -115,6 +127,10 @@ about**, so the fix is a slot rather than a memory.
 ### Carried gaps — ranked, unscheduled (runbook §2.4)
 
 Recorded at Gate B — or, for the first item below, at an operator walkthrough of the shipped binary — and scheduled at Gate C against the list above, never at the moment of discovery. Ranked most severe first.
+
+- **`ensureDirectory:` makes a false claim about a writable directory.** 📅 *Recorded at the Sprint 17 close-out (method finding **F13**); **scheduled into Sprint 18** at Gate C, 2026-08-09.* A regular file at `<workdir>/.parley` — or at `<workdir>/.parley/packages` with `.parley` writable — is refused with `/…/f1: could not be written - check its permissions and try again` while `test -w /…/f1` answers writable. `CommandLine>>ensureDirectory:` names the **parent** by a deliberate and documented rule, and that rule conflates two states: *the parent cannot be written*, and *the path exists and is not a directory*. In the second the sentence is **false** and the remedy cannot work, which is what [decision 58](design/architecture.md#8-decision-log) forbids outright. **Severity: soundness-class**, and probed rather than reasoned (the four commands are in the close-out). Not a wrong exit code — both states answer exit `1`, so Sprint 17's headline criterion holds and no law failed. **Consumer constraint until it lands:** an operator with a stray file at either path is told to check permissions that are already correct and given no route to the real fix.
+
+  **Why it rides along with Sprint 18 rather than waiting** (Gate C, and this is a ranking decision recorded rather than a convenience): it is not a prerequisite — the authoring boundary reads and parses where this one creates a directory — but it is a live member of **the same defect class Sprint 18 exists to abolish**, a diagnosis asserting a cause it never checked. The fix is small and the correct sentence already exists one row over. And the tag is held on this list, so deferring it leaves a **false** sentence in software that is about to be released, which is a compounding rather than a bounded cost of waiting. It carries [decision 74](design/architecture.md#8-decision-log): the state root's law drives the whole *shape*-space of a path, which is F13's rule made forced rather than recorded.
 
 - **`parley exec` reports the child's exit code, and 3.2.5 makes that a weaker promise than it sounds.** ✅ *Ruled at Sprint 12 staging — closed as a bounded limitation, not carried as a defect ([§8 decision 45](design/architecture.md#8-decision-log)).* GNU Smalltalk 3.2.5 continues past an unhandled error at the top level of a filed-in script and exits `0`, so `parley exec broken.st` prints the child's backtrace and reports success. Whether a fix existed had been estimated, never probed. **Probed at staging: it does not.** A handler installed around `FileStream fileIn:` never fires — a filed-in statement's doit context is parentless, the same mechanic decision 34 found for authoring — and `Behavior>>evaluate:` fails identically (probed at Sprint 9); there is no `SystemExceptions.UnhandledError` on this toolchain. What is left is capturing the child's output and pattern-matching a backtrace, which is heuristic and would end the live streaming that makes `exec` usable.
 

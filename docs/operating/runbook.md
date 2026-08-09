@@ -134,14 +134,16 @@ Amending §9 prevents *silent* drift. It does nothing about **priority inversion
    - `.parley/scope`: bump `sprint:`, set `phase: red`, add the `scope-<N>` regex (copy the prior line; add any new `src/<dir>/`). Sprint notes need no entry — `docs/` already covers `docs/sprints/`. Drop scope-7's one-off migration paths (`\.parley_sprint_scope$`, `SPRINT[0-9]+-NOTES\.md$`) from scope-8 onward.
    - `scripts/run-tests.st`: add the new source directory to the file-in list **only if** the sprint introduces one (keep load order: compat, domain, manifest, resolver, ...).
 5. **Write `operator/kickoffs/sprint-<NN>.md`** (zero-padded) modeled on the previous one (read it first): read-order with the sprint's spec of record, settled-API boundaries with declared exceptions, scope in/out, RED file list + red-gate expectations (declare any intentional passes-in-red guards), GREEN implementation order (riskiest core surgery first and alone), structural rules, DoD with `wrap-sprint.sh <N> <issue>` and the commit message. No exclude entry is needed — all of `operator/` is excluded wholesale.
-6. **Commit and mirror:**
+6. **Reconcile the operator-local narrative against the tracked roadmap, and say which way it moved.** `operator/master-plan.md` §9 is the narrative half of what `docs/roadmap.md` §2 keeps canonically. It is untracked and operator-local, so **no drift law can ever see it** — which is exactly why it drifted three sprints (15, 16 and 17 all delivered without reaching it) before anyone compared them. It is a **row-18-family pair**: two artifacts each correct alone, wrong with respect to each other, with nothing comparing them. This step is the comparison, and it is deliberately the weak kind of mechanism — a checklist item a reviewer works, not a law that halts — because the tracked/untracked split leaves nothing stronger available. **The tracked roadmap wins every disagreement.** Either amend the plan to match, or record in the Gate C staging comment that the plan is stale and by how many sprints. Silence here is what three sprints of drift looked like.
+
+7. **Commit and mirror:**
    ```
    git add .parley/scope docs/roadmap.md [scripts/run-tests.st] [docs/design/<amended>.md]
    git commit -m "chore(loop): advance scope to Sprint <N> — <name> (red)"
    git push origin main
    ./scripts/sync-loop.sh <new issue>
    ```
-7. Hand the user the kickoff prompt for a fresh agent session.
+8. Hand the user the kickoff prompt for a fresh agent session.
 
 ---
 

@@ -46,6 +46,27 @@ Parley define: [:pkg |
 
 **Fetched archives are outside that claim, and deliberately so** (narrowed at the Sprint 13 close-out; §8 decision 49). An archive a failed `add` had already fetched may remain in the content-addressed store, where it is **inert until a lock pins it**: it is hash-verified, it is re-used rather than re-fetched on the next run, and no verb reports store contents, so it is not observable project state. The pair above is what the atomicity claim is *for* — it is the pair that can manufacture the `PinVerification` failure — and the store cannot produce that state however it is left. Erasing an archive to satisfy a wider sentence would add machinery to delete something inert that another pin may legitimately share. If the store ever becomes observable as state — pruning, a size budget, a verb that reports contents — this narrowing is what reopens.
 
+### 2.2 The toolchain's own voice: capture, then re-voice — never echo, never silence (Sprint 18)
+
+`Package.st` is **executed**, and that makes this the one boundary in Parley where text reaches the user's terminal that **Parley did not write**. Every other diagnosis in the tool is composed by Parley and printed through `CliResult`; here the toolchain speaks first, in its own voice, about the author's own program. Probed through the shipped binary, a `Package.st` whose top-level statement raises answers **eleven lines of kernel backtrace — six of them absolute paths into Parley's own source tree** — above one correct sentence. A user reading that concludes Parley crashed. **The tool's own laws deny backtraces and pass**, because they assert over the `CliResult`'s composed `result lines` while this text reaches the terminal by another route entirely; that gap is why this is a boundary with a mechanism rather than a line to delete.
+
+**The mechanism is a capture around the author's program, and the capture is a value.** `Parley.ManifestCapture` (`src/manifest/`) rebinds the global `Transcript` to a collector for the duration of **a block its caller supplies**, restores the previous binding **unconditionally** through `ensure:` — including on non-local exit — and answers the collected text. It performs **no file I/O of its own**, which is the load-bearing half of its shape rather than an incidental property (§8 decision 61): the `FileStream fileIn:` stays in `ManifestFile`, where §8 decision 73 deliberately left it unwrapped, so `ManifestFile` keeps its seat in the decision-60 I/O census and **the census does not grow**. `ManifestCapture` captures; the caller decides.
+
+**The capture is evidence, not output** (§8 decision 62). Three rules follow, and each is a refusal:
+
+- **On success it is discarded.** A manifest that loaded cleanly has nothing to report even if the toolchain muttered on the way.
+- **On failure Parley mines it and composes its own sentence.** The capture's own frame line carries `(<basename>:<line>)` — Parley is presently throwing away a **file and a line number** for the commonest authoring mistake there is. The anchor is extracted and re-voiced in the settled `'<path>: …'` grammar, which produces a better diagnosis for a broken manifest than any of the seven package managers this project benchmarks against gives for the equivalent error.
+- **It is never echoed verbatim.** Echoing it would reintroduce the six Parley source paths this boundary exists to remove — the capture would have moved the defect rather than fixed it.
+
+**What cannot be captured is stated, not chased** (§8 decision 62, in the decision-45 shape). Two fragments reach the terminal outside `Transcript` and both are C-level, so no in-image rebinding reaches them:
+
+| Fragment | Stream | Ruling |
+| --- | --- | --- |
+| `Object: <receiver>` — `primError`'s receiver prefix | **stdout** | **Stated bounded limitation.** It carries no backtrace frame and no Parley source path, so the marker-absence law passes over it *by its stated bound* rather than by accident. |
+| `<path>:<line>: parse error, expected ']'` | **stderr** | **Deliberately kept.** It is the single most useful line the toolchain produces about a manifest — it names the author's file *and* the line — and suppressing it would destroy information Parley cannot reconstruct. |
+
+The second carries a consequence that is stated rather than left implicit: **Parley cannot distinguish an unparseable `Package.st` from one that simply never sent `define:`.** On the parse path `fileIn:` returns normally, nothing is recorded and the capture is empty, so both states answer the same settled `no manifest defined - the file never sent Parley define:` line, naming the path. That literal is **not re-toned** — it is true of both, and the information that separates them is already on the operator's terminal on stderr, unsuppressed. This reopens if Parley ever gains a stdout/stderr capture for another reason (roadmap §2 item 3's redirect is the named trigger), and not before.
+
 ---
 
 ## 3. `ManifestBuilder`

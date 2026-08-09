@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 17
-phase: green
+sprint: 18
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -138,3 +138,47 @@ scope-16: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # authorship, so wrap-sprint.sh refuses the wrap when anything under
 # docs/method/ is staged. That refusal is the rule working.
 scope-17: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-18 is identical to scope-17: Sprint 18 introduces no new src/
+# directory — Parley.ManifestCapture lives in src/manifest/, which
+# scripts/run-tests.st already files in AND files in BEFORE src/exec/,
+# where its one caller lives — so that script is unchanged and must not
+# be edited.
+#
+# Declared settled-class exceptions this sprint are TWO, both in
+# src/exec/, and the list is deliberately shorter than the staging
+# plan's four (checked against the code at Gate C rather than taken
+# from the plan — the scope-17 lineage above records what happens when
+# a comment and an issue disagree about this list):
+#
+#   ManifestFile - wraps step 2's namespace swap and FileStream fileIn:
+#     in a ManifestCapture block, prepends the decision-44 batch header
+#     naming the path to the authoring problems, and composes the
+#     re-voiced file-and-line diagnosis from the capture.
+#   CommandLine  - ensureDirectory: distinguishes an unwritable parent
+#     from a path of the wrong type (§8 decision 74, method finding
+#     F13), and the state-root boundary row gains its declared sentence
+#     for the new state.
+#
+# NOT exceptions, and each is a halt-and-ask if the agent needs it:
+# Parley.Parley (the gateway's two handlers are unchanged; the capture
+# wraps the file-in in ManifestFile, NOT in the gateway and NOT inside
+# ManifestCapture - §8 decision 61), ManifestBuilder (its four problem
+# literals stay byte-identical; the header is prepended by ManifestFile),
+# ManifestError and CommandLine's batchedErrorClasses (problems already
+# become the lines, so the header is a problem entry rather than a new
+# mechanism), and CLI (it already passes the path to ManifestFile load:).
+#
+# THE CENSUS STAYS AT EIGHT. ManifestCapture performs no file I/O; if
+# its source acquires 'FileStream ', 'File name:', 'Directory create:'
+# or 'Directory workingName' it becomes a ninth class and S13 of the
+# settled Sprint 17 suite fails by construction (§8 decisions 60, 61).
+#
+# bin/ stays in scope — the shipped binary is law-guarded from Sprint 8
+# onward, and this sprint's marker-absence law spawns it to capture
+# stdout AND stderr, which is the whole point of the law.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-17 record: the sentinel enforces paths rather
+# than authorship, so wrap-sprint.sh refuses the wrap when anything
+# under docs/method/ is staged. That refusal is the rule working.
+scope-18: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
