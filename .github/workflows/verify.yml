@@ -43,16 +43,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # zip, curl and git are present on GitHub's images; they are installed
-      # anyway so the suite's real dependencies are DECLARED rather than
-      # inherited from whatever the runner image happens to ship. The suite
-      # spawns all three: Publisher (zip via gst-package), SparseIndexSource
-      # (curl) and GitIndexSource (git).
+      # `gnu-smalltalk-common` is named EXPLICITLY and that is load-bearing: on
+      # Ubuntu it is a *Recommends* of `gnu-smalltalk`, not a Depends, so
+      # `--no-install-recommends` silently omits it — and it is the package that
+      # ships the class library, including `SUnit.star` and `packages.xml`. The
+      # first CI run failed exactly here: `PackageLoader fileInPackage: 'SUnit'`
+      # at `scripts/run-tests.st:24` answered "SUnit: package not found" after
+      # every source and test file had already loaded cleanly. The flag stays
+      # rather than being dropped, because naming what the suite needs is the
+      # point: this workflow DECLARES its dependencies instead of inheriting
+      # whatever the runner image happens to ship.
+      #
+      # zip, curl and git ship on GitHub's images and are installed anyway for
+      # the same reason. The suite spawns all three: Publisher (zip, via
+      # gst-package), SparseIndexSource (curl) and GitIndexSource (git).
+      #
+      # Note the layout difference this exposed, in case a later image moves
+      # again: the source build keeps the class library at
+      # `/usr/local/share/smalltalk/`, the distro at `/usr/share/gnu-smalltalk/`.
+      # Nothing here hardcodes either — `gst` finds its own prefix.
       - name: Install GNU Smalltalk 3.2.5 and the tools the suite spawns
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            gnu-smalltalk zip curl git
+            gnu-smalltalk gnu-smalltalk-common zip curl git
 
       # A silently different toolchain would make every later green a lie, so
       # this fails loudly rather than proceeding. gst-package is checked
@@ -67,6 +81,17 @@ jobs:
           }
           command -v gst-package >/dev/null || {
             echo "::error::gst-package is absent; the publish and install suites spawn it"
+            exit 1
+          }
+          # SUnit is probed through the very mechanism run-tests.st uses rather
+          # than by testing a path, because the path moved between the source
+          # build and the distro and a path check would encode the wrong one.
+          # The marker is grepped rather than trusting the exit code: gst 3.2.5
+          # exits 0 even on an unhandled error, which is the same reason this
+          # project's own harness looks for a PARLEY-VERIFY sentinel.
+          printf "PackageLoader fileInPackage: 'SUnit'.\nTranscript showCr: 'SUNIT-OK'.\n" > /tmp/sunit-probe.st
+          gst -q /tmp/sunit-probe.st 2>&1 | grep -q 'SUNIT-OK' || {
+            echo "::error::SUnit is not loadable — the class library package (gnu-smalltalk-common) is missing or relocated"
             exit 1
           }
 
