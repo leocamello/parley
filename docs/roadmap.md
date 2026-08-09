@@ -24,7 +24,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-- **Sprint 17 — the boundary table: every diagnosis earns its predicate.** Issue #19, staged 2026-08-06. [§8 decision 59](design/architecture.md#8-decision-log) and method finding **F12**. Staged **undisplaced and as a v1.0 blocker**: the six defects it closes were probed through the shipped binary at the Sprint 16 close-out, and **the v1.0 tag is held until it lands** (§5).
+- **Sprint 17 — the boundary table: every diagnosis earns its predicate.** ⏱ Issue #19, staged 2026-08-06, amended 2026-08-07 at the Gate C re-ranking. [§8 decision 59](design/architecture.md#8-decision-log), [§8 decision 60](design/architecture.md#8-decision-log) and method finding **F12**. **Item 1 of the seven below, and the only one of them in flight.** The Sprint 16 close-out held the tag on this sprint alone; **the hold is now on the whole list** (§5), which is what the re-ranking below is for. Nothing about the sprint's own content shrank at the amendment: its declared exception list became the eight-class I/O census (decision 60), and three manifest-authoring scenarios moved to item 2, where they have a governing ruling of their own. Staged **undisplaced** — the six defects it closes were probed through the shipped binary at that close-out.
 
 ### Recently delivered
 
@@ -43,11 +43,73 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### Next, in order
 
-**v1.0 is code-complete and uncut** — no tag, no release. The two standing items below are trigger-gated and 2.0-axis respectively, so neither competes; item 1 was added by the readiness audit described in it, and it wins by being the only ready item rather than by displacing anything.
+**The v1.0 line was re-ranked on 2026-08-07.** Sprint 15 declared it complete against a
+definition that counted capabilities and never counted the experience of using them; three
+consecutive close-outs then found instances of that omission and ranked each as a one-off
+defect. The list is what was wrong. **Items 1–6 are that category, enumerated once, in the
+order a user meets them; item 7 is the machinery that cuts the tag.** Each is now an ordinary
+roadmap item that wins on its own merits rather than a displacement.
 
-1. **The boundary table — every diagnosis earns its predicate** ⏱ — *deferred 0×; added 2026-08-06 at the Sprint 16 close-out, from six states probed through the shipped binary. **Holds the v1.0 tag.*** [§8 decision 59](design/architecture.md#8-decision-log), method finding **F12**. Decision 56 was ruled as a general rule and applied to three boundaries; six ordinary filesystem states still answer `internal error: … - this is a defect in Parley, not in your project` at exit `70`, and **three of them never name the offending path**. A read-only `parley.lock` under `resolve`; a read-only project directory under `resolve`; a read-only `Package.st` under `add`; `init` into a read-only directory; `publish` into a read-only destination; an unreadable index entry or `.star` — while `DirectorySource` already carries the sentence `missing or unreadable archive file`. Five are the rule's **mirror**: decision 56 governs reading and nothing governs writing. The external clock is the tag itself: every sprint this waits is a sprint v1.0 cannot be cut, and each of the six tells an ordinary user their tool is broken when their directory is read-only. The fix is an **enumerated boundary table** — path, direction, declared error — with a law driving every row through an unreadable and an unwritable state, which is what converts inventory row 21 from unforced to mechanical and is the only reason this is a sprint rather than six patches.
-2. **`PubGrubStrategy` + prereleases** — *deferred 0×; **trigger-gated**, does not compete until its trigger fires.* Pre-validated by Hex and Bundler, both of which discarded backtracking resolvers after pathological freezes on real graphs. The trigger is **graph size or observed slowness, never calendar**. Prereleases ride in the same sprint because they touch `Version` comparison — the declared single change site — exactly once.
-3. **Entry signing** — *deferred 0×; **2.0 axis** (§5), not a v1.0 blocker.* Byte-stable canonical rendering already makes signing unusually cheap *whenever* it lands, because canonicalization is a law rather than a convention, and decision 37 keeps signatures valid across a retirement. What is not cheap is the verification itself: under the no-third-party-libraries ban it is PKCS#1 v1.5 over `LargeInteger` or Ed25519 curve arithmetic, written from scratch and vector-anchored like `Sha256` — a crypto sprint, where a subtle error is a security defect rather than a failing law. crates.io ran for years on checksums and transport trust; Hex added signing later. v1.0 does the same.
+1. **The boundary table — every diagnosis earns its predicate** ⏱ — *deferred 0×; **holds the
+   v1.0 tag**.* Issue #19, in flight. §8 decisions 59 and 60, method finding **F12**.
+2. **Writing your first `Package.st`** — *deferred 0×.* The authoring boundary is the only
+   place in the tool where text reaches the terminal that Parley did not write: a malformed
+   manifest prints an 11-line kernel backtrace carrying Parley's own source paths, and the
+   authoring diagnoses are the only family that never names the file. Both are on the first
+   session's path. §8 decisions 61, 62.
+3. **Running your first command** — *deferred 0×.* Every successful verb prints more foreign
+   text than its own: `publish` emits five `mkdir`/`ln`/`rm`/`cd`/`zip` lines per one of its
+   own, `add` and `install` emit an `/usr/bin/install -c` line, `exec` emits a GC message.
+   Probed 2026-08-06: **all of it is on stdout and stderr is clean**, so silencing is a
+   redirect, not the deferred output-capture layer (§3, amended). §8 decision 63.
+4. **Getting Parley, and telling it where your index is** — *deferred 0×.* The README has no
+   installation section at all, and there is no configuration of any kind, so `--source <dir>`
+   is retyped on every command forever. (The broken symlink install itself — which exits `0` on
+   total failure — is §8 decision 66, ruled and fixed in Sprint 17 because it is a filesystem
+   state answering the wrong exit code; this item documents the route it opens.) §8 decisions
+   64, 65.
+5. **The verbs that close the grammar** — *deferred 0×.* `remove`, `search`, `info`,
+   `outdated`. All four are present in all seven of the package managers this project
+   benchmarks against; `remove` is the declared other half of `add` and its deferral trigger
+   has fired (§3). §8 decision 67.
+6. **Dependencies you are developing** — *deferred 0×.* Path dependencies and dev-only
+   dependencies. In an ecosystem with no published packages, two directories side by side is
+   *the* workflow, and today it costs a `parley publish` per edit. Both are **root-manifest-only
+   vocabulary**, so the index entry schema does not move. §8 decisions 68, 69.
+7. **The release** — *deferred 0×.* CHANGELOG, the declared release manifest with a law over
+   it, shell completions, the CI drift law, and the tag. §8 decisions 70, 71.
+
+### Harness, not a sprint
+
+Numbered separately because it is **not** a sprint and must not be ranked as one: the harness —
+`scripts/verify-sprint.sh`, `.githooks/`, `wrap-sprint.sh` — has never been sprint scope, and this
+lands as `chore(ci):` on the `chore(loop):` precedent. It is listed here because the item was
+nearly lost by having no slot at all: it was specified only in an operator-local plan, and §6
+item 1 below already reasons about *CI's toolchain source* as future work, which presumes a CI
+that nothing scheduled building. **A forward reference to an unscheduled thing is the same
+two-artifacts-disagreeing shape [§8 decision 60](design/architecture.md#8-decision-log) was ruled
+about**, so the fix is a slot rather than a memory.
+
+- **CI runs the one gate** — ⏱ *not started; **before Sprint 18**.* `scripts/verify-sprint.sh` is
+  the single verification entry point and it runs on one laptop. This project's central public
+  claim is *795 axiomatic laws, green, seeded, reproducible*, and today nothing lets a reader
+  check it — the one thing the method refuses to do anywhere else. Ubuntu 22.04 packages
+  `gnu-smalltalk` **3.2.5-1.3ubuntu1**, the exact baseline (probed 2026-08-06; dropped from Ubuntu
+  24.04+ and Debian bookworm+), so the whole of it is `runs-on: ubuntu-22.04` plus an apt line,
+  an assertion that `gst --version` reports 3.2.5, `verify-sprint.sh --phase green`, and a second
+  step on an explicit non-default seed — a suite that only ever runs one seed is not a randomized
+  suite. **CI observes the loop and never participates in it:** it does not run `wrap-sprint.sh`,
+  edit `.parley/scope`, or push. **The first run is itself a probe** — whether the *distro* 3.2.5
+  passes the suite the `/usr/local` source build passes is an open question, and a difference
+  would be a portability defect found before the tag rather than after, which is most of CI's
+  value. The drift law binding the workflow to `verify-sprint.sh` is **item 7's** (§8 decision
+  71): the workflow exists first, and the law that stops it drifting lands with the rest of the
+  release machinery.
+
+### Standing, not competing
+
+- **`PubGrubStrategy` + prereleases** — *deferred 0×; **trigger-gated**.* Unchanged.
+- **Entry signing** — *deferred 0×; **2.0 axis**.* Unchanged.
 
 ### Carried gaps — ranked, unscheduled (runbook §2.4)
 
@@ -80,18 +142,28 @@ Recorded at Gate B — or, for the first item below, at an operator walkthrough 
 | Deferred | Reason | Decision |
 | --- | --- | --- |
 | Registry **hosting**, entry **signing**, yanking-as-deletion | Hosting is an operated service with an indefinite horizon (storage, CDN, moderation, name squatting, key custody, an entity to hold it); signing is a from-scratch crypto implementation under the no-third-party-libraries ban, where "the laws pass" is not sufficient assurance. Both are the 2.0 axis (§5) | §8 decision 27, narrowed at the v1.0 staging |
-| A `RegistrySource` that *is* a renamed `DirectorySource` | The original decision-27 reason, and it still holds: a source with no protocol of its own earns nothing. What is **no longer** deferred is the sparse-index **client**, which has a protocol, is testable offline, and is §5's item 3 | §5 |
+| A `RegistrySource` that *is* a renamed `DirectorySource` | The original decision-27 reason, and it still holds: a source with no protocol of its own earns nothing. What is **no longer** deferred is the sparse-index **client**, which has a protocol, is testable offline, and shipped as the sparse-index client (§5, Sprint 14) | §5 |
 | Prerelease versions | Smallest well-defined semver surface for MVP; rides with `PubGrubStrategy` when that lands | §8 decision 8 |
 | Backjumping | Data supports it; the payoff belongs to `PubGrubStrategy`, not the backtracking loop | §8 decision 14 |
 | `PubGrubStrategy` | Trigger-gated on graph size or observed slowness | §2 above |
 | `parley retire` verb | Retirement records are authored by the index owner; a verb is ergonomics | Sprint 10 scope |
 | Retirement **reporting** on `install` | Requires the index on the fast path, which the settled no-snapshot law forbids; belongs to `parley check` | §8 decision 37 |
 | Un-retiring; package-level (vs release-level) retirement | Retirement is additive and monotonic in MVP | Sprint 10 scope |
-| Output capture; any shell-quoting layer | Parley composes command lines from paths it controls; the child streams to Parley's own stdout/stderr | Doc E §1 |
-| A prebuilt image | Per-invocation file-in is the honest MVP cost; deferred tooling polish | Doc E §4.3 |
+| Output capture; any shell-quoting layer | **Split, 2026-08-07** — the row deferred one mechanism and was read as forbidding a different one. *Output capture* — buffering a child's stream into the image — stays deferred, reason unchanged: the child streams to Parley's own stdout/stderr. *Discarding* a plumbing child's stdout by redirect is **ruled in**: it buffers nothing, touches no stderr, and interpolates no user text, so this row's stated reason never reached it. *Shell quoting* stays deferred — Parley still composes command lines from paths it controls | Doc E §1; §8 decision 63; *running your first command* (§2) |
+| A prebuilt image | Per-invocation file-in is the honest MVP cost; deferred tooling polish. **Confirmed 2026-08-07 with fresh evidence**, not merely carried: re-probed at `--version` **47 ms** and `init` **55 ms** end to end, so decision 54's measurement-based deferral stands and is stronger than when it was made. None of its three triggers fires | Doc E §4.3, §8 decision 54 |
 | Pruning the `--git` cache | No verb removes checkouts; one directory per distinct repo location | Sprint 9 notes |
-| `parley remove <pkg>`; **changing** an existing constraint | Both are *edits* rather than additions, and both want decision 49's recognize-or-refuse ruling applied a second time — to deletion and to in-place replacement, each with its own refusal surface. Neither is urgent: `add` refuses a different constraint rather than overwriting it, so nothing is silently wrong, and folding them in would double the recognizer's surface in its first sprint. Trigger: `add`'s recognizer surviving a sprint of real use | Sprint 13 scope, §8 decision 49 |
+| **Changing** an existing constraint | **Narrowed 2026-08-07 to this half alone.** `parley remove <pkg>` leaves this row: its stated trigger — *`add`'s recognizer surviving a sprint of real use* — fired four sprints ago, and it is *the verbs that close the grammar* (§2). **In-place replacement stays deferred, same reason:** it is an *edit* wanting decision 49's recognize-or-refuse ruling applied to overwriting, with its own refusal surface, and nothing is silently wrong meanwhile because `add` refuses a different constraint rather than overwriting it. New trigger: the first user who reports that refusal as a blocker | Sprint 13 scope, §8 decision 49; §6 |
 | Batching lock problems | One file, one repair, one problem — deliberately unlike the scan, and unlike `check`, which batches because it reports on a project rather than a file | §8 decision 44 |
+| Color / ANSI output | The diagnosis set is pinned **byte-for-byte** by law across 36 line literals and 111 fixture methods. Adding ANSI means re-pinning every one of them in the same sprint that changes their meaning — the largest possible surface on which to make an invisible mistake — and v1.0's promise is that the wording is settled. It is also a `--color` tri-state (`auto`/`always`/`never`) plus TTY detection, which 3.2.5 does not offer natively. Trigger: the fixture set surviving one release unchanged | §6 |
+| `--json` / machine-readable output | Structured output serves consumers that do not exist yet: there is no editor plugin, no CI action and no dashboard reading Parley. Building it now would pin an output schema against zero feedback. **Note the in-voice alternative when it lands:** Parley already owns a byte-stable literal format and a reader for it, so `#'parley-report' 1` may serve better than JSON and costs almost nothing. Trigger: the first tool that wants to consume Parley's output | §6 |
+| `--dry-run` | `add` and `remove` are already atomic and already refuse before writing, so the flag would today mean "print what a successful command would print". Trigger: the first verb whose effect is not trivially reversible — cache pruning is the likely one | the 2026-08-07 re-ranking |
+| Optional dependencies / feature flags | Unlike `path:` and `devDependency:`, these **must** appear in the index entry, so they are a schema change with a migration. Every benchmarked manager that has them added them after 1.0. Trigger: a package that genuinely cannot be expressed without them | §6, §8 decision 69 |
+| Workspaces / multi-package repositories | Real machinery — a workspace manifest, shared lock, member resolution — and nobody has three Parley packages in one repository yet. Trigger: a repository with three or more Parley packages | §6 |
+| `parley config` verb | The file is a small literal artifact edited by hand; a verb is ergonomics. Same reasoning as `parley retire`. Trigger: users mis-editing the file | §6; *getting Parley, and telling it where your index is* (§2) |
+| `parley test` verb | `parley exec` already runs a script in the resolved environment; a `test` verb is a naming convention over it. Trigger: a conventional test path emerging in real packages | §6 |
+| `parley cache` verb | Rides with the already-deferred `--git` cache pruning. Trigger: the same as pruning | §6 |
+| Distro packaging, Homebrew, man pages, a documentation site | Distribution for a tool whose only installation route was broken until Sprint 17. Do the route first, measure demand second. Trigger: the first external contributor or packaging request | §6 |
+| Publishing Parley itself into a Parley index | Charming, and it proves nothing the test suite does not already prove end to end. No trigger | the 2026-08-07 re-ranking |
 
 ---
 
@@ -128,22 +200,58 @@ So v1.0 builds the protocol and proves it offline. The day someone hosts a Parle
 | --- | --- | --- |
 | 12 | Selective `update <pkg>` | The all-or-nothing grammar was the last place the tool forced a diff nobody asked for. ✅ Delivered, issue #14, commit `a899ca8`. |
 | 13 | `parley add` | The ruling that gated it is made — [§8 decision 49](design/architecture.md#8-decision-log): a `ManifestBuilder` round-trip is disqualified, because `Package.st` is executable Smalltalk the author owns and the manifest is a lossy projection of it. Recognize or refuse, verify by re-reading, roll back on failure. ✅ Delivered, issue #15, commit `d9b6fad`. |
-| 14 | The sparse-index client | §2 item 2. Provable with no network and no server. |
-| 15 | Release hardening | §2 item 3: `--version`, publishing to a shared index, docs for a stranger, and the prebuilt-image call taken on measurements. ✅ Delivered, issue #17, commit `87a9e34`. |
+| 14 | The sparse-index client | The list's top item when it was staged (§2). Provable with no network and no server. ✅ Delivered, issue #16, commit `d54b490`. |
+| 15 | Release hardening | The list's top item when it was staged (§2): `--version`, publishing to a shared index, docs for a stranger, and the prebuilt-image call taken on measurements. ✅ Delivered, issue #17, commit `87a9e34`. |
 
 | 16 | v1.0 readiness | Not on the original line. Added 2026-08-05 from a hands-on audit of the shipped binary: five first-session defects, every one the tool disagreeing with itself. ✅ Delivered, issue #18, commit `96ad6b2`. |
-| 17 | The boundary table | ⏱ **Holds the tag.** Added 2026-08-06 at the Sprint 16 close-out from six probed states ([§8 decision 59](design/architecture.md#8-decision-log), finding **F12**). Issue #19. |
+| 17 | The boundary table | ⏱ Item 1 of seven; the hold is on the list (§2). Added 2026-08-06 at the Sprint 16 close-out from six probed states ([§8 decision 59](design/architecture.md#8-decision-log), finding **F12**). Issue #19. |
+| 18 | Writing your first `Package.st` | ⏱ The authoring boundary — the only foreign text in the tool. |
+| 19 | Running your first command | ⏱ Doc E §1's chatter, now probed as a redirect rather than a capture. |
+| 20 | Getting Parley, configuring it | ⏱ The install is broken and exits `0`; there is no configuration. |
+| 21 | The verbs that close the grammar | Parity: all four exist in all seven benchmarked managers. |
+| 22 | Dependencies you are developing | Root-only vocabulary; cheapest **before** entries exist. |
+| 23 | The release | CHANGELOG, release manifest, completions, **the tag**. |
 
-**🔒 THE v1.0 TAG IS HELD UNTIL SPRINT 17 LANDS.** Ruled at the Sprint 16 close-out. The feature line completed at Sprint 15 and the code has been complete since; what is not complete is the tool's honesty about the operator's filesystem. Six ordinary states — a read-only lock, a read-only project directory, a read-only `Package.st`, `init` and `publish` into unwritable destinations, an unreadable index entry — answer `internal error: … - this is a defect in Parley, not in your project` at exit `70`, and three never name the offending path. Cutting the tag over that would ship, as v1.0, a tool that blames itself for a `chmod`. **The hold is on the tag, not on the line:** nothing here adds a feature, and Sprint 17 closes a rule already ruled rather than opening a new axis.
+**🔒 THE v1.0 TAG IS HELD UNTIL SPRINT 23 LANDS.** Re-ruled 2026-08-07, replacing the
+Sprint-16 hold on Sprint 17 alone. That hold was correct about its own item and wrong about
+the count: it held the tag for one instance of a category whose other six members were not on
+this list. §2 items 1–7 are that category enumerated. The feature line completed at Sprint 15
+and nothing below adds an axis; what is being finished is the difference between a tool that
+is correct and a tool that is usable by someone who did not write it.
 
 **The feature line is complete.** All four of its sprints landed undisplaced, in the order ruled at the v1.0 staging on 2026-08-02. What v1.0 claims is what §5 opened with and nothing more: the complete, honest, local-and-git package manager whose client already speaks the registry protocol — proved offline, over `file://`, with a package published by one working directory and consumed by another through a layout neither downloads in full. Hosting remains a deployment, not a redesign.
 
 ### What was ruled *out* of the line, and why
 
 - **`parley exec`'s exit-code truthfulness** — closed as a bounded limitation at Sprint 12 staging (§8 decision 45), not carried and not scheduled. Probed rather than estimated: no handler placement works on 3.2.5, `-f` is inert, and the only remaining mechanism is pattern-matching the child's backtrace out of a captured stream, which would buy "no failing outcome exits `0`" by breaking "never claim more than you can prove". `exec` is a **runner, not a test harness**, and v1.0 says so where the operator meets it.
-- **Entry signing** — §2 item 5. Checksum pinning plus transport trust is what the comparable registries shipped their own 1.0 on.
-- **`PubGrubStrategy` and prereleases** — §2 item 4, trigger-gated on real graph sizes. A resolver swap is not a release blocker; it is a performance answer waiting for a performance question.
+- **Entry signing** — §2, *standing, not competing*. Checksum pinning plus transport trust is what the comparable registries shipped their own 1.0 on.
+- **`PubGrubStrategy` and prereleases** — §2, *standing, not competing*, trigger-gated on real graph sizes. A resolver swap is not a release blocker; it is a performance answer waiting for a performance question.
 
 ### The 2.0 axis
 
 Hosting, entry signing, and whatever governance a shared index needs. Reached from a v1.0 whose entry format is already canonical and signable, and whose client already fetches per-package metadata over a real transport — which is the whole point of building the road before the destination.
+
+---
+
+## 6. The 1.x line — what comes after the tag
+
+**Distinct from §5's 2.0 axis.** The 2.0 axis is *hosting, signing, governance* — an operated
+service and a from-scratch crypto implementation. This section is the ordinary next work: not
+deferred for a reason, merely not in v1.0. Each item carries a **trigger, never a date**
+(finding F9), and none of them competes for a slot until its trigger fires.
+
+1. **⏱ CI's toolchain source.** Ubuntu 22.04 (`gnu-smalltalk` 3.2.5-1.3ubuntu1) is the only
+   distro release still packaging the baseline — dropped from Ubuntu 24.04+ and Debian bookworm+.
+   When GitHub retires the `ubuntu-22.04` runner label, CI needs a pinned container image on
+   `ghcr.io` or a cached source build. **The external clock is somebody else's support calendar**,
+   which is precisely what ⏱ marks. Trigger: *GitHub announces the label's deprecation.*
+2. **Color output.** §3. Trigger: the fixture set surviving one release unchanged.
+3. **`--json` / machine-readable output.** §3. Trigger: the first consuming tool.
+4. **Optional dependencies and feature flags.** §3 — a schema change with a migration.
+5. **Workspaces.** §3.
+6. **Changing an existing constraint (`add` over an existing clause).** §3.
+7. **`parley config`, `parley test`, `parley cache`.** §3 — ergonomics over settled mechanics.
+8. **Distribution: Homebrew, distro packaging, man pages, a documentation site.** §3.
+
+**What is explicitly NOT on this line:** anything that would reopen the resolver's purity
+contract, the constraint normal form, or the index entry schema. Those are 2.0 conversations.

@@ -118,11 +118,20 @@ scope-16: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # scope-17 is identical to scope-16: Sprint 17 introduces no new src/
 # directory — Parley.PathGuard lives in src/compat/, which
 # scripts/run-tests.st already files in first — so that script is
-# unchanged. Declared settled-class exceptions this sprint: CLI,
-# ManifestFile, DirectorySource, Publisher and ManifestEditor, each
-# bounded to adding a guard call and its diagnosis. bin/ stays in scope
-# — the shipped binary is law-guarded from Sprint 8 onward and S14
-# spawns it once per probed state.
+# unchanged. Declared settled-class exceptions this sprint are the
+# EIGHT-CLASS I/O CENSUS (§8 decision 60, ruled at the Gate C
+# amendment and replacing an earlier five-class list that could not
+# satisfy the sprint's own prohibition law): CLI, Publisher,
+# SparseIndexSource, ContentStore, ManifestFile, DirectorySource,
+# GitIndexSource and CommandLine — every class in src/ performing
+# direct File/FileStream/Directory I/O — each bounded to routing that
+# I/O through PathGuard and adding its diagnosis, never changing what
+# the verb does when the path is fine. ManifestEditor and
+# ManifestBuilder are NOT exceptions: neither performs file I/O (the
+# add write boundary is in CLI), and needing either is a halt-and-ask.
+# bin/ stays in scope — the shipped binary is law-guarded from Sprint 8
+# onward, S14 spawns it once per probed state, and S18-S20 rewrite the
+# wrapper itself (§8 decision 66).
 #
 # docs/method/ remains operator-authored and is NOT agent-writable, as
 # scope-15 and scope-16 record: the sentinel enforces paths rather than
