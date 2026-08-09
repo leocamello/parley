@@ -54,9 +54,10 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 18 | `docs/sprints/README.md` index rows ↔ the sprint notes files that exist | — | **Unforced** <sup>[k]</sup> |
 | 19 | New tests that **pass** in RED ↔ the sprint's declared passes-in-red list | runbook Gate A step 3 weak-test item, via the pass-count arithmetic | Procedural — F10 |
 | 20 | A carried gap's asserted **reachability** ↔ the runtime behaviour that would make it reachable | runbook Gate B §2.4 probe-or-mark-unprobed | Procedural — F11, F12 <sup>[l]</sup> |
-| 21 | A boundary's stated diagnosis (its **sentence**) ↔ the predicate that boundary actually **checks** | — | **Unforced** — F12 <sup>[m]</sup> |
+| 21 | A boundary's stated diagnosis (its **sentence**) ↔ the predicate that boundary actually **checks** | Sprint 17's boundary table: S12 drives every row through its hostile state and requires the row's own declared error | **Mechanical, known-partial** — F12, F13 <sup>[m]</sup> |
+| 22 | A cross-reference inside a staging artifact ↔ the thing it points at (a count, a section number, a scenario's text, a sibling artifact's list) | — | **Unforced** — F13 <sup>[n]</sup> |
 
-**Seven mechanical, nine procedural, five unforced.**
+**Eight mechanical, nine procedural, five unforced.**
 
 - **[a]** Known-partial: textually spelled senders only, because 3.2.5 offers no reflective alternative (§8 decisions 38 corrected, 43).
 - **[b]** Written *because* `GitIndexSource` shipped lawful and unreachable for a whole sprint — nothing constructed it.
@@ -64,6 +65,8 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 - **[d]** Every `Parley` `Error` subclass must be in the diagnosed set or the declared undiagnosed list — **no third bucket**, coverage computed by handling as `on:do:` does.
 - **[e]** This pair is why usage re-pins land in GREEN with the code change rather than in RED.
 - **[f]** Adopted *after* the miss it records; four sprints of evidence since.
+- **[m]** Forced by Sprint 17 **only for the two hostile states the law enumerates** — unreadable and unwritable. A path of the *wrong type* is not driven, and that is exactly where F13's defect lives. The row is mechanical against the enumeration, not against the property.
+- **[n]** Named in §8 decision 60 when the census resolved a Scope/Architecture-impact disagreement; **added to this table at the Sprint 17 close-out, eight instances in**, every one caught by an operator reading one artifact against another and none by a gate.
 - **[g]** Adopted at Sprint 14. **Still untested after its first opportunity:** Sprint 15 introduced no new class at all, so the widened item was answered "n/a" rather than exercised. Recorded as untested, not as coverage — the opportunity is what expired, not the doubt.
 - **[h]** Both sides plain text and enumerable: the cheapest available drift law, unwritten. Open; scheduling is a Gate C question.
 - **[i]** Four instances (§8 decisions 43, 45, 49, 52), every one caught by a human reading. Not a drift-law candidate — comparing prose to behaviour is not a text walk.
@@ -130,12 +133,12 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **9** |
-| — caught by a mechanism | **5** (F3, F4, F6, F10, F12) |
-| — caught by luck | **4** (F1, F2, F5, F11) |
+| Defect-findings | **11** |
+| — caught by a mechanism | **6** (F3, F4, F6, F10, F12, F14) |
+| — caught by luck | **5** (F1, F2, F5, F11, F13) |
 | Confirmation-findings (excluded from the ratio) | 3 (F7, F8, F9) |
 
-**The pipeline caught 5 of 9.**
+**The pipeline caught 6 of 11.**
 
 **The split is not random: all four misses are unforced rows of the inventory above** —
 F1 (row 14, unforced until Sprint 14), F2 (row 13, unforced until Sprint 11), F5 (row 15,
@@ -575,3 +578,43 @@ convert this particular domain into a table with a law over it, which is the onl
 **Status.** First instance. Kin to F5 (an enumeration is a copy of a rule, and copies
 drift) inverted: F5 is a written list drifting from reality, F12 is reality with no list
 written at all.
+
+---
+
+## F13 — A law that abolishes enumeration can still enumerate its own test states, and the states it omits are where the false diagnosis lives
+
+**Rule (portable).** When a sprint replaces an enumeration with a total rule, check whether the *laws that prove the rule* are themselves enumerated. A chokepoint that translates **any** error makes the *error class* total; it does nothing about the **set of hostile states the laws drive**. If those states are a list — "unreadable" and "unwritable" — then a state outside the list reaches a code path no law exercised, and the diagnosis it produces has never been read by anyone. **The failure mode is not a wrong exit code; it is a confident sentence that is false.** Enumerate the *shapes* a path can take, not just the permissions it can carry: absent, wrong type, wrong type at the parent, a dangling link. The rule's own slogan is the tell — a sprint whose thesis is "enumerating states is the trap" is the likeliest place to find an enumeration of states.
+
+**Evidence (Parley, Sprint 17, commit `bba2c79`, found at Gate B — by luck).** The sprint shipped `PathGuard` as the single site performing file I/O, prechecking *and* translating so that "disk-full, a read-only mount and every mode nobody listed answer the same good sentence" (§8 decision 59). Its boundary table carries twelve rows, and `S12` drives **every** row through a hostile state and its mirror — where "hostile" means exactly two things: `makeUnreadable:` and `makeReadOnly:`. All seven states the sprint set out to fix were verified correct at close-out, by hand, through the shipped `bin/parley`. The defect was found only by inventing states nobody had listed:
+
+```
+$ mkdir f1 && cd f1 && parley init          # then replace .parley with a FILE
+$ echo junk > .parley
+$ parley resolve --source ../idx
+/…/f1: could not be written - check its permissions and try again
+$ test -w /…/f1 && echo WRITABLE
+WRITABLE
+```
+
+The directory the tool names **is writable**. `CommandLine>>ensureDirectory:` refuses and, by a deliberate and documented rule, names the *parent* — *"told `<workdir>/.parley` could not be written they are reading a name Parley invented."* That rule is right when the parent really is unwritable, and it conflates two states: **the parent cannot be written**, and **the path exists and is not a directory**. In the second the sentence is false and the remedy — *check its permissions* — cannot work, which is precisely what §8 decision 58 forbids: a tool may only make claims it has checked. The mirror reproduces it (`.parley/packages` as a file, `.parley` writable). Both answer exit `1`, so **the sprint's headline exit criterion holds** and no law failed.
+
+The tool already had the right shape one row over: `parley.lock` as a directory answers `parley.lock: not a regular readable file - remove it and run parley resolve to write a new one` — the offender named, a true cause, a remedy that works.
+
+**What caught it: nothing.** The Gate B checklist said *probe the seven states through the shipped binary*; all seven passed. The defect surfaced only because the operator went past the checklist and asked what a path could be *besides* readable and writable. The checklist would have closed the sprint clean.
+
+**Status.** First instance. Kin to F12 one level down: F12 rules that a general rule owes its whole **domain**; F13 rules that the **laws proving it** owe the whole shape-space of their inputs, and that a chokepoint's totality over error *classes* is not totality over input *states*.
+
+---
+
+## F14 — A red gate proves that a law fails; it does not prove that the law's fixtures work
+
+**Rule (portable).** In a red phase every new law must fail, so **failure carries no information about the law's interior.** A law fronted by a missing-class error — the class the sprint is about to create — aborts at its first reference, and everything after that reference is unexecuted for the whole of RED: driver blocks, oracles, the assertions themselves. A fixture defect there is invisible to the gate *by construction*, and it surfaces only at GREEN, when the law is expected to pass and instead fails for a reason that has nothing to do with the product. **At the red review, separate "this law failed" from "this law's machinery ran":** classify each new law as `FAILURE` (its body executed and an assertion was false) or `ERROR` (it aborted early), and treat every `ERROR` law's interior as **unreviewed by the gate and reviewable only by reading**. Record it as an explicit close-out obligation rather than assuming green will vindicate it.
+
+**Evidence (Parley, Sprint 17, commits `62aee7a` → `bba2c79`).** `BoundaryTableTest` and the `S12` acceptance law both errored in red on a `pathBoundaries` MNU — the class-side declaration the sprint existed to add. Their driver *builders* ran, so twenty-four fixture trees were built and torn down and `tmp/` was clean, which made the machinery look exercised; the driver **blocks** never evaluated. Two defects hid there and surfaced only at GREEN:
+
+1. **The `parley.lock (read)` driver ran `parley check` with no `--source`.** `check` is a source-requiring verb, so it answered the pinned usage lines at **exit `2`** — that row could never refuse, and the law over it would have reported a green boundary that had never once been driven.
+2. **`PathFixtures boundaryRoleNames` was left unsorted** by the decision-72 rename, against a law comparing a sorted table against it.
+
+**What caught it: a mechanism — the green gate**, which is the honest answer and also the uncomfortable one, because the green gate catches this *after* the red review has already approved the law. The operator had recorded the exposure at the phase flip — *drivers that never evaluate in red hide defects the gate structurally cannot see* — after reading the mirror drivers by hand rather than trusting the gate, and the coding agent disclosed the `ERROR`-versus-`FAILURE` split unprompted in its own RED report. Both are the practice this finding generalizes; neither was a rule at the time.
+
+**Status.** First instance. Kin to F10 (a red phase reports failures, so attention follows the failures and the *passes* go unexamined) inverted: F10 governs what a red gate does not print, F14 governs what it prints without having checked.
