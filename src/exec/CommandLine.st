@@ -289,6 +289,102 @@ equality (the decision-23 precedent).'>
                     with: 'version listings'))
     ]
 
+    "---- the declared path boundaries (Doc E §4.1, §8 decisions 59/60/72) ----"
+
+    CommandLine class >> pathBoundaries [
+        "EVERY FILE BOUNDARY IN THE TOOL: each row is the path role an
+         operator would call it by, its DIRECTION, and the declared
+         error it must answer.
+
+         WHY A TABLE RATHER THAN TWELVE FIXES. ManifestFile said
+         missing or unreadable Package.st from Sprint 8 while its
+         predicate tested exists alone — eight sprints of a right
+         sentence over a missing predicate, invisible because reviewers
+         read the sentence and nothing in this repository could compare
+         a sentence against a check. This is what a reviewer reads to
+         find the THIRTEENTH boundary, and the laws over it drive every
+         row through the hostile state its direction defines and
+         through the mirror of that state.
+
+         A DECLARATION CONSUMED TWICE, exactly as sourceFlags,
+         publishLayouts and deserializationBoundaries are: the laws
+         iterate it, and the drivers are asserted against it first, so
+         a row added without a driver fails the suite rather than
+         quietly widening the claim.
+
+         NINE ROWS AN OPERATOR REACHES BY RUNNING A VERB, and three the
+         tool reaches on its own behalf. The wiring state directory,
+         the archive cache and the index cache are rows like any other;
+         what they lack is a remedy sentence of their OWN, because an
+         operator does not choose where the content store lives.
+
+         THE WIRING STATE DIRECTORY'S ERROR IS A CARRIER, NOT AN
+         ATTRIBUTION (§8 decision 72). CommandLine creates
+         <workdir>/.parley and <workdir>/.parley/packages once a verb
+         is known to run, which makes it the FIRST write every verb
+         performs — so in a working directory the operator cannot
+         write, it is what fails first, for init as much as for
+         resolve. ExecutionError carries that refusal because Sprint 16
+         already gave it the job of carrying a filesystem precondition
+         in the settled '<path>: ...' grammar and because
+         .parley/packages is ExecutionScope's own target — NOT because
+         the failure has anything to do with executing something. An
+         init refused in a read-only directory does not. A class name
+         silently doing duty as a blame label would be the same defect
+         as a diagnosis claiming more than it checked (decision 43).
+
+         The publish STAGE is deliberately absent. It is created inside
+         the destination and only after that destination's own precheck
+         has passed, so it has no reachable hostile state of its own —
+         and a row nothing can drive is documentation, which is the
+         shape this table exists to replace.
+
+         THE FOURTH COLUMN IS HOW THE ROW IS GUARDED (§8 decision 73).
+         Every row PRECHECKS through PathGuard; #guarded rows also
+         route the operation through its translating seam.
+         Package.st (read) is #prechecked — precheck yes, translate no
+         — and that is a ruling rather than an omission: ManifestFile
+         files the AUTHOR'S OWN PROGRAM in, and a broad translation
+         around that block would relabel a vocabulary typo or a
+         division by zero as an I/O failure, which is §8 decision 52's
+         discriminator and Sprint 18's boundary. It is a column and not
+         a comment because Sprint 8's ManifestFile defect was a right
+         sentence over a missing predicate that survived eight sprints,
+         and it survived because the reasoning lived where nothing
+         could compare it against the code.
+
+         3.2.5's Array class >> with: stops at five arguments, so the
+         rows are concatenated rather than passed."
+        <category: 'path boundaries'>
+        ^(Array
+            with: (Array with: 'Package.st (read)' with: #read
+                with: ManifestError with: #prechecked)
+            with: (Array with: 'Package.st (write)' with: #write
+                with: ManifestError with: #guarded)
+            with: (Array with: 'parley.lock (read)' with: #read
+                with: LockError with: #guarded)
+            with: (Array with: 'parley.lock (write)' with: #write
+                with: LockError with: #guarded)
+            with: (Array with: 'the exec script (read)' with: #read
+                with: ExecutionError with: #guarded)),
+            (Array
+                with: (Array with: 'the source directory (read)' with: #read
+                    with: SourceError with: #guarded)
+                with: (Array with: 'the index entry (read)' with: #read
+                    with: SourceError with: #guarded)
+                with: (Array with: 'the star archive (read)' with: #read
+                    with: SourceError with: #guarded)
+                with: (Array with: 'the publish destination (write)'
+                    with: #write with: PublishError with: #guarded)
+                with: (Array with: 'the wiring state directory (write)'
+                    with: #write with: ExecutionError with: #guarded)),
+            (Array
+                with: (Array with: 'the archive cache (write)' with: #write
+                    with: InstallError with: #guarded)
+                with: (Array with: 'the index cache (write)' with: #write
+                    with: SourceError with: #guarded))
+    ]
+
     CommandLine class >> sourceFlagNames [
         "Every flag the table declares — the grammar's own vocabulary,
          derived from the table so the parser cannot know a flag the
@@ -595,9 +691,33 @@ equality (the decision-23 precedent).'>
     ]
 
     ensureDirectory: aPath [
-        "Private — create aPath when it is absent; silent otherwise."
+        "Private — create aPath when it is absent; silent otherwise.
+
+         THE EARLIEST WRITE OF ALL (§8 decision 72, Sprint 17). These
+         directories appear once a verb is known to run (decision 57),
+         which makes this the FIRST write every verb performs — so in a
+         working directory the operator cannot write, this is what
+         fails first, for resolve, init and everything else. It answered
+         FileError: Permission denied at exit 70, naming nothing.
+
+         It is the wiring-state-directory row of the boundary table,
+         direction write, declared error ExecutionError. THAT CLASS IS
+         THE CARRIER, NOT AN ATTRIBUTION: Sprint 16 gave ExecutionError
+         the job of carrying a filesystem precondition in the settled
+         '<path>: ...' grammar, and .parley/packages is
+         ExecutionScope's own target, so no settled class fits better
+         and no new one is warranted. An init refused in a read-only
+         directory has nothing to do with executing anything.
+
+         The refusal names the PARENT — the directory the creation
+         failed in. Told their project directory could not be written
+         an operator can act; told <workdir>/.parley could not be
+         written they are reading a name Parley invented."
         <category: 'private-wiring'>
-        (File name: aPath) exists ifFalse: [Directory create: aPath]
+        ^PathGuard ensureDirectory: aPath
+            ifRefused: [:path |
+                ExecutionError new signal: (PathGuard
+                    unwritableLineFor: (PathGuard parentOf: path))]
     ]
 
     parleyDir [

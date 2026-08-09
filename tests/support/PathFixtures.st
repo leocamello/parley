@@ -191,6 +191,14 @@ uniqueness comes from per-test labels.'>
         ^aFileName, ': missing or unreadable archive file'
     ]
 
+    PathFixtures class >> missingDirectoryProblemFor: aPath [
+        "The settled DirectorySource scan sentence, restated here so a
+         row can declare it. The wording does not move — Sprint 17 only
+         puts the predicate behind it."
+        <category: 'pinned wordings'>
+        ^aPath, ': missing or unreadable directory'
+    ]
+
     PathFixtures class >> wrapperMissingScriptLineFor: aPath [
         "What bin/parley prints when its own main script is not where
          it looked (§8 decision 66, Doc E §4.3). Exit 70 accompanies
@@ -485,9 +493,9 @@ Object subclass: Quiet [
            'parley.lock (read)' 'parley.lock (write)'
            'the archive cache (write)' 'the exec script (read)'
            'the index cache (write)' 'the index entry (read)'
-           'the wiring state directory (write)'
            'the publish destination (write)'
-           'the source directory (read)' 'the star archive (read)')
+           'the source directory (read)' 'the star archive (read)'
+           'the wiring state directory (write)')
     ]
 
     PathFixtures class >> namesOfBoundaryRolesIn: aTable [
@@ -511,6 +519,33 @@ Object subclass: Quiet [
          somebody invented a kind of file access."
         <category: 'boundary table'>
         ^#(#read #write)
+    ]
+
+    PathFixtures class >> declaredGuardings [
+        "The two ways a row may be guarded, and the whole of them (§8
+         decision 73). #guarded is precheck AND translate — the normal
+         case and every row but one. #prechecked is precheck WITHOUT
+         translation, which is a deliberate ruling rather than an
+         omission and therefore has to be declared where a reviewer
+         reads the table."
+        <category: 'boundary table'>
+        ^#(#guarded #prechecked)
+    ]
+
+    PathFixtures class >> precheckOnlyRoles [
+        "The rows that precheck without translating, in table order.
+         One: ManifestFile files the AUTHOR'S OWN PROGRAM in, and a
+         broad translation around that would relabel a vocabulary typo
+         or a division by zero as an I/O failure — decision 52's
+         discriminator, in the one place this project has been most
+         careful about blame. Sprint 18 owns that boundary.
+
+         It is an oracle rather than a comment because Sprint 8's
+         ManifestFile defect was a right sentence over a missing
+         predicate that survived eight sprints, and it survived because
+         the reasoning lived where nothing could compare it to code."
+        <category: 'boundary table'>
+        ^#('Package.st (read)')
     ]
 
     PathFixtures class >> tableWithoutRole: aRoleName in: aTable [
@@ -688,12 +723,13 @@ Object subclass: Quiet [
          enumeration and cannot drift apart. Two enumerations of the
          same table is inventory row 22, one sprint after it was ruled."
         <category: 'boundary drivers'>
-        | work index script srcIndex entryIndex starIndex lockWork |
+        | work index script srcIndex entryIndex starIndex lockWork lockIndex |
         work := self resolvableWorkDirTracking: track named: aPrefix, '-manifest-read-work'.
         index := self diamondIndexTracking: track named: aPrefix, '-manifest-read-index'.
         hostile value: (self packagePathIn: work).
 
         lockWork := self resolvableWorkDirTracking: track named: aPrefix, '-lock-read-work'.
+        lockIndex := self diamondIndexTracking: track named: aPrefix, '-lock-read-index'.
         SourceFixtures write: ExecFixtures diamondLockString
             toFile: 'parley.lock' in: lockWork.
         hostile value: (self lockPathIn: lockWork).
@@ -715,28 +751,38 @@ Object subclass: Quiet [
         ^(Array
             with: (Array with: 'Package.st (read)'
                 with: (self packagePathIn: work)
-                with: [self resultOf: (self resolveArgvOn: index) in: work])
+                with: [self resultOf: (self resolveArgvOn: index) in: work]
+                with: (CommandLineFixtures missingManifestProblemFor:
+                    (self packagePathIn: work)))
             with: (Array with: 'parley.lock (read)'
                 with: (self lockPathIn: lockWork)
-                with: [self resultOf: #('check') in: lockWork])
+                with: [self resultOf: (Array with: 'check'
+                        with: '--source' with: lockIndex)
+                    in: lockWork]
+                with: (ReadinessFixtures unreadableLockProblemFor:
+                    (self lockPathIn: lockWork)))
             with: (Array with: 'the exec script (read)'
                 with: script, '/run.st'
                 with: [self resultOf:
                     (Array with: 'exec' with: script, '/run.st')
-                    in: script])
+                    in: script]
+                with: (ReadinessFixtures execRefusalLineFor: script, '/run.st'))
             with: (Array with: 'the source directory (read)'
                 with: srcIndex
                 with: [self resultOf: (self resolveArgvOn: srcIndex)
-                    in: (self resolvableWorkDirTracking: track named: aPrefix, '-directory-read-work')])),
+                    in: (self resolvableWorkDirTracking: track named: aPrefix, '-directory-read-work')]
+                with: (self missingDirectoryProblemFor: srcIndex))),
             (Array
                 with: (Array with: 'the index entry (read)'
                     with: 'c-2.4.0.st'
                     with: [self resultOf: (self resolveArgvOn: entryIndex)
-                        in: (self resolvableWorkDirTracking: track named: aPrefix, '-entry-read-work')])
+                        in: (self resolvableWorkDirTracking: track named: aPrefix, '-entry-read-work')]
+                    with: (self unreadableEntryProblemFor: 'c-2.4.0.st'))
                 with: (Array with: 'the star archive (read)'
                     with: 'a-1.0.0.star'
                     with: [self resultOf: (self installArgvOn: starIndex)
-                        in: (self resolvableWorkDirTracking: track named: aPrefix, '-archive-read-work')]))
+                        in: (self resolvableWorkDirTracking: track named: aPrefix, '-archive-read-work')]
+                    with: (self unreadableArchiveProblemFor: 'a-1.0.0.star')))
     ]
 
     PathFixtures class >> writeRowDriversTracking: track [
@@ -807,30 +853,37 @@ Object subclass: Quiet [
                 with: (self packagePathIn: manifestWork)
                 with: [self resultOf: (Array with: 'add' with: 'c'
                         with: '^2.0' with: '--source' with: manifestIndex)
-                    in: manifestWork])
+                    in: manifestWork]
+                with: (self unwritableLineFor: (self packagePathIn: manifestWork)))
             with: (Array with: 'parley.lock (write)'
                 with: (self lockPathIn: lockWork)
                 with: [self resultOf: (self resolveArgvOn: lockIndex)
-                    in: lockWork])
+                    in: lockWork]
+                with: (self unwritableLineFor: (self lockPathIn: lockWork)))
             with: (Array with: 'the publish destination (write)'
                 with: publishDest
                 with: [self resultOf:
                     (Array with: 'publish' with: publishDest)
-                    in: publishWork])
+                    in: publishWork]
+                with: (self unwritableLineFor: publishDest))
             with: (Array with: 'the wiring state directory (write)'
                 with: stateWork
                 with: [self resultOf: (self resolveArgvOn: stateIndex)
-                    in: stateWork])),
+                    in: stateWork]
+                with: (self unwritableLineFor: stateWork))),
             (Array
                 with: (Array with: 'the archive cache (write)'
                     with: store
                     with: [self resultOf: (self installArgvOn: storeIndex)
-                        in: storeWork])
+                        in: storeWork]
+                    with: (self unwritableLineFor:
+                        store, '/', InstallFixtures digestA, '.star'))
                 with: (Array with: 'the index cache (write)'
                     with: cacheRoot
                     with: [self resultOf: (Array with: 'resolve'
                             with: '--index' with: 'file:///nowhere')
-                        in: indexWork]))
+                        in: indexWork]
+                    with: (self unwritableLineFor: cacheRoot)))
     ]
 
     "---- the shipped wrapper (S18-S20) ----"

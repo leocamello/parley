@@ -117,11 +117,14 @@ and the install-time fetch:version: of Doc D §1.1.'>
                         ^SourceError signalProblems: (Array with:
                             aPackageName, ' ', aVersion printString,
                             ': no published archive - the entry declares #archive #()')].
-                    file := File name: path, '/', (archive at: 1).
-                    file exists ifFalse: [
+                    file := path, '/', (archive at: 1).
+                    (PathGuard isReadableFile: file) ifFalse: [
                         ^SourceError signalProblems: (Array with:
                             (archive at: 1), ': missing or unreadable archive file')].
-                    ^file contents]].
+                    ^PathGuard contentsOf: file
+                        ifRefused: [:each |
+                            SourceError signalProblems: (Array with:
+                                (archive at: 1), ': missing or unreadable archive file')]]].
         ^SourceError signalProblems: (Array with:
             aPackageName, ' ', aVersion printString,
             ': unknown (package, version) - the source directory declares no entry for it')
@@ -144,17 +147,21 @@ and the install-time fetch:version: of Doc D §1.1.'>
          missing directory) into one SourceError. Answers
          {entries. retirement tuples}, both in scan order."
         <category: 'private'>
-        | dir problems seen entries retired |
-        dir := File name: path.
-        (dir exists and: [dir isDirectory]) ifFalse: [
+        | problems seen entries retired |
+        (PathGuard isReadableDirectory: path) ifFalse: [
             ^SourceError signalProblems:
                 (Array with: path, ': missing or unreadable directory')].
         problems := OrderedCollection new.
         seen := Dictionary new.
         entries := OrderedCollection new.
         retired := OrderedCollection new.
-        ((dir files select: [:each | each name endsWith: '.st'])
-            asSortedCollection: [:a :b | a stripPath <= b stripPath])
+        (((PathGuard filePathsIn: path
+            ifRefused: [:each |
+                SourceError signalProblems:
+                    (Array with: path, ': missing or unreadable directory')])
+                select: [:each | each endsWith: '.st'])
+            asSortedCollection: [:a :b |
+                (PathGuard baseNameOf: a) <= (PathGuard baseNameOf: b)])
             do: [:each |
                 self scan: each into: entries retiring: retired
                     seen: seen problems: problems].
@@ -220,15 +227,27 @@ and the install-time fetch:version: of Doc D §1.1.'>
         ^out contents
     ]
 
-    scan: aFile into: entries retiring: retired seen: seen problems: problems [
+    scan: aPath into: entries retiring: retired seen: seen problems: problems [
         "Private — one file: parse through the literals-only reader,
          then hand the artifact to the handler its tag selects. A
          problem is recorded against the file's basename and the file
-         contributes nothing."
+         contributes nothing.
+
+         READABILITY IS A SCAN PROBLEM LIKE ANY OTHER (§8 decision 56's
+         own domain, applied at last — Sprint 17). An entry file the
+         reader lacks permission to open EXISTS, so the enumeration
+         above hands it here and File>>contents died on it: exit 70,
+         blaming Parley for somebody else's index. It batches now, in
+         this class's settled voice and beside the archive sentence it
+         has always carried."
         <category: 'private'>
         | basename artifact row |
-        basename := aFile stripPath.
-        artifact := [IndexEntryReader readFrom: (ReadStream on: aFile contents)]
+        basename := PathGuard baseNameOf: aPath.
+        artifact := [IndexEntryReader readFrom: (ReadStream on:
+                (PathGuard contentsOf: aPath
+                    ifRefused: [:each |
+                        problems add: basename, ': missing or unreadable entry file'.
+                        ^self]))]
             on: IndexEntryParseError, IndexEntryFormatError
             do: [:e |
                 problems add: basename, ': ', e messageText.

@@ -36,13 +36,13 @@ the root path is held immutably.'>
          and answer the hex hash. Idempotent: re-storing identical
          bytes writes nothing new and answers the same hash."
         <category: 'storing'>
-        | digest file stream |
+        | digest path |
         digest := Sha256 hexDigestOf: aByteString.
         self ensureRoot.
-        file := File name: (self starPathFor: digest).
-        file exists ifFalse: [
-            stream := file writeStream.
-            [stream nextPutAll: aByteString] ensure: [stream close]].
+        path := self starPathFor: digest.
+        (PathGuard exists: path) ifFalse: [
+            PathGuard write: aByteString to: path
+                ifRefused: [:each | self refuseStore: each]].
         ^digest
     ]
 
@@ -51,7 +51,7 @@ the root path is held immutably.'>
          the empty hash '' (a no-archive release is never a store key)."
         <category: 'accessing'>
         aHexString isEmpty ifTrue: [^false].
-        ^(File name: (self starPathFor: aHexString)) exists
+        ^PathGuard exists: (self starPathFor: aHexString)
     ]
 
     pathForHash: aHexString [
@@ -69,7 +69,8 @@ the root path is held immutably.'>
         <category: 'accessing'>
         (self containsHash: aHexString) ifFalse: [^false].
         ^(Sha256 hexDigestOf:
-            (File name: (self starPathFor: aHexString)) contents)
+            (PathGuard contentsOf: (self starPathFor: aHexString)
+                ifRefused: [:each | self refuseRead: each]))
             = aHexString
     ]
 
@@ -80,9 +81,32 @@ the root path is held immutably.'>
     ]
 
     ensureRoot [
-        "Private — lazy root creation on the first store:."
+        "Private — lazy root creation on the first store:, through the
+         chokepoint (§8 decision 59). The store lives under the
+         operator's own .parley/, so a store they cannot write is their
+         filesystem and not a defect in Parley — and it answered exit
+         70 saying otherwise."
         <category: 'private'>
-        (File name: root) exists ifFalse: [Directory create: root]
+        ^PathGuard ensureDirectory: root
+            ifRefused: [:each | self refuseStore: (PathGuard parentOf: each)]
+    ]
+
+    refuseStore: aPath [
+        "Private — the cache's declared error for a path it cannot
+         write. The store is the install pipeline's, so an InstallError
+         is what the §4.2 boundary answers as one line at exit 1."
+        <category: 'private'>
+        ^InstallError signalProblems: (Array with:
+            (PathGuard unwritableLineFor: aPath))
+    ]
+
+    refuseRead: aPath [
+        "Private — and for a stored archive that cannot be read. The
+         store never repairs itself (detection only), so this names the
+         file and says nothing it has not checked."
+        <category: 'private'>
+        ^InstallError signalProblems: (Array with:
+            (PathGuard lineFor: aPath saying: PathGuard unreadableTail))
     ]
 ]
 

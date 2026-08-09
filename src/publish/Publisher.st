@@ -132,12 +132,14 @@ setters; no value equality.'>
         "Run the §1 pipeline and answer the landed archive's sha256 hex
          digest; signal one PublishError on any problem."
         <category: 'publishing'>
-        | destination missing listing code |
-        destination := File name: destDir.
-        (destination exists and: [destination isDirectory]) ifFalse: [
+        | missing listing code |
+        (PathGuard isDirectory: destDir) ifFalse: [
             ^PublishError signalProblems:
                 (Array with: self missingDestinationProblem)].
-        (File name: self entryPath) exists ifTrue: [
+        (PathGuard isWritableDirectory: destDir) ifFalse: [
+            ^PublishError signalProblems:
+                (Array with: self unwritableDestinationProblem)].
+        (PathGuard exists: self entryPath) ifTrue: [
             ^PublishError signalProblems:
                 (Array with: self refusalProblem)].
         missing := self missingFileInProblems.
@@ -169,6 +171,28 @@ setters; no value equality.'>
         ^destDir, ': missing or unreadable destination directory - publish does not create it'
     ]
 
+    unwritableDestinationProblem [
+        "Private — AND THE DESTINATION MUST BE WRITABLE, NOT MERELY
+         PRESENT (Doc F §1, §8 decision 59, Sprint 17). The check above
+         answers a destination that is absent or is not a directory; one
+         that exists, is a directory and cannot be written was left to
+         the write itself, which on 3.2.5 signals a kernel
+         FileError: Permission denied — outside PublishError, so it
+         reached the §4.2 boundary as
+         internal error: ... - this is a defect in Parley at exit 70,
+         NEVER NAMING THE DESTINATION.
+
+         It runs here, before step 1, because publish refuses rather
+         than half-creating: no stage directory, no package.xml, no
+         .star, no entry and no process spawned. That is what makes the
+         refusal assertable on the ARTIFACT rather than on the exit
+         code — the destination is still empty, which an implementation
+         that created the stage and then failed would not satisfy even
+         while answering the same line and the same code."
+        <category: 'private-problems'>
+        ^PathGuard unwritableLineFor: destDir
+    ]
+
     refusalProblem [
         "Private — releases are immutable: republishing is a category
          error, not a batch member. Nothing else is checked and nothing
@@ -187,7 +211,7 @@ setters; no value equality.'>
         | absent |
         absent := OrderedCollection new.
         manifest fileIns do: [:each |
-            (File name: workingDir, '/', each) exists ifFalse: [
+            (PathGuard exists: workingDir, '/', each) ifFalse: [
                 absent add: each]].
         ^((absent asSortedCollection: [:a :b | a <= b]) asArray)
             collect: [:each |
@@ -203,10 +227,11 @@ setters; no value equality.'>
          invisible to a DirectorySource scan."
         <category: 'private-staging'>
         self removeStage.
-        Directory create: self stageDir.
+        PathGuard createDirectory: self stageDir
+            ifRefused: [:path | self refuseWrite: (PathGuard parentOf: path)].
         self write: self packageXml toFile: self stageDir, '/package.xml'.
         manifest fileIns do: [:each |
-            self write: (File name: workingDir, '/', each) contents
+            self write: (self contentsOfFileIn: each)
                 toFile: self stageDir, '/', each]
     ]
 
@@ -226,19 +251,13 @@ setters; no value equality.'>
          producer must not be able to manufacture the state its own
          consumer reports."
         <category: 'private-staging'>
-        | bytes digest stream |
-        bytes := (File name: self stageDir, '/', manifest name, '.star')
-            contents.
+        | bytes digest |
+        bytes := self contentsOfStar.
         digest := Sha256 hexDigestOf: bytes.
         self ensureReleaseDir.
         self write: bytes toFile: self archivePath.
-        stream := (File name: self entryPath) writeStream.
-        [IndexEntryWriter
-            write: manifest
-            archive: self archiveFileName
-            sha256: digest
-            on: stream]
-                ensure: [stream close].
+        self write: (self entryTextWithDigest: digest)
+            toFile: self entryPath.
         self perform: (layout at: 3).
         self removeStage.
         ^digest
@@ -251,8 +270,8 @@ setters; no value equality.'>
          created before the build would be published state a failure
          left behind."
         <category: 'private-staging'>
-        (File name: self releaseDir) exists
-            ifFalse: [Directory create: self releaseDir]
+        PathGuard ensureDirectory: self releaseDir
+            ifRefused: [:path | self refuseWrite: (PathGuard parentOf: path)]
     ]
 
     "---- the listing (Doc B §5.6, written here for the first time) ----"
@@ -337,11 +356,15 @@ setters; no value equality.'>
          never re-implemented: they stay the single definition of what
          parses and what a schema string is."
         <category: 'private-listing'>
-        | file entry versions |
+        | entry versions |
         versions := OrderedCollection new.
-        file := File name: self listingPath.
-        file exists ifFalse: [^versions].
-        entry := [IndexEntryReader readFrom: (ReadStream on: file contents)]
+        (PathGuard exists: self listingPath) ifFalse: [^versions].
+        entry := [IndexEntryReader readFrom: (ReadStream on:
+                (PathGuard contentsOf: self listingPath
+                    ifRefused: [:path |
+                        problems add: self listingLabel,
+                            ': missing or unreadable version listing'.
+                        ^OrderedCollection new]))]
             on: IndexEntryParseError, IndexEntryFormatError
             do: [:e |
                 problems add: self listingLabel, ': ', e messageText.
@@ -381,19 +404,73 @@ setters; no value equality.'>
         "Private — remove the flat stage and the directory itself;
          silent when absent."
         <category: 'private-staging'>
-        | dir |
-        dir := File name: self stageDir.
-        dir exists ifFalse: [^self].
-        dir files do: [:each | each remove].
-        dir remove
+        (PathGuard exists: self stageDir) ifFalse: [^self].
+        (PathGuard filePathsIn: self stageDir
+            ifRefused: [:path | self refuseWrite: path])
+                do: [:each |
+                    PathGuard remove: each
+                        ifRefused: [:path | self refuseWrite: path]].
+        PathGuard remove: self stageDir
+            ifRefused: [:path | self refuseWrite: path]
     ]
 
     write: aByteString toFile: aPath [
-        "Private — aByteString as the complete contents of aPath."
+        "Private — aByteString as the complete contents of aPath,
+         through the chokepoint (§8 decision 59)."
         <category: 'private-staging'>
-        | stream |
-        stream := (File name: aPath) writeStream.
-        [stream nextPutAll: aByteString] ensure: [stream close]
+        ^PathGuard write: aByteString to: aPath
+            ifRefused: [:path | self refuseWrite: path]
+    ]
+
+    contentsOfFileIn: aFileName [
+        "Private — the bytes of one declared fileIn, staged verbatim.
+         Its ABSENCE is the batched pre-flight problem above and never
+         reaches here; what this refusal answers is a fileIn that
+         exists and cannot be read, which pre-flight cannot see."
+        <category: 'private-staging'>
+        ^PathGuard contentsOf: workingDir, '/', aFileName
+            ifRefused: [:path |
+                PublishError signalProblems: (Array with:
+                    aFileName, ': missing or unreadable file to stage')]
+    ]
+
+    contentsOfStar [
+        "Private — the bytes of the archive the toolchain just built.
+         A build that exited 0 and left nothing readable is not a
+         defect in Parley, and it used to be reported as one."
+        <category: 'private-staging'>
+        ^PathGuard contentsOf: self stageDir, '/', manifest name, '.star'
+            ifRefused: [:path |
+                PublishError signalProblems: (Array with:
+                    (PathGuard baseNameOf: path),
+                        ': missing or unreadable built archive')]
+    ]
+
+    entryTextWithDigest: aHexDigest [
+        "Private — the published entry as BYTES, rendered before any
+         file is opened. The settled writer is handed a String stream
+         rather than a file stream deliberately: the chokepoint's
+         broad translation must guard nothing but the write, or a
+         writer's own failure would come back as a path refusal and
+         the blame would land on the wrong party (§8 decision 52's
+         discriminator). The bytes are identical either way."
+        <category: 'private-staging'>
+        | out |
+        out := WriteStream on: String new.
+        IndexEntryWriter
+            write: manifest
+            archive: self archiveFileName
+            sha256: aHexDigest
+            on: out.
+        ^out contents
+    ]
+
+    refuseWrite: aPath [
+        "Private — this class's declared error for a path it cannot
+         write, in the one composition every write boundary shares."
+        <category: 'private-staging'>
+        ^PublishError signalProblems: (Array with:
+            (PathGuard unwritableLineFor: aPath))
     ]
 
     "---- paths and command lines ----"

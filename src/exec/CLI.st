@@ -206,14 +206,11 @@ construction; zero public setters.'>
         "Write the Doc B §2 template Package.st; refuse (one line,
          exit 1) when the file already exists."
         <category: 'verbs'>
-        | file stream |
-        file := File name: self packagePath.
-        file exists ifTrue: [
+        (PathGuard exists: self packagePath) ifTrue: [
             ^CliResult
                 lines: (Array with: 'Package.st already exists - refusing to overwrite')
                 exitCode: 1].
-        stream := file writeStream.
-        [stream nextPutAll: self templateContents] ensure: [stream close].
+        self writePackage: self templateContents.
         ^CliResult lines: (Array with: 'wrote Package.st') exitCode: 0
     ]
 
@@ -361,10 +358,14 @@ construction; zero public setters.'>
          a verb — true."
         <category: 'verbs'>
         | original editor declared before pinned held unheld narrowed deleted lock after |
-        (File name: self packagePath) exists ifFalse: [
+        (PathGuard isReadableFile: self packagePath) ifFalse: [
             "The settled missing-manifest diagnosis, defined once in
              ManifestFile: load: signals it and the boundary answers
-             exit 1. It never returns."
+             exit 1. It never returns. The predicate is decision 56's
+             rather than plain existence (Sprint 17): a Package.st that
+             exists and cannot be read reached File>>contents below and
+             died there, and the sentence ManifestFile already carries
+             covers both states."
             ^self loadManifest].
         original := self packageContents.
         editor := ManifestEditor on: original.
@@ -466,9 +467,7 @@ construction; zero public setters.'>
          the curated child, and pushing the check down would make it
          answer questions about the filesystem."
         <category: 'private'>
-        | file |
-        file := File name: aScriptPath.
-        (file isFile and: [file isReadable]) ifTrue: [^self].
+        (PathGuard isReadableFile: aScriptPath) ifTrue: [^self].
         ^ExecutionError new signal: (self unrunnableScriptLineFor: aScriptPath)
     ]
 
@@ -814,11 +813,10 @@ construction; zero public setters.'>
          undone — a hash-verified archive is inert, re-used on the next
          run, and never observable as project state."
         <category: 'private-add'>
-        | file |
         self writePackage: anOriginalText.
-        file := File name: self lockPath.
         aLockTextOrNil isNil
-            ifTrue: [file exists ifTrue: [file remove]]
+            ifTrue: [PathGuard remove: self lockPath
+                ifRefused: [:path | self refuseLockWrite: path]]
             ifFalse: [self write: aLockTextOrNil to: self lockPath]
     ]
 
@@ -891,11 +889,10 @@ construction; zero public setters.'>
          The reader and Resolution fromLockEntry: are consumed
          unchanged: validation asks them and never re-implements them."
         <category: 'private'>
-        | file entry shape value |
-        file := File name: self lockPath.
-        file exists ifFalse: [^nil].
+        | entry shape value |
+        (PathGuard exists: self lockPath) ifFalse: [^nil].
         self requireReadableLock.
-        entry := [IndexEntryReader readFrom: (ReadStream on: file contents)]
+        entry := [IndexEntryReader readFrom: (ReadStream on: self lockBytes)]
             on: IndexEntryParseError, IndexEntryFormatError
             do: [:e | ^self signalLockProblem: e messageText].
         (entry at: 1) = #'parley-lock' ifFalse: [
@@ -952,10 +949,8 @@ construction; zero public setters.'>
          Once the path is removed the lock is MISSING, not corrupt, and
          resolve is the verb that writes a first one."
         <category: 'private-lock'>
-        | file |
-        file := File name: self lockPath.
-        file exists ifFalse: [^self].
-        (file isFile and: [file isReadable]) ifTrue: [^self].
+        (PathGuard exists: self lockPath) ifFalse: [^self].
+        (PathGuard isReadableFile: self lockPath) ifTrue: [^self].
         ^LockError signalProblems: (Array with: self unreadableLockLine)
     ]
 
@@ -1265,43 +1260,80 @@ construction; zero public setters.'>
     ]
 
     writeLock: aResolution [
-        "Private — the byte-stable lock through the settled writer."
+        "Private — the byte-stable lock through the settled writer.
+
+         THE BYTES ARE RENDERED BEFORE ANY FILE IS OPENED (Sprint 17).
+         The settled writer is handed a String stream rather than a
+         file stream deliberately: the chokepoint's translation must
+         guard nothing but the write, or a writer's own failure would
+         come back as a path refusal and the blame would land on the
+         wrong party (§8 decision 52's discriminator). The bytes are
+         identical either way, so every settled lock oracle is
+         unchanged."
         <category: 'private'>
-        | stream |
-        stream := (File name: self lockPath) writeStream.
-        [IndexEntryWriter writeLock: aResolution on: stream]
-            ensure: [stream close]
+        | out |
+        out := WriteStream on: String new.
+        IndexEntryWriter writeLock: aResolution on: out.
+        self write: out contents to: self lockPath
+    ]
+
+    lockBytes [
+        "Private — the lock's bytes for a boundary that has already
+         required the path to be readable. The refusal is the TOCTOU
+         path and nothing else, and it answers this file's own declared
+         error rather than a kernel one."
+        <category: 'private'>
+        ^PathGuard contentsOf: self lockPath
+            ifRefused: [:path |
+                LockError signalProblems: (Array with:
+                    (PathGuard lineFor: path saying: PathGuard unreadableTail))]
     ]
 
     packageContents [
         "Private — the working directory's Package.st, as bytes. The
          operator's own file: read whole so add can put it back."
         <category: 'private'>
-        ^(File name: self packagePath) contents
+        ^PathGuard contentsOf: self packagePath
+            ifRefused: [:path |
+                ManifestError signalProblems: (Array with:
+                    (PathGuard lineFor: path saying: PathGuard unreadableTail))]
     ]
 
     lockContents [
         "Private — the lock's bytes, or nil when the project has none;
          what add restores on any failure."
         <category: 'private'>
-        | file |
-        file := File name: self lockPath.
-        ^file exists ifTrue: [file contents] ifFalse: [nil]
+        ^(PathGuard exists: self lockPath)
+            ifTrue: [self lockBytes]
+            ifFalse: [nil]
     ]
 
     writePackage: aString [
         "Private — replace Package.st with aString. The only place any
          verb writes the operator's manifest after init."
         <category: 'private'>
-        self write: aString to: self packagePath
+        ^PathGuard write: aString to: self packagePath
+            ifRefused: [:path |
+                ManifestError signalProblems: (Array with:
+                    (PathGuard unwritableLineFor: path))]
     ]
 
     write: aString to: aPath [
-        "Private — aString as the complete contents of aPath."
+        "Private — aString as the complete contents of aPath. Only the
+         lock arrives here; the manifest has writePackage:, because the
+         two files answer DIFFERENT declared errors and a shared writer
+         that guessed would be a boundary blaming the wrong file."
         <category: 'private'>
-        | stream |
-        stream := (File name: aPath) writeStream.
-        [stream nextPutAll: aString] ensure: [stream close]
+        ^PathGuard write: aString to: aPath
+            ifRefused: [:path | self refuseLockWrite: path]
+    ]
+
+    refuseLockWrite: aPath [
+        "Private — the lock's declared error for a path it cannot
+         write, in the one composition every write boundary shares."
+        <category: 'private'>
+        ^LockError signalProblems: (Array with:
+            (PathGuard unwritableLineFor: aPath))
     ]
 
     "---- results ----"

@@ -184,25 +184,52 @@ non-empty guard and its must-fail-on-drift proof.'>
     testEveryRowsDiagnosisNamesItsPathAndACause [
         "§8 decision 58's standard made a law rather than a habit: the
          line a first-time user meets must say WHICH file and WHAT is
-         wrong with it, in the settled '<path>: <cause>' grammar. The
-         non-empty guard is explicit — a law that iterates nothing
-         passes while proving nothing."
-        | lines |
-        lines := self everyRowsFirstLine.
-        self deny: lines isEmpty
+         wrong with it, in the settled '<path>: <cause>' grammar.
+
+         THE LAW GOVERNS THE ROW'S SENTENCE, NOT THE WHOLE LINE (§8
+         decision 73). It asserts that the operator's line ENDS WITH
+         the row's declared sentence and that the sentence OPENS WITH
+         the path. For eleven of the twelve rows the sentence IS the
+         line and the two readings coincide; the twelfth crosses
+         Installer's settled batching carrier, which composes
+         '<name> <version>: fetch failed - ' in front of a SourceError
+         whose text is law-pinned for the archive-absent case.
+
+         THE VACUITY THE OPENS-WITH FORM CLOSED STAYS CLOSED: the
+         abolished internal error: FileError: could not open <path> -
+         this is a defect in Parley, not in your project contains a
+         path, a cause and a remedy, but it ENDS WITH no row's
+         DECLARED sentence.
+
+         WHAT BOUNDS THE PREFIX IS NAMED RATHER THAN LEFT TO THIS
+         LAW'S SILENCE (decision 43). This law now tolerates a prefix,
+         so it must say what constrains one:
+         testEveryReadRowRefusesAnUnreadablePath and its write twin
+         drive these same twelve rows and hold every one to exit 1 with
+         its own declared error, and the acceptance suite's S12 drives
+         them again under BOTH hostile states holding every one to
+         never exit 70, never name a kernel class, never print a
+         backtrace and never carry the undiagnosed prefix. A law that
+         tolerates composition without saying what bounds the composed
+         part has traded a precise claim for a vague one."
+        | rows |
+        rows := self everyRowsFirstLine.
+        self deny: rows isEmpty
             description: 'no row produced a diagnosis to check'.
-        lines do: [:triple |
-            | role path line |
-            role := triple at: 1.
-            path := triple at: 2.
-            line := triple at: 3.
-            self assert: ((PathFixtures pathPartOf: line)
-                startsWith: path)
-                description: role, ' opens with ',
-                    (PathFixtures pathPartOf: line) printString,
-                    ' rather than the path it is about: ', line.
-            self deny: (PathFixtures causePartOf: line) isEmpty
-                description: role, ' states no cause: ', line]
+        rows do: [:row |
+            | role path line sentence |
+            role := row at: 1.
+            path := row at: 2.
+            line := row at: 3.
+            sentence := row at: 4.
+            self assert: (line endsWith: sentence)
+                description: role, ' does not end with its declared sentence ',
+                    sentence printString, ': ', line.
+            self assert: (sentence startsWith: path)
+                description: role, ' declares a sentence that does not open with its path ',
+                    path printString, ': ', sentence.
+            self deny: (PathFixtures causePartOf: sentence) isEmpty
+                description: role, ' states no cause: ', sentence]
     ]
 
     testEveryWriteRowsDiagnosisOffersARemedy [
@@ -218,22 +245,20 @@ non-empty guard and its must-fail-on-drift proof.'>
         lines := self writeRowsFirstLine.
         self deny: lines isEmpty
             description: 'no write row produced a diagnosis to check'.
-        lines do: [:triple |
-            "The line must OPEN with the row's own path before its
-             remedy means anything. Without this half the law passes
-             over the pre-sprint sentence
+        lines do: [:row |
+            "The line must END WITH the row's own declared sentence
+             before its remedy means anything (§8 decision 73). Without
+             this half the law passes over the pre-sprint sentence
              internal error: FileError: could not open <path> - this is
              a defect in Parley, not in your project, which has a path
              in it, a colon and a dash, and is the exact diagnosis this
              sprint exists to abolish."
-            self assert: ((PathFixtures pathPartOf: (triple at: 3))
-                startsWith: (triple at: 2))
-                description: (triple at: 1), ' opens with ',
-                    (PathFixtures pathPartOf: (triple at: 3)) printString,
-                    ' rather than the path it is about: ', (triple at: 3).
-            self deny: (PathFixtures remedyPartOf: (triple at: 3)) isEmpty
-                description: (triple at: 1), ' offers no remedy: ',
-                    (triple at: 3)]
+            self assert: ((row at: 3) endsWith: (row at: 4))
+                description: (row at: 1),
+                    ' does not end with its declared sentence: ', (row at: 3).
+            self deny: (PathFixtures remedyPartOf: (row at: 4)) isEmpty
+                description: (row at: 1), ' offers no remedy: ',
+                    (row at: 4)]
     ]
 
     everyRowsFirstLine [
@@ -258,8 +283,8 @@ non-empty guard and its must-fail-on-drift proof.'>
                     include: (row at: 2)]
                 ifNone: [nil].
             named isNil ifFalse: [
-                pairs add: (Array
-                    with: (row at: 1) with: (row at: 2) with: named)]].
+                pairs add: (Array with: (row at: 1) with: (row at: 2)
+                    with: named with: (row at: 4))]].
         ^pairs asArray
     ]
 
@@ -299,6 +324,35 @@ non-empty guard and its must-fail-on-drift proof.'>
                 description: (row at: 1), ' declares ',
                     (CommandLineFixtures nameOf: (row at: 3)),
                     ', which the boundary does not diagnose']
+    ]
+
+    testEveryRowDeclaresHowItIsGuarded [
+        "PRECHECK YES, TRANSLATE NO IS A PROPERTY OF A ROW, NOT A
+         SENTENCE IN A REPORT (§8 decision 73). Every row prechecks
+         through PathGuard; all but one also route the operation
+         through its translating seam. Package.st (read) deliberately
+         does not: ManifestFile files the author's own program in, and
+         a broad translation around THAT would relabel a vocabulary
+         typo or a division by zero as an I/O failure — decision 52's
+         discriminator, in the one place this project has been most
+         careful about blame. That is Sprint 18's boundary.
+
+         The reason it is a column rather than prose: Sprint 8's
+         ManifestFile defect was a right sentence over a missing
+         predicate, and it survived eight sprints because the reasoning
+         lived in a comment where nothing could compare it against the
+         code."
+        | prechecked |
+        prechecked := OrderedCollection new.
+        CommandLine pathBoundaries do: [:row |
+            self assert: (PathFixtures declaredGuardings includes: (row at: 4))
+                description: (row at: 1), ' declares guarding ',
+                    (row at: 4) printString.
+            (row at: 4) = #prechecked
+                ifTrue: [prechecked add: (row at: 1)]].
+        self assert: prechecked asArray = PathFixtures precheckOnlyRoles
+            description: 'the rows that precheck without translating are ',
+                prechecked asArray printString
     ]
 
     "---- S13: the prohibition, its guard, and its proof of drift ----"

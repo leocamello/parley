@@ -145,7 +145,7 @@ setters.'>
         | path |
         path := self archivePathFor: aPackageName
             version: aVersion printString.
-        (File name: path) exists ifFalse: [
+        (PathGuard exists: path) ifFalse: [
             self fetchUrl: (self archiveUrlFor: aPackageName
                     version: aVersion printString)
                 to: path].
@@ -186,7 +186,10 @@ setters.'>
         | label entry members |
         label := aName, '/', self listingFileName.
         entry := [IndexEntryReader readFrom: (ReadStream on:
-                (File name: (self listingPathFor: aName)) contents)]
+                (PathGuard contentsOf: (self listingPathFor: aName)
+                    ifRefused: [:path |
+                        problems add: label, ': ', self unreadableListingDefect.
+                        ^#()]))]
             on: IndexEntryParseError, IndexEntryFormatError
             do: [:e |
                 problems add: label, ': ', e messageText.
@@ -224,7 +227,7 @@ setters.'>
         <category: 'private'>
         | path ground |
         path := self entryPathFor: aName version: aVersionString.
-        (File name: path) exists ifTrue: [^true].
+        (PathGuard exists: path) ifTrue: [^true].
         ground := self fetchUrl:
                 (self entryUrlFor: aName version: aVersionString)
             to: path.
@@ -243,8 +246,10 @@ setters.'>
         <category: 'private'>
         | entry |
         entry := [IndexEntryReader readFrom: (ReadStream on:
-                (File name: (self entryPathFor: aName
-                    version: aVersionString)) contents)]
+                (PathGuard
+                    contentsOf: (self entryPathFor: aName
+                        version: aVersionString)
+                    ifRefused: [:path | ^#()]))]
             on: Error
             do: [:e | ^#()].
         ^[self dependencyNamesIn: entry] on: Error do: [:e | ^#()]
@@ -333,13 +338,44 @@ setters.'>
     ensureCacheLayout [
         "Private — the cache directory with listings BESIDE the
          scanned entries directory, created at the I/O moment, never
-         at construction. Directory creation, not a process."
+         at construction. Directory creation, not a process.
+
+         ROUTED THROUGH THE CHOKEPOINT (§8 decision 59, Sprint 17).
+         This is the tool's own state under the working directory, so
+         an operator never chose where it lives — but a cache root they
+         cannot write is still their filesystem and not a defect in
+         Parley, and it answered exit 70 saying otherwise. It is the
+         index-cache row of the boundary table, direction write,
+         declared error SourceError.
+
+         The refusal names the path that failed, which for a create is
+         the PARENT: told .parley/index could not be written, an
+         operator can act; told .parley/index/<sha256 of the base URL>
+         could not be written, they are reading a name Parley invented."
         <category: 'private'>
-        (File name: cache) exists ifFalse: [Directory create: cache].
-        (File name: self entriesDir) exists
-            ifFalse: [Directory create: self entriesDir].
-        (File name: self listingsDir) exists
-            ifFalse: [Directory create: self listingsDir]
+        self ensureCacheDirectory: cache.
+        self ensureCacheDirectory: self entriesDir.
+        self ensureCacheDirectory: self listingsDir
+    ]
+
+    ensureCacheDirectory: aPath [
+        "Private — one cache directory, through the chokepoint, with
+         this source's own declared error."
+        <category: 'private'>
+        ^PathGuard ensureDirectory: aPath
+            ifRefused: [:path |
+                SourceError signalProblems: (Array with:
+                    (PathGuard unwritableLineFor: (PathGuard parentOf: path)))]
+    ]
+
+    unreadableListingDefect [
+        "Private — a cached listing that cannot be read, in the voice
+         DirectorySource already uses for the archive beside it. It
+         names no remedy: the reader of this line did not put the file
+         there and cannot repair it, and a remedy nobody checked is the
+         §8 decision 58 defect."
+        <category: 'private'>
+        ^'missing or unreadable listing'
     ]
 ]
 

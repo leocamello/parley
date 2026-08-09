@@ -1,7 +1,29 @@
 #!/bin/sh
-# Parley — the executable wrapper (Doc E §4.2): glue only, no logic.
-# Finds the Parley checkout from its own location, then execs the main
-# script; the user's working directory stays current for Package.st.
-PARLEY_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Parley — the executable wrapper (Doc E §4.3): glue only, no logic.
+# Finding itself is not a decision about a package (§8 decision 66).
+#
+# It resolves its own symlink chain before locating the checkout,
+# honours a pre-set PARLEY_ROOT rather than overwriting it, and checks
+# that its main script is there before exec'ing gst. That last check
+# cannot be delegated: gst -f <missing file> prints its own message and
+# exits 0 on 3.2.5, so a wrapper that passed gst's status through would
+# report every broken installation as a success — which is what the
+# canonical symlink-onto-PATH installation did.
+if [ -z "$PARLEY_ROOT" ]; then
+    self=$0
+    while [ -L "$self" ]; do
+        link=$(readlink "$self")
+        case $link in
+            /*) self=$link ;;
+            *) self=$(dirname "$self")/$link ;;
+        esac
+    done
+    PARLEY_ROOT=$(cd "$(dirname "$self")/.." && pwd)
+fi
 export PARLEY_ROOT
-exec gst -f "$PARLEY_ROOT/bin/parley-main.st" -- "$@"
+main=$PARLEY_ROOT/bin/parley-main.st
+if [ ! -f "$main" ]; then
+    echo "parley: cannot find $main - this Parley installation is incomplete"
+    exit 70
+fi
+exec gst -f "$main" -- "$@"

@@ -443,7 +443,19 @@ location contract.'>
         "The sentence DirectorySource already carries — missing or
          unreadable archive file — finally gets the predicate behind it.
          Sprint 8's ManifestFile defect, in a second place: a right
-         sentence over a check that only tested existence."
+         sentence over a check that only tested existence.
+
+         THE SENTENCE IS THE TAIL OF THE LINE, NOT THE LINE (§8 decision
+         73, ruled mid-GREEN). install is the only verb that reads a
+         .star, and Installer batches a source failure as
+         '<name> <version>: fetch failed - ', e messageText — a literal
+         settled and law-pinned for the archive-ABSENT case. Routing the
+         unreadable case into that same path is exactly what
+         missing or unreadable archive file has always promised;
+         answering the two differently would be the regression. This
+         scenario asked only for exit 1 naming the archive, and the
+         first version of this test asserted line membership of the bare
+         sentence — over-asserting beyond its own reviewed contract."
         | work index result |
         work := self workDir: 's17-s11-work'.
         index := self diamondIndex: 's17-s11-index'.
@@ -455,8 +467,9 @@ location contract.'>
             description: 'the unreadable archive answered exit ',
                 result exitCode printString, ': ',
                 result lines printString.
-        self assert: (result lines includes:
-            (PathFixtures unreadableArchiveProblemFor: 'a-1.0.0.star'))
+        self assert: (result lines anySatisfy: [:line |
+            line endsWith: (PathFixtures unreadableArchiveProblemFor:
+                'a-1.0.0.star')])
             description: 'install answered ', result lines printString.
         self denyBlamesParley: result
     ]
@@ -707,7 +720,26 @@ location contract.'>
          archive — owe none, and inventing one for them would be the
          very defect decision 58 rules against: a diagnosis that names a
          cause has made a claim, and a tool may only make claims it has
-         checked."
+         checked.
+
+         THE LAW GOVERNS THE ROW'S SENTENCE, NOT THE WHOLE LINE (§8
+         decision 73, ruled mid-GREEN). It asserts the line ENDS WITH
+         the row's declared sentence and that the sentence OPENS WITH
+         the path. For eleven of the twelve rows the sentence IS the
+         line; the twelfth crosses Installer's settled batching
+         carrier, whose wrapper is law-pinned for the archive-absent
+         case — and making the unreadable case answer differently from
+         the absent one would be the regression, not the fix.
+
+         THE VACUITY THE OPENS-WITH FORM CLOSED STAYS CLOSED: the
+         abolished internal error: FileError: could not open <path> -
+         this is a defect in Parley, not in your project ends with no
+         row's DECLARED sentence. AND WHAT BOUNDS THE PREFIX IS NAMED
+         rather than left to this law's silence (decision 43): S12
+         drives these same twelve rows under BOTH hostile states and
+         holds every one to never exit 70, never name a kernel class,
+         never print a backtrace and never carry the undiagnosed
+         prefix."
         | reads writes |
         reads := self firstLinesOf: (PathFixtures readRowDriversTracking:
             [:path | self track: path]).
@@ -717,36 +749,39 @@ location contract.'>
             description: 'no read row produced a diagnosis to check'.
         self deny: writes isEmpty
             description: 'no write row produced a diagnosis to check'.
-        reads, writes do: [:triple |
-            self assert: ((PathFixtures pathPartOf: (triple at: 3))
-                startsWith: (triple at: 2))
-                description: (triple at: 1), ' opens with ',
-                    (PathFixtures pathPartOf: (triple at: 3)) printString,
-                    ' rather than the path it is about: ', (triple at: 3).
-            self deny: (PathFixtures causePartOf: (triple at: 3)) isEmpty
-                description: (triple at: 1), ' states no cause: ',
-                    (triple at: 3)].
-        writes do: [:triple |
-            self deny: (PathFixtures remedyPartOf: (triple at: 3)) isEmpty
-                description: (triple at: 1), ' offers no remedy: ',
-                    (triple at: 3)]
+        reads, writes do: [:row |
+            self assert: ((row at: 3) endsWith: (row at: 4))
+                description: (row at: 1),
+                    ' does not end with its declared sentence ',
+                    (row at: 4) printString, ': ', (row at: 3).
+            self assert: ((row at: 4) startsWith: (row at: 2))
+                description: (row at: 1),
+                    ' declares a sentence that does not open with its path ',
+                    (row at: 2) printString, ': ', (row at: 4).
+            self deny: (PathFixtures causePartOf: (row at: 4)) isEmpty
+                description: (row at: 1), ' states no cause: ', (row at: 4)].
+        writes do: [:row |
+            self deny: (PathFixtures remedyPartOf: (row at: 4)) isEmpty
+                description: (row at: 1), ' offers no remedy: ',
+                    (row at: 4)]
     ]
 
     firstLinesOf: someDrivers [
         "Private — for each driver, {role. its path. the first answered
-         line naming that path}. The batching rows answer several
-         problems; the one about THIS path is the one the structure law
-         is about.
+         line naming that path. the row's DECLARED sentence}. The
+         batching rows answer several problems; the one about THIS path
+         is the one the structure law is about.
 
-         The path travels with the line because the law asserts the line
-         OPENS with it, not merely that it has some path part: the
-         pre-sprint exit-70 sentence
+         The declared sentence travels with the line because the law
+         asserts the line ENDS WITH it and that IT opens with the path
+         (§8 decision 73) — not merely that the line has some path part:
+         the pre-sprint exit-70 sentence
          internal error: FileError: could not open <path> - … contains
          the path, has a colon and has a dash, so a structural law that
          only counted parts would pass over exactly the diagnosis this
          sprint exists to abolish."
-        | pairs |
-        pairs := OrderedCollection new.
+        | rows |
+        rows := OrderedCollection new.
         someDrivers do: [:row |
             | named |
             named := (row at: 3) value lines
@@ -754,9 +789,9 @@ location contract.'>
                     include: (row at: 2)]
                 ifNone: [nil].
             named isNil ifFalse: [
-                pairs add: (Array
-                    with: (row at: 1) with: (row at: 2) with: named)]].
-        ^pairs asArray
+                rows add: (Array with: (row at: 1) with: (row at: 2)
+                    with: named with: (row at: 4))]].
+        ^rows asArray
     ]
 
     "---- S16: the settled exit-70 boundary still exists ----"

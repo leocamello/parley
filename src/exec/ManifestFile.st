@@ -103,10 +103,24 @@ one-problem ManifestError naming the path.'>
          every file boundary, a regular readable file, and THE WORDING
          DOES NOT MOVE: it was already telling the truth about what this
          step was supposed to do."
-        file := File name: aPath.
-        (file isFile and: [file isReadable]) ifFalse: [
+        (PathGuard isReadableFile: aPath) ifFalse: [
             ^ManifestError signalProblems: (Array with:
                 aPath, ': missing or unreadable Package.st - run parley init to write one')].
+
+        "THE FILE-IN ITSELF IS DELIBERATELY NOT WRAPPED (Sprint 17).
+         The predicate above now lives in Parley.PathGuard, the single
+         site performing file I/O, but the file-in below does NOT go
+         through its translating seam and that is a ruling rather than
+         an omission. The translation is broad, and broad is correct
+         only while the block it guards contains nothing but the
+         operation (§8 decision 52's discriminator). This block
+         contains the AUTHOR'S WHOLE PROGRAM: guarding it would turn a
+         vocabulary typo, or a division by zero in somebody's
+         Package.st, into a sentence about a path that could not be
+         read — the wrong blame, in the one place this project has been
+         most careful about blame. What this sprint owes the boundary is
+         the predicate; the authoring stream is Sprint 18's subject and
+         has a ruling and a class of its own."
         recorded := nil.
         authoringProblems := nil.
         previous := Namespace current.

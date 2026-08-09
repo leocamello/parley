@@ -102,7 +102,7 @@ until snapshot. Class-side construction; zero public setters.'>
          an absent cache, fast-forward an existing one. --ff-only
          because an index checkout is a mirror, never a merge base."
         <category: 'private'>
-        ^(File name: cache) exists
+        ^(PathGuard exists: cache)
             ifTrue: ['git -C ', cache, ' pull --ff-only']
             ifFalse: ['git clone ', repo, ' ', cache]
     ]

@@ -52,6 +52,39 @@ Parley never answers a backtrace, and no failing command ever exits `0`:
 
 The split between `1` and `70` is deliberate and law-enforced: a script checking `$?` can tell "your input is wrong" from "the tool is broken".
 
+### When Parley cannot read or write a file
+
+Every file boundary in Parley checks the path before it commits to anything, and refuses by naming it. A checkout you cannot write, a root-owned `parley.lock`, a bad umask, a `chmod -R a-w` cache: those are states of your filesystem, not defects in Parley, and it says so at exit `1` rather than claiming to be broken.
+
+```
+$ parley resolve --source ../index
+/srv/app/parley.lock: could not be written - check its permissions and try again
+$ echo $?
+1
+```
+
+The same shape covers the read side (`missing or unreadable Package.st`, `missing or unreadable archive file`) and every write: `init` and `add` on `Package.st`, `resolve` and `update` on `parley.lock`, `publish` on its destination. A refused write leaves the filesystem exactly as it found it — nothing is half-created, and `add` never moves your manifest without moving your lock.
+
+The check is a **precheck, not a lock**. A path can become unwritable between the check and the write, and Parley makes no claim about that window; what it does guarantee is that such a failure still names the file at exit `1`, and never reports itself as broken.
+
+## Installing
+
+Parley runs from a checkout. Clone it, then put the wrapper on your `PATH`:
+
+```bash
+git clone https://github.com/leocamello/parley.git ~/src/parley
+ln -s ~/src/parley/bin/parley ~/.local/bin/parley
+parley --version
+```
+
+The symlink is the supported route: `bin/parley` resolves its own symlink chain — including a link to a link — before locating the checkout, so it works from anywhere on your `PATH`. If you would rather point it explicitly, set `PARLEY_ROOT` to the checkout and the wrapper honours it:
+
+```bash
+PARLEY_ROOT=~/src/parley ~/src/parley/bin/parley --version
+```
+
+An installation whose `bin/parley-main.st` is missing exits `70` naming the path it looked for — a broken install is a defect in Parley, and it will not pretend to have succeeded.
+
 ## Publishing a package
 
 `parley publish <dir>` builds the archive with `gst-package` from your own manifest and lands a release in the index directory you give it. An index is a directory you own — a folder, a git repository you push, a path behind any web server. There is no hosted registry to sign up for.
