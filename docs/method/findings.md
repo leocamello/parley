@@ -55,9 +55,11 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 19 | New tests that **pass** in RED ↔ the sprint's declared passes-in-red list | runbook Gate A step 3 weak-test item, via the pass-count arithmetic | Procedural — F10 |
 | 20 | A carried gap's asserted **reachability** ↔ the runtime behaviour that would make it reachable | runbook Gate B §2.4 probe-or-mark-unprobed | Procedural — F11, F12 <sup>[l]</sup> |
 | 21 | A boundary's stated diagnosis (its **sentence**) ↔ the predicate that boundary actually **checks** | Sprint 17's boundary table: S12 drives every row through its hostile state and requires the row's own declared error | **Mechanical, known-partial** — F12, F13 <sup>[m]</sup> |
-| 22 | A cross-reference inside a staging artifact ↔ the thing it points at (a count, a section number, a scenario's text, a sibling artifact's list) | — | **Unforced** — F13 <sup>[n]</sup> |
+| 22 | A cross-reference inside a staging artifact ↔ the thing it points at (a count, a section number, a scenario's text, a sibling artifact's list) | — | **Unforced** — F13, F16 <sup>[n]</sup> |
+| 23 | `operator/master-plan.md` §9's narrative sprint history ↔ `docs/roadmap.md` §2, the tracked ranking it narrates | runbook §3 step 6 | **Unforced** <sup>[o]</sup> |
+| 24 | A gate whose validity depends on the **order** its steps ran in ↔ any evidence that they ran in that order | — | **Unforced** <sup>[p]</sup> |
 
-**Eight mechanical, nine procedural, five unforced.**
+**Eight mechanical, nine procedural, seven unforced.**
 
 - **[a]** Known-partial: textually spelled senders only, because 3.2.5 offers no reflective alternative (§8 decisions 38 corrected, 43).
 - **[b]** Written *because* `GitIndexSource` shipped lawful and unreachable for a whole sprint — nothing constructed it.
@@ -65,9 +67,11 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 - **[d]** Every `Parley` `Error` subclass must be in the diagnosed set or the declared undiagnosed list — **no third bucket**, coverage computed by handling as `on:do:` does.
 - **[e]** This pair is why usage re-pins land in GREEN with the code change rather than in RED.
 - **[f]** Adopted *after* the miss it records; four sprints of evidence since.
-- **[m]** Forced by Sprint 17 **only for the two hostile states the law enumerates** — unreadable and unwritable. A path of the *wrong type* is not driven, and that is exactly where F13's defect lives. The row is mechanical against the enumeration, not against the property.
-- **[n]** Named in §8 decision 60 when the census resolved a Scope/Architecture-impact disagreement; **added to this table at the Sprint 17 close-out, eight instances in**, every one caught by an operator reading one artifact against another and none by a gate.
+- **[m]** Forced by Sprint 17 **only for the two hostile states the law enumerates** — unreadable and unwritable. A path of the *wrong type* is not driven, and that is exactly where F13's defect lives. The row is mechanical against the enumeration, not against the property. **Sprint 18's decision 74 narrows the partial without closing it:** the *state-root* row is now driven through a path's four **shapes** — absent, already a directory, a regular file, wrong-type-or-unwritable parent — and each answers its own declared sentence. That is **one row of twelve.** The other eleven are still driven through the same two permission bits, so the property/enumeration gap this footnote records is now one-twelfth closed and eleven-twelfths open, and saying "F13 is fixed" would be the highlight-reel reading.
+- **[n]** Named in §8 decision 60 when the census resolved a Scope/Architecture-impact disagreement; **added to this table at the Sprint 17 close-out, eight instances in**, every one caught by an operator reading one artifact against another and none by a gate. **Sprint 18 added six more, and the count is kept honestly because a tidy count is how this row stops being believed.** Four at Gate C, by reading the code against the staging plan: a selector that does not exist (`Parley.Parley class >> load:`), Doc E §4.1 cited for a §3 subject, four declared settled-class exceptions where the code needs two, and an S2 promising a re-voicing the toolchain cannot perform. One at the RED review: *six* absolute Parley source paths where the shipped binary prints **four**, propagated from the staging plan into the issue, Doc B §2.2, decision 62 and four test comments before anyone ran the binary and counted. One at GREEN: the operator's own Gate A impact list, two sites short — see F16. **Fourteen instances; still nothing compares these pairs but a person reading one against the other.**
 - **[g]** Adopted at Sprint 14. **Still untested after its first opportunity:** Sprint 15 introduced no new class at all, so the widened item was answered "n/a" rather than exercised. Recorded as untested, not as coverage — the opportunity is what expired, not the doubt.
+- **[o]** The operator-local narrative half of what the tracked roadmap keeps canonically. It is **untracked**, so no drift law can ever see it — which is why it drifted three sprints (15, 16 and 17 all delivered without reaching it) before anyone compared them. Raised at Sprint 18's Gate C, which deliberately did **not** write this row itself because `docs/method/` is operator-authored and a gate that authors its own findings is how the tally becomes a highlight reel. The forcing step that exists — runbook §3 step 6 — is **the weak kind**: a checklist item a reviewer works, not a law that halts. The tracked/untracked split leaves nothing stronger available, and saying so is the point of the row.
+- **[p]** Raised while reviewing Sprint 18's Gate C output, and **not an accusation about that session** — its cold read reached the demonstrably correct conclusion and caught a §2 divergence a retroactive write-up would not have produced. The pair is structural. Runbook §3.0 step 1 exists *because* the roadmap must be read **before** the carried gap; the only artifact is `operator/staging/sprint-18-cold-read.md`, whose **mtime is the latest of every Gate C artifact** — after the issue, the comment, the plan and the kickoff. mtime records last modification, so it neither proves nor disproves the ordering; **nothing records it either way.** The same hole sits under Gate A's *read the tests before running the gate* and Gate B's *probe before ranking*. **Unlike [o] this one has a cheap real mechanism**: require the ordered step to be a **message in the session transcript** rather than a file, because a transcript is inherently ordered and an mtime is not. Sprint 18's own Gate B is the demonstration — its probe-before-ranking order is legible precisely because it happened as conversation rather than as a file. Adopting it is a runbook §3.0 change and belongs to **Gate C**, not to this close-out.
 - **[h]** Both sides plain text and enumerable: the cheapest available drift law, unwritten. Open; scheduling is a Gate C question.
 - **[i]** Four instances (§8 decisions 43, 45, 49, 52), every one caught by a human reading. Not a drift-law candidate — comparing prose to behaviour is not a text walk.
 - **[j]** No finding raised it, and it has drifted before: the tracked log and the operator's copy diverged by four decisions, leaving tracked docs citing decisions a cloner could not resolve. The repair was a convention ("same commit as the doc change"), not a check. **Verified in sync at the time of writing** — 31 distinct decisions cited across tracked docs, all 31 resolve in §8. **Re-verified at the Sprint 15 close-out:** 55 decisions defined, every citation across `docs/`, `.github/` and `AGENTS.md` resolves, no dangling reference. Two consecutive clean checks is not forcing — it is two clean checks.
@@ -133,12 +137,18 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **11** |
-| — caught by a mechanism | **6** (F3, F4, F6, F10, F12, F14) |
+| Defect-findings | **13** |
+| — caught by a mechanism | **8** (F3, F4, F6, F10, F12, F14, F15, F16) |
 | — caught by luck | **5** (F1, F2, F5, F11, F13) |
 | Confirmation-findings (excluded from the ratio) | 3 (F7, F8, F9) |
 
-**The pipeline caught 6 of 11.**
+**The pipeline caught 8 of 13** — and the ratio flatters it. **Both of Sprint 18's
+catches are the same mechanism catching the same reviewer's misses one gate late:** F15
+and F16 were approved at the RED review and found by the **green** gate, exactly as F14
+was. A gate that catches what the previous gate approved is doing its job and is also
+evidence that the previous gate's method was wrong; counting it as a clean catch is the
+arithmetic being kind. Read the three together — F14, F15, F16 — as one pattern rather
+than three successes.
 
 **The split is not random: all four misses are unforced rows of the inventory above** —
 F1 (row 14, unforced until Sprint 14), F2 (row 13, unforced until Sprint 11), F5 (row 15,
@@ -618,3 +628,27 @@ The tool already had the right shape one row over: `parley.lock` as a directory 
 **What caught it: a mechanism — the green gate**, which is the honest answer and also the uncomfortable one, because the green gate catches this *after* the red review has already approved the law. The operator had recorded the exposure at the phase flip — *drivers that never evaluate in red hide defects the gate structurally cannot see* — after reading the mirror drivers by hand rather than trusting the gate, and the coding agent disclosed the `ERROR`-versus-`FAILURE` split unprompted in its own RED report. Both are the practice this finding generalizes; neither was a rule at the time.
 
 **Status.** First instance. Kin to F10 (a red phase reports failures, so attention follows the failures and the *passes* go unexamined) inverted: F10 governs what a red gate does not print, F14 governs what it prints without having checked.
+
+---
+
+## F15 — A `FAILURE` proves the law's body started, not that it reached its claim
+
+**Rule (portable).** F14 splits new laws into `ERROR` (aborted at a missing reference, interior unreviewed) and `FAILURE` (body ran, an assertion was false), and treats `ERROR` as the blind spot. **That split is necessary and insufficient.** A test framework stops at the *first* failed assertion, so a law that opens with a **fixture-correctness guard** — a membership check, a sorted-declaration comparison, a "the drivers and their declared labels agree" assertion — reports a perfectly honest `FAILURE` while everything below the guard, including the driver loop and every assertion about the law's actual subject, never executes. The gate cannot tell that apart from a law that failed on its claim: **both print `FAILURE`.** So at the red review, do not stop at the class of the result — **ask which assertion produced it.** A failure at a guard is `ERROR`-equivalent: unreviewed by the gate, reviewable only by reading. The guards are worth keeping — they are what stops a driver being silently dropped — but a guard placed first converts every downstream claim into an unexamined one for as long as the guard is red.
+
+**Evidence (Parley, Sprint 18, commits `d320ba2` → `c9c72e9`).** `AuthoringDiagnosisTest>>testNoAuthoringDiagnosisReachesTheOperatorWithoutNamingAPath` is S7's law — *no diagnosis the authoring path can produce reaches the operator without naming a path* — quantified over an eight-driver family. It opens by asserting the sorted driver labels equal `AuthoringFixtures familyLabels`. On gst 3.2.5 `String <=` **folds case**, so `'no define:'` sorts before `'no Package.st'`; the declared literal was ASCII-ordered; the guard failed first and **the eight-driver loop never ran.** Through the entire red gate and two GREEN increments that law asserted nothing whatever about the diagnoses it exists to check, while reporting a `FAILURE` indistinguishable from a real one. The operator read the law at Gate A, described in the posted review what it asserts, classified it `FAILURE` under F14 — *"body ran, an assertion was false"* — and never asked **which** assertion. The coding agent found it at GREEN, when the law would not go green for a reason unrelated to the product, and disclosed it unprompted with the collation named at the oracle.
+
+**What caught it: a mechanism — the green gate**, and it is the third consecutive finding with that answer and that discomfort. The red review approved a law that was structurally incapable of checking its own subject; the gate that caught it is the one *after* the gate that should have.
+
+**Status.** First instance. Direct refinement of **F14**: F14 says a red `ERROR` hides the interior, F15 says a red `FAILURE` hides everything past the first failed assertion, and the two together mean **a red gate tells you a law is red and nothing else at all.**
+
+---
+
+## F16 — An impact list built from the spelling misses every site that reaches the value another way
+
+**Rule (portable).** When a change ripples through a set of artifacts, **enumerate the set by the property that makes an artifact affected — never by the spelling that usually accompanies it.** Grepping for a literal finds the sites that write the literal and misses every site reaching the same value through a fixture, a constant, an accessor or a helper. This is the census rule for prohibition laws (a law's exemption list is a census of the property it prohibits, not the set of sites that motivated it) applied one level over, to a **review's impact list** — and it is harder to see there, because an impact list is prose in a review rather than code in a law, and nothing ever runs it.
+
+**Evidence (Parley, Sprint 18, commit `c9c72e9`).** The RED review enumerated the settled oracles that the new batch header would break, and posted four: three in `LockBoundaryTest`, one in `Sprint9AcceptanceTest`. The list was built by grepping the four problem **literals** plus the `vocabularyTypo` / `invalidDeclaration` fixture names. `AddVerbTest>>testAnEditThatWillNotLoadIsRolledBack` and `AddVerbTest>>testAnUnparseableConstraintIsJudgedByTheSettledBuilderAndRolledBack` reach their problems through `ManifestEditFixtures selfDependencyProblem` and `unparseableConstraintProblemFor:`, matched neither pattern, and were absent. **The review then compounded it**: it independently checked the agent's *"nothing else breaks"* claim against three further sites and reported the claim accurate — verifying the entries that were on the list rather than asking how the list had been built. The coding agent found both at GREEN by deriving the set from the property, applied them under the existing bounded grant rather than halting a second time on a decision already made, and recorded the miss in both method comments as the lesson.
+
+**What caught it: a mechanism — the green gate**, when the two oracles failed. Note what that is worth: an oracle mismatch is *guaranteed* to be caught by the green gate, so the mechanism deserves little credit here. The reviewable failure is the method, and no gate examines a review's method.
+
+**Status.** First instance as a *method* finding; the same rule already exists in the product as §8 decision 60, where the operator wrote it, and was then not applied to the operator's own list four sprints later. Inventory **row 22**.
