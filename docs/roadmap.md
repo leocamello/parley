@@ -62,8 +62,17 @@ roadmap item that wins on its own merits rather than a displacement.
 3. **Running your first command** — *deferred 0×.* Every successful verb prints more foreign
    text than its own: `publish` emits five `mkdir`/`ln`/`rm`/`cd`/`zip` lines per one of its
    own, `add` and `install` emit an `/usr/bin/install -c` line, `exec` emits a GC message.
-   Probed 2026-08-06: **all of it is on stdout and stderr is clean**, so silencing is a
-   redirect, not the deferred output-capture layer (§3, amended). §8 decision 63.
+   **Re-probed at Sprint 19's Gate C, 2026-08-10, and the earlier note was wrong.** It read
+   *"all of it is on stdout and stderr is clean, so silencing is a redirect"*; measured, the
+   `publish` and `install` chatter is on **stdout** but `exec`'s GC message is on **stderr**,
+   emitted by the `gst -i -I <target>/parley.im` image load Parley composes
+   (`ExecutionScope.st:77`) — `gst -f <script>` alone writes nothing to stderr, so it is
+   plumbing rather than the user's program. **That falsifies the premise the item was scoped
+   on**, and splits it: `publish`/`install` spawn plumbing children that are *not* the user's
+   program, so discarding their stdout is the ruled-in redirect; `exec` spawns **one** child
+   that is both the plumbing and the user's program on **one** stream, so suppressing the GC
+   message means suppressing the script's own stderr — which is [decision 45](design/architecture.md#8-decision-log)'s
+   territory and the deferred *output capture* row's actual subject. §8 decision 63.
 4. **Getting Parley, and telling it where your index is** — *deferred 0×.* The README has no
    installation section at all, and there is no configuration of any kind, so `--source <dir>`
    is retyped on every command forever. (The broken symlink install itself — which exits `0` on
