@@ -371,7 +371,18 @@ exit 70.'>
         "ManifestFile load: answers the author's own diagnosis. The
          message is the vocabulary error's, character for character:
          the oracle is obtained by signaling that error, not by copying
-         its text, so the law is an identity and cannot drift."
+         its text, so the law is an identity and cannot drift.
+
+         AMENDED IN SPRINT 18 GREEN, approved at the RED review and
+         BOUNDED TO ADDING THE HEADER (issue #20; Doc E §3.1, §8 decision
+         44). The authoring problems are now emitted inside the settled
+         per-file batch, so the diagnosis names the file the author must
+         open. The vocabulary message itself does not move by one byte —
+         that is still asserted as an identity against the signaled
+         error — and the identity is now checked at its position INSIDE
+         the batch. The selector keeps its name: the vocabulary error is
+         still exactly one manifest problem, and the header is the path
+         around it rather than a second problem with the file."
         | work problems |
         work := self typoWorkDir: 'authoring-typo-work'.
         problems := [(ManifestFile load: work, '/Package.st').
@@ -383,8 +394,13 @@ exit 70.'>
                         description: 'expected a ManifestError, got ',
                             e class name.
                     e return: e problems].
-        self assert: problems size = 1.
+        self assert: problems size = 2
+            description: 'the batch answered ', problems printString.
         self assert: (problems at: 1)
+            = (AuthoringFixtures batchHeaderFor: work, '/Package.st'
+                count: 1)
+            description: 'the header is ', (problems at: 1) printString.
+        self assert: (problems at: 2)
             = LockBoundaryFixtures vocabularyTypoProblem
     ]
 
@@ -398,6 +414,9 @@ exit 70.'>
     ]
 
     testAVocabularyTypoIsExitOneAndNeverExitSeventy [
+        "AMENDED IN SPRINT 18 GREEN, bounded to adding the header: the
+         operator's lines are the batch, and the vocabulary message
+         inside it is byte-identical."
         | work index result |
         work := self typoWorkDir: 'authoring-exit-work'.
         index := self freshDir: 'authoring-exit-index'.
@@ -405,7 +424,10 @@ exit 70.'>
             (Array with: 'resolve' with: '--source' with: index) in: work.
         self assert: result exitCode = 1.
         self assert: result lines
-            = (Array with: LockBoundaryFixtures vocabularyTypoProblem).
+            = ((Array with: (AuthoringFixtures
+                batchHeaderFor: work, '/Package.st' count: 1)),
+                (Array with: LockBoundaryFixtures vocabularyTypoProblem))
+            description: 'the typo answered ', result lines printString.
         self denyBlamesParley: result
     ]
 
@@ -417,7 +439,14 @@ exit 70.'>
          validation. The builder's own ManifestError is re-signaled with
          every problem intact — never flattened to one line, and never
          the define-less diagnosis, which was a provable lie about a
-         file that did send define:."
+         file that did send define:.
+
+         AMENDED IN SPRINT 18 GREEN, bounded to adding the header: the
+         batch is now headed by a problem naming the path and the count,
+         and every sentence the builder composed is still present,
+         byte-identical, in its own order. WHOLE means whole — the
+         assertion is still an equality against the settled oracle, with
+         the header prepended and nothing else changed."
         | work index result |
         work := self track: (LockBoundaryFixtures
             invalidDeclarationWorkDirNamed: 'authoring-invalid-work').
@@ -426,7 +455,12 @@ exit 70.'>
             (Array with: 'resolve' with: '--source' with: index) in: work.
         self assert: result exitCode = 1.
         self assert: result lines
-            = LockBoundaryFixtures invalidDeclarationProblems.
+            = ((Array with: (AuthoringFixtures
+                batchHeaderFor: work, '/Package.st'
+                count: LockBoundaryFixtures invalidDeclarationProblems size)),
+                LockBoundaryFixtures invalidDeclarationProblems)
+            description: 'the invalid declarations answered ',
+                result lines printString.
         self deny: (result lines includes:
             (ExecFixtures defineLessProblemFor: work, '/Package.st'))
             description: 'the file did send define: — reporting otherwise is a lie'.

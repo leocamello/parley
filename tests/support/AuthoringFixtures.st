@@ -540,11 +540,24 @@ uniqueness comes from per-test labels.'>
     AuthoringFixtures class >> familyLabels [
         "The family''s declared membership, so a driver added or dropped
          fails the law rather than quietly changing what it quantifies
-         over."
+         over.
+
+         SORTED THE WAY 3.2.5 SORTS, WHICH IS NOT ASCII ORDER (probed,
+         and it cost a verifier increment to find). String <= on this
+         toolchain FOLDS CASE, so ''no define:'' comes BEFORE
+         ''no Package.st'' — d before p — where an ASCII comparison puts
+         the capital P first. This list was first written in ASCII order,
+         which made the membership assertion fail FIRST and the law''s
+         driver loop never run at all: in red AND in green it reported a
+         failure that said nothing about the diagnoses it exists to
+         check. That is method finding F14''s blind spot INSIDE a law
+         rather than in front of one — a FAILURE whose cause is not the
+         claim — which is why this comment names the collation instead of
+         leaving the order looking arbitrary."
         <category: 'family'>
         ^#('a missing version' 'a raising statement' 'a vocabulary typo'
-           'four problems' 'invalid declarations' 'no Package.st'
-           'no define:' 'one problem')
+           'four problems' 'invalid declarations' 'no define:'
+           'no Package.st' 'one problem')
     ]
 ]
 

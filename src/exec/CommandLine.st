@@ -385,6 +385,27 @@ equality (the decision-23 precedent).'>
                     with: SourceError with: #guarded))
     ]
 
+    CommandLine class >> wrongTypeStateDirectoryTail [
+        "THE STATE-ROOT ROW'S SECOND DECLARED SENTENCE (§8 decision 74,
+         Sprint 18; Doc E §4.1). The row keeps its role, its direction,
+         its declared error and its guarding — what it gains is a
+         sentence for the state ensureDirectory: could not previously
+         tell apart, and it is declared HERE, beside the table a reviewer
+         reads to find the next boundary, rather than inline at the one
+         site that composes it.
+
+         IT NAMES A CAUSE THAT WAS CHECKED AND A REMEDY THAT WORKS
+         (§8 decision 58). The predicate is exactly `the path exists and
+         is not a directory`, which is what `not a directory` says; and
+         the path is the operator's own file, so removing it is a repair
+         they can perform — unlike `check its permissions`, which was
+         advice about a directory whose permissions were already fine.
+         The shape is the one the parley.lock row carries: cause, dash,
+         remedy, after a path the line opens with."
+        <category: 'path boundaries'>
+        ^'not a directory - remove it and try again'
+    ]
+
     CommandLine class >> sourceFlagNames [
         "Every flag the table declares — the grammar's own vocabulary,
          derived from the table so the parser cannot know a flag the
@@ -712,8 +733,43 @@ equality (the decision-23 precedent).'>
          The refusal names the PARENT — the directory the creation
          failed in. Told their project directory could not be written
          an operator can act; told <workdir>/.parley could not be
-         written they are reading a name Parley invented."
+         written they are reading a name Parley invented.
+
+         AND NAMING THE PARENT CONFLATED TWO STATES (§8 decision 74,
+         Sprint 18 — method finding F13). The rule above is right for the
+         state it was written for and FALSE for one it never considered:
+         when aPath EXISTS AND IS NOT A DIRECTORY — a regular file at
+         <workdir>/.parley, or at <workdir>/.parley/packages with
+         .parley writable — the create fails for a reason that has
+         nothing to do with the parent, and the refusal said
+         <workdir>: could not be written - check its permissions and try
+         again about a directory test -w reports WRITABLE, with a remedy
+         that cannot work. That is §8 decision 58's standard broken by
+         the newest row in the table Sprint 17 built, and it stayed
+         invisible because the exit code was right: 1, then as now.
+
+         SO THE STATES ARE DISTINGUISHED BY PREDICATE BEFORE ANYTHING IS
+         COMPOSED, and the wrong-type state names THE OFFENDING PATH
+         ITSELF with a cause that was checked and a remedy that works —
+         the shape the parley.lock row already carries. The parent-naming
+         rule survives underneath it, for the state it was written for.
+
+         THE SPLIT LIVES HERE RATHER THAN AT A CALL SITE, AND THAT IS THE
+         RULING RATHER THAN A CONVENIENCE. This method has FOUR callers —
+         the git cache root, the index cache root, <workdir>/.parley and
+         <workdir>/.parley/packages — so a split written into
+         createStateDirectories, or repeated per path, would leave a
+         regular file at <workdir>/.parley/index answering the identical
+         false sentence under --index with no law over it. Totality over
+         the SITES the rule must reach is the same obligation as totality
+         over the STATES a path can take (F13's own clause), and one
+         method that every caller goes through is the only shape that
+         gets both by construction."
         <category: 'private-wiring'>
+        (PathGuard isDirectory: aPath) ifTrue: [^aPath].
+        (PathGuard exists: aPath) ifTrue: [
+            ^ExecutionError new signal: (PathGuard lineFor: aPath
+                saying: self class wrongTypeStateDirectoryTail)].
         ^PathGuard ensureDirectory: aPath
             ifRefused: [:path |
                 ExecutionError new signal: (PathGuard

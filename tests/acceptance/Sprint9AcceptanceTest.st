@@ -214,16 +214,31 @@ git.'>
     "---- S4: a vocabulary typo is the author's diagnosis, exit 1 ----"
 
     testS4_aVocabularyTypoIsTheAuthorsDiagnosis [
+        "AMENDED IN SPRINT 18 GREEN, approved at that sprint's RED review
+         and BOUNDED TO ADDING THE HEADER (issue #20; Doc E §3.1, §8
+         decision 44). Sprint 9's claim is untouched — the typo is the
+         AUTHOR'S diagnosis at exit 1, carrying the vocabulary error's
+         message with its suggestion, character for character. What
+         Sprint 18 adds is the path around it: the authoring problems
+         were the only family in the tool that never named the file the
+         author must open, and they are now emitted inside the settled
+         per-file batch. The message is asserted at its position inside
+         the batch and has not moved by one byte."
         | work index result |
         work := self typoWorkDir: 's9-4-work'.
         index := self freshDir: 's9-4-index'.
         result := self resultOf:
             (Array with: 'resolve' with: '--source' with: index) in: work.
         self assert: result exitCode = 1.
-        self assert: result lines size = 1.
+        self assert: result lines size = 2
+            description: 'the typo answered ', result lines printString.
         self assert: (result lines at: 1)
+            = (AuthoringFixtures batchHeaderFor: work, '/Package.st'
+                count: 1)
+            description: 'the header is ', (result lines at: 1) printString.
+        self assert: (result lines at: 2)
             = LockBoundaryFixtures vocabularyTypoProblem.
-        self assert: (CommandLineFixtures does: (result lines at: 1)
+        self assert: (CommandLineFixtures does: (result lines at: 2)
             include: LockBoundaryFixtures vocabularySuggestionText).
         self denyBlamesParley: result
     ]

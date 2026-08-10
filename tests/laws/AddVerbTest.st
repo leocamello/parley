@@ -202,7 +202,18 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
     testAnEditThatWillNotLoadIsRolledBack [
         "Adding the root's own name inserts cleanly and produces a file
          the settled builder rejects. The operator sees the builder's
-         own problem and a Package.st byte-identical to what they had."
+         own problem and a Package.st byte-identical to what they had.
+
+         AMENDED IN SPRINT 18 GREEN, bounded to adding the header (issue
+         #20; Doc E §3.1, §8 decision 44): the reload's authoring problems
+         are now emitted inside the settled per-file batch, so the
+         diagnosis names the file. The builder's own sentence does not
+         move by one byte. THIS SITE WAS MISSED by the enumeration posted
+         at the RED review, which grepped the problem LITERALS; this law
+         reaches its problem through ManifestEditFixtures and so never
+         matched. Recorded because the miss, not the fix, is the lesson —
+         decision 60's rule one level over: a census must enumerate the
+         property, never the spellings somebody thought of."
         | work index original result |
         work := self track:
             (ManifestEditFixtures toolBWorkDirNamed: 'add-selfdep-work').
@@ -213,7 +224,11 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
             in: work source: index.
         self assert: result exitCode = 1.
         self assert: result lines
-            = (Array with: ManifestEditFixtures selfDependencyProblem).
+            = ((Array with: (AuthoringFixtures
+                batchHeaderFor: work, '/Package.st' count: 1)),
+                (Array with: ManifestEditFixtures selfDependencyProblem))
+            description: 'the refused add answered ',
+                result lines printString.
         self assert: (self packageIn: work) = original
             description: 'a failed add left a half-edited Package.st'.
         self assert: (self lockIn: work)
@@ -226,7 +241,12 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
         "add never parses a constraint itself: the spelling travels into
          the file and the reload is where it is judged, which keeps
          ConstraintFormatError's declared ground - never signaled out of
-         a verb - true."
+         a verb - true.
+
+         AMENDED IN SPRINT 18 GREEN, bounded to adding the header, for the
+         same reason as the self-dependency law above and missed by the
+         same enumeration. The builder's sentence is byte-identical; the
+         reload is still where the spelling is judged."
         | work index original result |
         work := self track:
             (ManifestEditFixtures toolBWorkDirNamed: 'add-badconstraint-work').
@@ -236,9 +256,14 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
             constraint: ManifestEditFixtures unparseableConstraint
             in: work source: index.
         self assert: result exitCode = 1.
-        self assert: result lines = (Array with:
-            (ManifestEditFixtures unparseableConstraintProblemFor:
-                ManifestEditFixtures addedName)).
+        self assert: result lines
+            = ((Array with: (AuthoringFixtures
+                batchHeaderFor: work, '/Package.st' count: 1)),
+                (Array with:
+                    (ManifestEditFixtures unparseableConstraintProblemFor:
+                        ManifestEditFixtures addedName)))
+            description: 'the refused add answered ',
+                result lines printString.
         self assert: (self packageIn: work) = original
             description: 'an unparseable constraint stayed in Package.st'.
         self denyBlamesParley: result

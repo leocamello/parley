@@ -67,6 +67,34 @@ The same shape covers the read side (`missing or unreadable Package.st`, `missin
 
 The check is a **precheck, not a lock**. A path can become unwritable between the check and the write, and Parley makes no claim about that window; what it does guarantee is that such a failure still names the file at exit `1`, and never reports itself as broken.
 
+### When your `Package.st` is broken
+
+`Package.st` is a program Parley *runs*, which makes it the one place where text on your terminal was not written by Parley. GNU Smalltalk's own report of a failed statement is captured and re-voiced: you get one line naming your file and the line to open, not a stack trace through Parley's source tree.
+
+```
+$ parley resolve --source ../index
+Object: nil
+/srv/app/Package.st: line 2 raised an error while the manifest was being read - fix that line and try again
+$ echo $?
+1
+```
+
+Several problems in one manifest come back as **one batch naming the file**, so a single run tells you everything to fix rather than one thing per run:
+
+```
+$ parley resolve --source ../index
+/srv/app/Package.st: 4 problem(s) in this manifest
+missing required field name
+invalid version 'nope'
+fileIns must declare at least one file to load
+invalid constraint 'garbage' for dependency 'demo'
+```
+
+**Two fragments in that output are the toolchain's, not Parley's, and both are deliberate.**
+
+- **`Object: nil`, on standard output.** GNU Smalltalk writes the receiver of a failed message send below the level any Smalltalk code can reach, so Parley cannot remove it. It carries no stack frame and no file path. What Parley does is *end the line* it leaves dangling, so the fragment stays on its own line instead of running into the diagnosis underneath it.
+- **`Package.st:3: parse error, expected ']'`, on standard error.** When the file will not even parse, GNU Smalltalk says so — naming your file *and* the line — and Parley **keeps** it, because it is the most useful sentence anything produces about a manifest that cannot be read and Parley cannot reconstruct it. On standard output Parley then reports `no manifest defined - the file never sent Parley define:`: it genuinely cannot tell a file that failed to parse from one that never declared a package, and rather than guess it says the thing that is true of both. The line on standard error is what tells you which you have.
+
 ## Installing
 
 Parley runs from a checkout. Clone it, then put the wrapper on your `PATH`:
