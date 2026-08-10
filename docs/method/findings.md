@@ -137,12 +137,12 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **13** |
+| Defect-findings | **14** |
 | — caught by a mechanism | **8** (F3, F4, F6, F10, F12, F14, F15, F16) |
-| — caught by luck | **5** (F1, F2, F5, F11, F13) |
+| — caught by luck | **6** (F1, F2, F5, F11, F13, F17) |
 | Confirmation-findings (excluded from the ratio) | 3 (F7, F8, F9) |
 
-**The pipeline caught 8 of 13** — and the ratio flatters it. **Both of Sprint 18's
+**The pipeline caught 8 of 14** — and the ratio flatters it. **Both of Sprint 18's
 catches are the same mechanism catching the same reviewer's misses one gate late:** F15
 and F16 were approved at the RED review and found by the **green** gate, exactly as F14
 was. A gate that catches what the previous gate approved is doing its job and is also
@@ -652,3 +652,24 @@ The tool already had the right shape one row over: `parley.lock` as a directory 
 **What caught it: a mechanism — the green gate**, when the two oracles failed. Note what that is worth: an oracle mismatch is *guaranteed* to be caught by the green gate, so the mechanism deserves little credit here. The reviewable failure is the method, and no gate examines a review's method.
 
 **Status.** First instance as a *method* finding; the same rule already exists in the product as §8 decision 60, where the operator wrote it, and was then not applied to the operator's own list four sprints later. Inventory **row 22**.
+
+---
+
+## F17 — A gate that asserts a property the method deliberately suspends will be ignored exactly when it matters
+
+**Rule (portable).** A continuous check earns its keep by being **believed**, and it is believed only if a red result means something is wrong. So before wiring one up, ask what the process does *on purpose* that the check forbids — every phased method has such a window: a red-first phase, a migration half-applied, a feature flag mid-rollout, a generated artifact not yet regenerated. **If the pipeline publishes a state that cannot satisfy the check, the check will be red for the whole of that window, everyone will learn that red is normal there, and the next genuine failure inside the window is indistinguishable from the expected one.** The fix is almost never to teach the check about the exception — that is how a check is taught to stay quiet. **It is to stop publishing the state**: hold the commits locally and push once the property holds again, so what is published is always a state that can be verified against what it declares.
+
+**Evidence (Parley, Sprint 18).** CI runs `verify-sprint.sh`, which reads `phase:` from `.parley/scope` and requires the suite to pass when it says `green`. Runbook §1.6 as written had the operator flip `phase:` to `green` and **push** at the RED review — at which instant the tree holds the reviewed RED tests and none of the implementation, so the suite necessarily fails. Observed across the sprint:
+
+| commit | CI | state |
+| --- | :-: | --- |
+| `016b116` | ✅ | `phase: red`, suite red — as declared |
+| `d320ba2` | ❌ | `phase: green` pushed with RED tests, no implementation |
+| `896e6c3` | ❌ | same window, mid-GREEN ruling pushed on top |
+| `129d1da` | ✅ | wrap pushed, 876/876 |
+
+`origin/main` spent the entire GREEN phase in the one state that cannot satisfy the gate it declares. The window is bounded only by how long GREEN takes — hours here, plausibly days.
+
+**What caught it: luck.** CI is a mechanism and it did fire, on two consecutive commits, and **nothing in the pipeline halts on it** — the flip proceeded, GREEN proceeded, the wrap landed, and no gate consulted it. It surfaced because the human operator mentioned the red build out of band while the close-out was in progress. Had they not, the close-out would have shipped and the same red would have been re-created at Sprint 19's flip, one sprint further from anyone remembering why it was normal.
+
+**Status.** First instance, and the first finding in this file about the *observability* layer rather than the review layer. Kin to the inventory's **row 24** — a property the process depends on with nothing recording whether it held — and to **F8**'s standard, that a limitation not written where people look is not stated at all. Ruled at the Sprint 18 close-out: runbook §1.6 no longer pushes, and §2.6 is the sprint's only push.

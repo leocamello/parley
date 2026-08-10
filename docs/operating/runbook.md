@@ -66,9 +66,12 @@ The agent has written the full test suite, satisfied the red gate, posted its **
    ```
    git add .parley/scope <any amended test files>
    git commit -m "chore(loop): flip Sprint <N> phase to green after red-phase test review"
-   git push origin main
    ./scripts/sync-loop.sh <issue>
    ```
+
+   **DO NOT PUSH — the flip commit stays local until the wrap** (ruled at the Sprint 18 close-out; method finding **F17**). `phase: green` means *these tests must now pass*, and at the instant of the flip they cannot: the tree carries the RED tests and none of the implementation. Pushing it puts `origin/main` in the one state that cannot satisfy the gate it declares, **for the whole duration of GREEN** — hours or days. Sprint 18 did exactly that and CI was red across `d320ba2` and `896e6c3` until the wrap landed. The failing run is not the damage; **an expected red is an alarm nobody reads**, and the next real breakage arrives mid-GREEN looking identical. `sync-loop.sh` labels the issue from local state and needs no push.
+
+   **The same holds for mid-sprint ruling commits** (§4): commit them so the agent's tree has them, and let them ride out with the wrap push at Gate B §2.6. If one genuinely must be shared before then — an agent on another machine — that is a declared exception, said out loud, not a habit.
 7. Tell the agent to begin Stage 4 (GREEN).
 
 ---
@@ -96,7 +99,7 @@ The agent has gone green, run `wrap-sprint.sh`, written `docs/sprints/sprint-<NN
 
    **You write this, never the agent**: it has no cross-sprint memory and is the subject of most findings. `docs/method/` sits inside the scope regex, and `wrap-sprint.sh` refuses to wrap when it is staged.
 5. **Independently verify:** `./scripts/verify-sprint.sh` must pass green.
-6. **Push and close:**
+6. **Push and close.** This is the sprint's **only** push, and it carries everything held back since the phase flip — the flip commit, any mid-sprint ruling commits, the wrap, and this close-out (§1.6, finding **F17**). Push only once `verify-sprint.sh` is green in step 5, so every commit that reaches `origin/main` leaves it in a state a stranger can clone and verify against the phase it declares.
    ```
    git push origin main
    gh issue comment <N> --body-file <close-out review>   # commit, audit, traceability, rulings
