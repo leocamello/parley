@@ -50,6 +50,17 @@
  does not exist, and both live-tree laws assert that the walk sees
  PathGuard, which does not exist either.
 
+ SPRINT 18 EXTENDS THIS FILE BY ONE LAW AND CHANGES NOTHING ELSE (issue
+ #20 S10; §8 decision 74, method finding F13). The table is settled and
+ law-guarded, so testTheStateRootRowIsDrivenThroughEveryPathShape is
+ added beside the existing laws rather than folded into them: it drives
+ the wiring-state-directory row through the four SHAPES a path can take,
+ which is the half the two hostile-state laws above cannot see. They make
+ the error CLASS total through PathGuard while the states they drive stay
+ a list of exactly two, and a regular FILE at <workdir>/.parley passed
+ every one of them while answering a sentence about a writable directory.
+ The new law fails against the pre-sprint tree; no declared pass is added.
+
  Every fixture path is under tmp/, unique per test, torn down through
  PathFixtures removeTree:, which UNLOCKS the tree first. Nothing here
  spawns except where a verb's own pipeline does; no network is
@@ -419,6 +430,74 @@ non-empty guard and its must-fail-on-drift proof.'>
         self assert: offenders isEmpty
             description: offenders printString,
                 ' perform direct File I/O in src/ but are neither PathGuard nor declared in the §8 decision 60 census'
+    ]
+
+    "---- Sprint 18 / S10: the state-root row's SHAPE-space ----"
+
+    testTheStateRootRowIsDrivenThroughEveryPathShape [
+        "SPRINT 18 EXTENDS THIS FILE RATHER THAN RESTRUCTURING IT (issue
+         #20 S10; §8 decision 74, method finding F13). The table keeps
+         its rows, its columns and its settled oracles; what the
+         wiring-state-directory row gains is a second declared SENTENCE
+         for a state it could not previously tell apart.
+
+         WHY A NEW LAW AND NOT A WIDER DRIVER. The two laws above make
+         the ERROR CLASS total — every row answers its own declared error
+         under a hostile state, never exit 70 — because PathGuard
+         translates anything. They say nothing about the set of hostile
+         STATES they drive, which was a list of exactly two:
+         unreadable and unwritable. A PATH IS NOT TWO THINGS. With a
+         regular FILE at <workdir>/.parley, resolve answered
+         <workdir>: could not be written - check its permissions and try
+         again about a directory test -w reports WRITABLE, with a remedy
+         that cannot work — §8 decision 58's standard broken by the
+         newest row in the table this file was written for, and passing
+         every law above.
+
+         So the row is driven through the four shapes a path can take:
+         ABSENT (created, the verb proceeds), ALREADY A DIRECTORY
+         (accepted), A REGULAR FILE (refused, naming THAT path), and A
+         WRONG-TYPE OR UNWRITABLE PARENT (refused, naming the parent —
+         the rule Sprint 17 wrote, which survives for the state it was
+         written for). The shapes are asserted against their declaration
+         first, so a shape dropped fails here rather than narrowing the
+         claim in silence.
+
+         A chokepoint's totality over error classes is not totality over
+         input states, and the difference is where a confident false
+         sentence lives."
+        | drivers |
+        drivers := StateRootFixtures shapeDriversTracking:
+            [:path | self track: path].
+        self assert: (StateRootFixtures shapesOf: drivers)
+            = StateRootFixtures sortedDeclaredShapes
+            description: 'the shape drivers and the declared shapes disagree: ',
+                (StateRootFixtures shapesOf: drivers) printString.
+        drivers do: [:row |
+            | label expected result |
+            label := row at: 2.
+            expected := row at: 5.
+            result := (row at: 4) value.
+            expected isNil
+                ifTrue: [
+                    self assert: result exitCode = 0
+                        description: label,
+                            ' must let the verb proceed, and answered exit ',
+                            result exitCode printString, ': ',
+                            result lines printString.
+                    self assert: result lines
+                        = CommandLineFixtures diamondPinLines
+                        description: label, ' answered ',
+                            result lines printString]
+                ifFalse: [
+                    self assertDiagnosis: result
+                        names: (row at: 3)
+                        for: label.
+                    self assert: result lines = (Array with: expected)
+                        description: label, ' answered ',
+                            result lines printString,
+                            ' rather than its declared sentence ',
+                            expected printString]]
     ]
 
     testTheProhibitionDetectsANinthClass [
