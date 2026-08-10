@@ -220,6 +220,14 @@ The fourth schema: the artifact that lets a sparse index (Doc F §7) answer "whi
 
 ---
 
+### 5.7 Configuration schema (`#'parley-config'`, format 1) — Sprint 19
+
+The operator's own file, and the fourth consumer of `IndexEntryReader`. It records the source flags a project would otherwise retype on every command (§8 decision 64), in the same literals-only micro-format as every other artifact Parley reads — **no third-party serialization, ever** (§2.4), and no second reader to give one malformed file a second wording.
+
+It lives at **`<workdir>/parley.config.st`, at the project root**, deliberately *not* under `.parley/`: that directory is regenerable state an operator may delete to clean a project, and configuration is theirs and must survive it. The three root files then have three clear owners — the author writes `Package.st`, Parley writes `parley.lock`, the operator writes `parley.config.st`.
+
+The body carries the declared source flags as key/value pairs, keys in the fixed order §5.4 rule 2 requires, values Strings. **A flag on the command line always wins**; the file supplies a default only where no flag was given, so every settled behaviour is byte-identical and the file can only add. Reading it is a boundary held to the settled shape from the day it exists (§8 decision 65): a regular readable file, parsing, carrying the tag and a supported format version, and body-shape-validated before any value reaches a consumer — each failure answering one line naming the path with a checked remedy at exit `1`.
+
 ## 6. Two Ordering Rules (both deliberate — do not "fix" either)
 
 | Field | Rule | Why |
