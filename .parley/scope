@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 18
-phase: green
+sprint: 19
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -181,4 +181,81 @@ scope-17: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # scope-15 through scope-17 record: the sentinel enforces paths rather
 # than authorship, so wrap-sprint.sh refuses the wrap when anything
 # under docs/method/ is staged. That refusal is the rule working.
+# scope-19 is identical to scope-18: Sprint 19 introduces no new src/
+# directory — Parley.Configuration lives in src/exec/, which
+# scripts/run-tests.st already files in — so that script is unchanged
+# and must not be edited.
+#
+# Declared settled-class exceptions this sprint are FOUR:
+#
+#   Publisher   - the stdout redirect on its composed plumbing command
+#     lines (mkdir, ln, rm, cd && zip). Nothing about what it writes.
+#   Installer   - the same, for its one /usr/bin/install -c line.
+#   CommandLine - consult Configuration when a source flag is absent,
+#     and the new parley.config.st boundary-table row with its declared
+#     sentence. PRECEDENCE LIVES HERE and nowhere else.
+#   ManifestFile - load: answers the anchor diagnosis when an anchor was
+#     recovered, regardless of what recorded holds (§8 decision 76).
+#
+# NOT exceptions, each a halt-and-ask: ProcessRunner (decision 63 is a
+# redirect on a COMPOSED LINE, not a change to the seam - the seam still
+# captures nothing), ExecutionScope (exec is carved out: its plumbing and
+# the author's program share one stderr, so separating them means
+# buffering, which roadmap §3 defers by name), CLI (it already passes the
+# flags through), IndexEntryReader (a new schema tag is a reader CONSUMER,
+# not a reader change), Resolver/IndexSnapshot, PathGuard and
+# ManifestCapture.
+#
+# THE CENSUS STAYS AT EIGHT. The parley.config.st read routes through
+# PathGuard like every other boundary; if Configuration's source acquires
+# 'FileStream ', 'File name:', 'Directory create:' or 'Directory
+# workingName' it becomes a ninth class and Sprint17AcceptanceTest>>testS13
+# fails by construction (§8 decisions 60, 65).
+#
+# bin/ stays in scope - the shipped binary is law-guarded from Sprint 8
+# onward, and this sprint's chatter laws spawn it to capture stdout AND
+# stderr separately, reusing Sprint 18's runner rather than writing a
+# second one.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-18 record.
 scope-18: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-19 is identical to scope-18: Sprint 19 introduces no new src/
+# directory — Parley.Configuration lives in src/exec/, which
+# scripts/run-tests.st already files in — so that script is unchanged
+# and must not be edited.
+#
+# Declared settled-class exceptions this sprint are FOUR:
+#
+#   Publisher   - the stdout redirect on its composed plumbing command
+#     lines (mkdir, ln, rm, cd && zip). Nothing about what it writes.
+#   Installer   - the same, for its one /usr/bin/install -c line.
+#   CommandLine - consult Configuration when a source flag is absent,
+#     and the new parley.config.st boundary-table row with its declared
+#     sentence. PRECEDENCE LIVES HERE and nowhere else.
+#   ManifestFile - load: answers the anchor diagnosis when an anchor was
+#     recovered, regardless of what recorded holds (§8 decision 76).
+#
+# NOT exceptions, each a halt-and-ask: ProcessRunner (decision 63 is a
+# redirect on a COMPOSED LINE, not a change to the seam - the seam still
+# captures nothing), ExecutionScope (exec is carved out: its plumbing and
+# the author's program share one stderr, so separating them means
+# buffering, which roadmap §3 defers by name), CLI (it already passes the
+# flags through), IndexEntryReader (a new schema tag is a reader CONSUMER,
+# not a reader change), Resolver/IndexSnapshot, PathGuard and
+# ManifestCapture.
+#
+# THE CENSUS STAYS AT EIGHT. The parley.config.st read routes through
+# PathGuard like every other boundary; if Configuration's source acquires
+# 'FileStream ', 'File name:', 'Directory create:' or 'Directory
+# workingName' it becomes a ninth class and Sprint17AcceptanceTest>>testS13
+# fails by construction (§8 decisions 60, 65).
+#
+# bin/ stays in scope - the shipped binary is law-guarded from Sprint 8
+# onward, and this sprint's chatter laws spawn it to capture stdout AND
+# stderr separately, reusing Sprint 18's runner rather than writing a
+# second one.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-18 record.
+scope-19: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
