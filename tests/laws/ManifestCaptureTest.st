@@ -190,9 +190,36 @@ I/O.'>
 
     testTranscriptIsRestoredWhenTheBlockSignals [
         "The ordinary failure path: the block raises and the error
-         travels out. The binding must be back before the handler runs,
-         because the handler is where a diagnosis gets composed and
-         printed.
+         travels out.
+
+         THE ORDER IS PINNED, NOT ASSUMED (§8 decision 75, ruled
+         mid-GREEN; probed on 3.2.5). As first reviewed this law asserted
+         the binding was already back INSIDE the handler, on the reasoning
+         that a handler is where a diagnosis gets composed and printed.
+         That is false about this toolchain and about every conforming
+         one: a handler runs on top of the still-live signaling context
+         and an ensure: runs on the UNWIND, so the order is
+         block, handler, ensure — measured, #blockStarted #handlerRan
+         #stillSwapped #ensureRan.
+
+         SO THE LAW PINS THE REAL ORDER RATHER THAN GOING SILENT ABOUT
+         IT. Inside the handler the swap is STILL LIVE; by the time that
+         handler returns the binding is back. Asserting the first half is
+         what keeps §8 decision 61 mechanical: an implementation that
+         caught the error here to restore earlier WOULD satisfy the
+         original assertion — probed, it restores before the outer
+         handler — and it is rejected because it wraps THE AUTHOR'S WHOLE
+         PROGRAM in a broad catch, where decision 61 requires the guarded
+         block to contain the operation and nothing else. It is not
+         rejected for swallowing: `e pass` swallows nothing. This law is
+         what makes that rejection stick.
+
+         THE CONSUMER CONSTRAINT, STATED (decision 43): any handler for
+         an error raised inside the capture window runs with Transcript
+         still swapped and MUST NOT PRINT. Nothing does today — the
+         boundary signals from ManifestFile's own frame after the window
+         has closed, and printing happens in bin/parley-main.st after a
+         full unwind — so this is a bound on future code.
 
          THE HANDLER NAMES ManifestError AND NOT Error, and that is not a
          stylistic preference: an on: Error handler here also catches the
@@ -209,7 +236,8 @@ I/O.'>
             on: ManifestError
             do: [:e |
                 escaped := true.
-                self assertTranscriptRestored: 'a signaling block, inside the handler'.
+                self deny: (Smalltalk at: #Transcript) == self realTranscript
+                    description: 'the binding was already restored inside the handler - either the toolchain unwound before running it, or the capture caught the error to restore early, which decision 61 forbids'.
                 e return: nil].
         self assert: escaped
             description: 'the error never left the capture - the capture is swallowing errors, which is the caller''s decision to make'.
