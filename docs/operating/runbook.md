@@ -35,7 +35,7 @@ Standing conventions (apply at every gate):
 - **Never** include `Co-Authored-By` / AI-attribution trailers in commits or PRs.
 - Only the human edits `.parley/scope`, `scripts/*`, `.githooks/*`, `docs/roadmap.md`, and this runbook. The agent never does — if a wrap commit *contains* a scope-file change, verify it was the operator's own working-tree edit swept in by staging (this is benign and has happened; note it in the close-out comment).
 - Kickoff prompts, the master plan and the landscape audits stay out of git (`.git/info/exclude`) and out of the scope regexes. This runbook, the roadmap and the decision log are **tracked** and live under `docs/`, which every scope regex already admits.
-- Long issue comments: write to the session scratchpad and post with `gh issue comment N --body-file ...` (`gh issue close` has no `--comment-file`; comment first, then `gh issue close N --reason completed`).
+- Long issue comments and every other gate artifact: write to `operator/staging/sprint-NN/` — never a session scratchpad, which does not survive the session and leaves the gate's record self-dated rather than observed (finding **F21**, inventory row 25) — and post with `gh issue comment N --body-file ...` (`gh issue close` has no `--comment-file`; comment first, then `gh issue close N --reason completed`).
 
 ---
 
