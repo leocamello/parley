@@ -63,7 +63,7 @@ roadmap item that wins on its own merits rather than a displacement.
    probed through the shipped binary at Gate B across nine inputs, both streams captured
    separately. §8 decisions 61, 62, **74** and **75**. **The numbering is not compacted** — see
    the note above.
-3. **Running your first command** — *deferred 0×.* Every successful verb prints more foreign
+3. **Running your first command** — *deferred 0×; **in flight**, Sprint 19 with item 4 (issue #21).* Every successful verb prints more foreign
    text than its own: `publish` emits five `mkdir`/`ln`/`rm`/`cd`/`zip` lines per one of its
    own, `add` and `install` emit an `/usr/bin/install -c` line, `exec` emits a GC message.
    **Re-probed at Sprint 19's Gate C, 2026-08-10, and the earlier note was wrong.** It read
@@ -77,12 +77,15 @@ roadmap item that wins on its own merits rather than a displacement.
    that is both the plumbing and the user's program on **one** stream, so suppressing the GC
    message means suppressing the script's own stderr — which is [decision 45](design/architecture.md#8-decision-log)'s
    territory and the deferred *output capture* row's actual subject. §8 decision 63.
-4. **Getting Parley, and telling it where your index is** — *deferred 0×.* The README has no
-   installation section at all, and there is no configuration of any kind, so `--source <dir>`
-   is retyped on every command forever. (The broken symlink install itself — which exits `0` on
-   total failure — is §8 decision 66, ruled and fixed in Sprint 17 because it is a filesystem
-   state answering the wrong exit code; this item documents the route it opens.) §8 decisions
-   64, 65.
+4. **Getting Parley, and telling it where your index is** — *deferred 0×; **in flight**, Sprint
+   19 with item 3 (issue #21).* **Re-probed at Sprint 19's Gate C, 2026-08-10, and the earlier
+   note was wrong.** It read *"the README has no installation section at all"*; the
+   `## Installing` section has existed since Sprint 17, whose §8 decision 66 ruled and fixed
+   the broken symlink install that exited `0` on total failure — a filesystem state answering
+   the wrong exit code. **What remains is the configuration half only:** there is no
+   configuration of any kind, so `--source <dir>` is retyped on every command forever; Sprint
+   19 extends the existing `## Installing` section with the configuration route rather than
+   rewriting it. §8 decisions 64, 65.
 5. **The verbs that close the grammar** — *deferred 0×.* `remove`, `search`, `info`,
    `outdated`. All four are present in all seven of the package managers this project
    benchmarks against; `remove` is the declared other half of `add` and its deferral trigger
@@ -235,15 +238,23 @@ So v1.0 builds the protocol and proves it offline. The day someone hosts a Parle
 | 15 | Release hardening | The list's top item when it was staged (§2): `--version`, publishing to a shared index, docs for a stranger, and the prebuilt-image call taken on measurements. ✅ Delivered, issue #17, commit `87a9e34`. |
 
 | 16 | v1.0 readiness | Not on the original line. Added 2026-08-05 from a hands-on audit of the shipped binary: five first-session defects, every one the tool disagreeing with itself. ✅ Delivered, issue #18, commit `96ad6b2`. |
-| 17 | The boundary table | ⏱ Item 1 of seven; the hold is on the list (§2). Added 2026-08-06 at the Sprint 16 close-out from six probed states ([§8 decision 59](design/architecture.md#8-decision-log), finding **F12**). Issue #19. |
-| 18 | Writing your first `Package.st` | ⏱ The authoring boundary — the only foreign text in the tool. |
-| 19 | Running your first command | ⏱ Doc E §1's chatter, now probed as a redirect rather than a capture. |
-| 20 | Getting Parley, configuring it | ⏱ The install is broken and exits `0`; there is no configuration. |
-| 21 | The verbs that close the grammar | Parity: all four exist in all seven benchmarked managers. |
-| 22 | Dependencies you are developing | Root-only vocabulary; cheapest **before** entries exist. |
-| 23 | The release | CHANGELOG, release manifest, completions, **the tag**. |
+| 17 | The boundary table | ⏱ Item 1 of seven; the hold is on the list (§2). Added 2026-08-06 at the Sprint 16 close-out from six probed states ([§8 decision 59](design/architecture.md#8-decision-log), finding **F12**). ✅ Delivered, issue #19, commit `bba2c79`. |
+| 18 | Writing your first `Package.st` | ⏱ The authoring boundary — the only foreign text in the tool. ✅ Delivered, issue #20, commit `c9c72e9`. |
+| 19 | Running your first command; getting Parley, configuring it | ⏱ **Items 3 AND 4, paired at Gate C 2026-08-10** (issue #21, in flight): the Gate C probes shrank both — `exec` carved out of item 3, item 4's installation half found already delivered in Sprint 17 — so the pair holds one sprint. §8 decisions 63, 64, 65, 76. |
+| 20 | The verbs that close the grammar | Parity: all four exist in all seven benchmarked managers. |
+| 21 | Dependencies you are developing | Root-only vocabulary; cheapest **before** entries exist. |
+| 22 | The release | CHANGELOG, release manifest, completions, **the tag**. |
 
-**🔒 THE v1.0 TAG IS HELD UNTIL SPRINT 23 LANDS.** Re-ruled 2026-08-07, replacing the
+*(Rows 20–22 renumbered 2026-08-11, at the Sprint 19 document review: pairing items 3 and 4
+into Sprint 19 shifted every planned row below it, and the previous mapping ran to Sprint 23.
+These sprint numbers are predictions, not identifiers — §2's item numbers are the identifiers,
+and those are never compacted.)*
+
+**🔒 THE v1.0 TAG IS HELD UNTIL §2 ITEM 7 — THE RELEASE — LANDS** (Sprint 22 on the current
+mapping). Re-keyed 2026-08-11 from *"until Sprint 23 lands"*: the hold is keyed to the item
+rather than to a sprint number, because the mapping has already moved once — the pairing of
+items 3 and 4 into Sprint 19 shifted every planned row — and a hold spelled as a sprint
+number goes stale by citation the moment it does. Re-ruled 2026-08-07, replacing the
 Sprint-16 hold on Sprint 17 alone. That hold was correct about its own item and wrong about
 the count: it held the tag for one instance of a category whose other six members were not on
 this list. §2 items 1–7 are that category enumerated. The feature line completed at Sprint 15
