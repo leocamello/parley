@@ -487,9 +487,25 @@ Object subclass: Quiet [
          hostile state of its own — and a row nothing can drive is
          documentation, which is the shape this table exists to
          replace (Doc F §1: the destination check is the precheck that
-         makes the stage unreachable)."
+         makes the stage unreachable).
+
+         SPRINT 19 ADDS THE THIRTEENTH ROW (§8 decision 65):
+         parley.config.st (read), a new operator-editable file at the
+         project root. It arrives with the table's full discipline
+         rather than after failing once — held to the settled shape from
+         the day it exists, which is the only moment when nothing has
+         shipped depending on the wrong behaviour. Its carrier is
+         ExecutionError by decision 72's precedent: the composition
+         root's settled carrier for a filesystem precondition, a carrier
+         and not an attribution.
+
+         SORTED THE WAY 3.2.5 SORTS IT, WHICH PUTS THE NEW ROW BETWEEN
+         Package.st (write) AND parley.lock (read) — String <= folds
+         case, and the order here was taken from the toolchain rather
+         than read off the page (finding F15)."
         <category: 'boundary table'>
         ^#('Package.st (read)' 'Package.st (write)'
+           'parley.config.st (read)'
            'parley.lock (read)' 'parley.lock (write)'
            'the archive cache (write)' 'the exec script (read)'
            'the index cache (write)' 'the index entry (read)'
@@ -723,7 +739,7 @@ Object subclass: Quiet [
          enumeration and cannot drift apart. Two enumerations of the
          same table is inventory row 22, one sprint after it was ruled."
         <category: 'boundary drivers'>
-        | work index script srcIndex entryIndex starIndex lockWork lockIndex |
+        | work index script srcIndex entryIndex starIndex lockWork lockIndex configWork configIndex configPath |
         work := self resolvableWorkDirTracking: track named: aPrefix, '-manifest-read-work'.
         index := self diamondIndexTracking: track named: aPrefix, '-manifest-read-index'.
         hostile value: (self packagePathIn: work).
@@ -747,6 +763,20 @@ Object subclass: Quiet [
 
         starIndex := self diamondIndexTracking: track named: aPrefix, '-archive-read-index'.
         hostile value: (starIndex, '/a-1.0.0.star').
+
+        "The thirteenth row (Sprint 19). The project records a REAL
+         index, so under the mirror state — readable and not writable —
+         the config is read and the verb resolves exactly as it would
+         have with the flag; only the hostile state refuses. A config
+         naming nothing would make the mirror pass for the wrong
+         reason."
+        configWork := self resolvableWorkDirTracking: track named: aPrefix, '-config-read-work'.
+        configIndex := self diamondIndexTracking: track named: aPrefix, '-config-read-index'.
+        configPath := ConfigFixtures pathIn: configWork.
+        ConfigFixtures write: (ConfigFixtures contentsDeclaring: '--source'
+            value: (CommandLineFixtures absolutePathOf: configIndex))
+            in: configWork.
+        hostile value: configPath.
 
         ^(Array
             with: (Array with: 'Package.st (read)'
@@ -782,7 +812,12 @@ Object subclass: Quiet [
                     with: 'a-1.0.0.star'
                     with: [self resultOf: (self installArgvOn: starIndex)
                         in: (self resolvableWorkDirTracking: track named: aPrefix, '-archive-read-work')]
-                    with: (self unreadableArchiveProblemFor: 'a-1.0.0.star')))
+                    with: (self unreadableArchiveProblemFor: 'a-1.0.0.star'))
+                with: (Array with: 'parley.config.st (read)'
+                    with: configPath
+                    with: [self resultOf: (Array with: 'resolve')
+                        in: configWork]
+                    with: (ConfigFixtures unreadableLineFor: configPath)))
     ]
 
     PathFixtures class >> writeRowDriversTracking: track [

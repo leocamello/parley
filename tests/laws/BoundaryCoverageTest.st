@@ -208,7 +208,7 @@ declares, and one malformed-input law per declared boundary.'>
          names are asserted against the declared names first, so a row
          added without a driver fails here rather than widening the
          claim silently."
-        | lockWork lockIndex indexWork badIndex authorWork authorIndex sparseWork sparseBase publishWork publishDest rows |
+        | lockWork lockIndex indexWork badIndex authorWork authorIndex sparseWork sparseBase publishWork publishDest configWork rows |
         lockWork := self diamondWorkDir: 'boundary-lock-work'.
         lockIndex := self freshDir: 'boundary-lock-index'.
         LockSchemaFixtures
@@ -238,6 +238,15 @@ declares, and one malformed-input law per declared boundary.'>
         PublishLayoutFixtures
             writeListing: SparseIndexFixtures wrongTagListingText
             in: publishDest.
+        "The sixth boundary (Sprint 19): the operator's own
+         parley.config.st, driven through resolve with NO source flag —
+         which is the argv that answers usage today, so the read must
+         happen before the usage determination or a malformed file would
+         be reported as somebody who forgot a flag."
+        configWork := ConfigFixtures
+            workDirTracking: [:path | self track: path]
+            named: 'boundary-config-work'
+            contents: ConfigFixtures unparseableContents.
         rows := (Array
             with: (Array with: 'CLI'
                 with: [self installIn: lockWork source: lockIndex])
@@ -255,7 +264,11 @@ declares, and one malformed-input law per declared boundary.'>
                 with: [(CommandLine in: publishWork
                         runner: RecordingRunner new)
                     run: (PublishLayoutFixtures
-                        publishArgvTo: publishDest layout: 'sparse')])).
+                        publishArgvTo: publishDest layout: 'sparse')])
+                with: (Array with: 'Configuration'
+                    with: [ConfigFixtures
+                        resultOf: ConfigFixtures resolveArgv
+                        in: configWork])).
         self assert: (((rows collect: [:row | row at: 1])
             asSortedCollection: [:a :b | a <= b]) asArray)
                 = (LockSchemaFixtures namesOfBoundaryClassesIn:

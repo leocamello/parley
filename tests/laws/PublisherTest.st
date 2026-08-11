@@ -301,6 +301,14 @@ destination-confined stage.'>
     "---- S10: a failed build is fail-stop ----"
 
     testAFailedBuildIsFailStopAndLandsNothing [
+        "THE RECORDED COMMAND IS RE-PINNED AT SPRINT 19'S RED, AND THE
+         DIAGNOSIS DELIBERATELY IS NOT (issue #21, §8 decision 63). The
+         build child is plumbing, so the line Parley RUNS now carries a
+         stdout redirect; the line the operator is TOLD ABOUT is the
+         composed one, unchanged, because the shell tail is not
+         something they typed or can act on. The two assertions below
+         say exactly that, and the second is the settled wording
+         byte-for-byte."
         | work dest runner problems stage |
         work := self greetingWorkDir: 'pub-failstop-work'.
         dest := self freshDir: 'pub-failstop-dest'.
@@ -313,7 +321,8 @@ destination-confined stage.'>
             = (PublishFixtures buildFailureProblemFor:
                 (PublishFixtures buildCommandFor: dest) code: 2).
         self assert: runner commands
-            = (Array with: (PublishFixtures buildCommandFor: dest)).
+            = (Array with: (PublishFixtures buildCommandFor: dest),
+                ChatterFixtures stdoutRedirectTail).
         self deny: (File name: dest, '/', PublishFixtures archiveFileName)
             exists.
         self deny: (File name: dest, '/', PublishFixtures entryFileName)

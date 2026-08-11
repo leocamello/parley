@@ -61,6 +61,23 @@
  every one of them while answering a sentence about a writable directory.
  The new law fails against the pre-sprint tree; no declared pass is added.
 
+ SPRINT 19 EXTENDS THIS FILE BY NO LAW AT ALL, AND THAT IS THE POINT
+ (issue #21 S10; §8 decision 65). The thirteenth row —
+ parley.config.st (read), #read, ExecutionError, #guarded — is declared
+ in CommandLine class >> pathBoundaries and driven by
+ PathFixtures readRowDriversTracking:, so every law already in this file
+ picks it up: it is refused under the hostile state, accepted under the
+ mirror, structurally checked for path-first and cause, and counted by
+ the table's own shape law. A new boundary that needed a new law would
+ be a table that does not work.
+
+ WHAT THAT MEANS FOR RED: the laws here that read the role oracle fail
+ until the row exists in the table, and so does Sprint17AcceptanceTest
+ S12, which drives the same shared enumeration by design (two
+ enumerations of one table is inventory row 22). Those settled failures
+ are declared in the RED report by selector and return to green with the
+ row.
+
  Every fixture path is under tmp/, unique per test, torn down through
  PathFixtures removeTree:, which UNLOCKS the tree first. Nothing here
  spawns except where a verb's own pipeline does; no network is

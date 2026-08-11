@@ -114,7 +114,7 @@ tearDown.'>
             target: 'tmp/parley-s3-target'
             runner: runner.
         self assert: (scope childCommandFor: 'tmp/s.st')
-            = 'gst -i -I tmp/parley-s3-target/parley.im --no-user-files tmp/s.st'.
+            = 'gst -g -i -I tmp/parley-s3-target/parley.im --no-user-files tmp/s.st'.
         self assert: runner commands = #()
     ]
 
@@ -501,7 +501,7 @@ tearDown.'>
         self assert: result exitCode = 7.
         self assert: result lines = #().
         self assert: runner commands = (Array with:
-            'gst -i -I tmp/parley-s18-target/parley.im --no-user-files tmp/parley-s18-script.st')
+            'gst -g -i -I tmp/parley-s18-target/parley.im --no-user-files tmp/parley-s18-script.st')
     ]
 
     "---- S19: unknown input answers usage ----"

@@ -294,11 +294,21 @@ end-to-end exit criterion.'>
     "---- S6: the whitelist grew, and its sentence grew with it ----"
 
     testS6_TheReadersWhitelistGrewAndItsSentenceGrewWithIt [
-        "The rejection names ALL FOUR tags this Parley reads, because
-         it is rendered from formatTags and is the only place an
-         operator learns what a build accepts (Doc B §7)."
+        "The rejection names EVERY tag this Parley reads, because it is
+         rendered from formatTags and is the only place an operator
+         learns what a build accepts (Doc B §7).
+
+         RE-PINNED AT SPRINT 19'S RED, AND THE RE-PIN IS THE LAW WORKING
+         (declared on issue #21). #'parley-config' joined the whitelist
+         as a declared settled-class exception — the reader enforces the
+         whitelist inside readFrom:, so the operator's own configuration
+         file is unreadable without it — and Doc B §7 requires the
+         sentence to grow IN THE SAME CHANGE. This literal is what makes
+         that requirement bite: a widening that left the sentence behind
+         fails here, which is exactly what happened at Sprint 14 and is
+         why the law exists. Four tags became five."
         | expected |
-        expected := 'unknown format tag #''parley-mystery'': this Parley reads #''parley-index'', #''parley-lock'', #''parley-retired'' and #''parley-listing'' artifacts'.
+        expected := 'unknown format tag #''parley-mystery'': this Parley reads #''parley-index'', #''parley-lock'', #''parley-retired'', #''parley-listing'' and #''parley-config'' artifacts'.
         [IndexEntryReader readFrom:
             (ReadStream on: '#(#''parley-mystery'' 1)').
          self assert: false description: 'expected an IndexEntryFormatError']

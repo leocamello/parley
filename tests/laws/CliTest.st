@@ -431,7 +431,7 @@ exec propagation — all over doubles, spawning nothing.'>
         self assert: result exitCode = 7.
         self assert: result lines = #().
         self assert: runner commands = (Array with:
-            'gst -i -I tmp/parley-cli-exec-target/parley.im --no-user-files tmp/parley-cli-exec-script.st')
+            'gst -g -i -I tmp/parley-cli-exec-target/parley.im --no-user-files tmp/parley-cli-exec-script.st')
     ]
 ]
 

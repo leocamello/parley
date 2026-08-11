@@ -264,10 +264,23 @@ uniqueness comes from per-test labels.'>
          The two listing readers are the same file kind read from
          opposite ends of the ecosystem, and each names it the way ITS
          operator can act on: the client by base-relative URL path, the
-         publisher by the destination path the author typed."
+         publisher by the destination path the author typed.
+
+         SPRINT 19 ADDS THE SIXTH, AND IT IS THE FIFTH SENDER OF THE
+         READER: Configuration reads the operator's own
+         parley.config.st, at the project root, under the new
+         #'parley-config' 1 schema (Doc B §5.7). A new operator-editable
+         file is two declarations and not one — this table and the path
+         boundary table — and a row missing from either is a drift law
+         that cannot see the boundary.
+
+         SORTED THE WAY 3.2.5 SORTS IT: String <= folds case, so
+         'CLI' still comes before 'Configuration' (cl before co). Taken
+         from the toolchain rather than read off the page (finding
+         F15)."
         <category: 'boundary table'>
-        ^#('CLI' 'DirectorySource' 'ManifestFile' 'Publisher'
-            'SparseIndexSource')
+        ^#('CLI' 'Configuration' 'DirectorySource' 'ManifestFile'
+            'Publisher' 'SparseIndexSource')
     ]
 
     LockSchemaFixtures class >> boundaryFileFor: aClassName [
@@ -277,6 +290,7 @@ uniqueness comes from per-test labels.'>
          boundary; it is a reader."
         <category: 'boundary table'>
         aClassName = 'CLI' ifTrue: [^'parley.lock'].
+        aClassName = 'Configuration' ifTrue: [^'parley.config.st'].
         aClassName = 'DirectorySource'
             ifTrue: [^'index entries and retirement records'].
         aClassName = 'ManifestFile' ifTrue: [^'Package.st'].

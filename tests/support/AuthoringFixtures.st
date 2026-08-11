@@ -88,6 +88,72 @@ uniqueness comes from per-test labels.'>
         ^2
     ]
 
+    "---- Sprint 19: the manifests that HALF-succeed (§8 decision 76) ----"
+
+    AuthoringFixtures class >> secondDefineRaisesContents [
+        "A Package.st that sends define: TWICE, where the first succeeds
+         and the second raises (issue #21 S13).
+
+         WHY IT WAS INVISIBLE. The raise is a doesNotUnderstand from a
+         top-level statement, so it never reaches the gateway''s captured
+         -error slot: gst''s executeStatements abandons the statement and
+         continues, recorded keeps the value the first send left, and
+         load: discarded the anchor and answered that manifest. The verb
+         exited 0 with two orphan Object: nil fragments and no diagnosis.
+
+         The line number is probed rather than counted by eye — see
+         secondDefineRaisesLineNumber."
+        <category: 'half-succeeding manifests'>
+        ^'Parley define: [:pkg |
+    pkg
+        name: ''my-app'';
+        version: ''1.0.0'';
+        fileIns: #(''App.st'') ].
+Parley define: [:pkg |
+    nil foo.
+    pkg
+        name: ''my-app'';
+        version: ''1.0.0'';
+        fileIns: #(''App.st'') ]', SourceFixtures newline
+    ]
+
+    AuthoringFixtures class >> secondDefineRaisesLineNumber [
+        "The line the anchor names for the manifest above — PROBED
+         against 3.2.5 rather than counted, by mining a real capture of
+         a real file-in. A frame names the line of the EXPRESSION that
+         raised, not the line the statement opens on, and a diagnosis
+         that told an author to open the wrong line would be the
+         confident wrong sentence this boundary exists to abolish."
+        <category: 'half-succeeding manifests'>
+        ^7
+    ]
+
+    AuthoringFixtures class >> firstDefineRaisesContents [
+        "The mirror (issue #21 S14): the FIRST define: raises and a later
+         one succeeds. This is the case Doc E §3''s settled sentence
+         names in so many words — where a file sends define: more than
+         once, the first authoring error wins and is reported even if a
+         later define: succeeds."
+        <category: 'half-succeeding manifests'>
+        ^'Parley define: [:pkg |
+    nil foo.
+    pkg
+        name: ''my-app'';
+        version: ''1.0.0'';
+        fileIns: #(''App.st'') ].
+Parley define: [:pkg |
+    pkg
+        name: ''my-app'';
+        version: ''1.0.0'';
+        fileIns: #(''App.st'') ]', SourceFixtures newline
+    ]
+
+    AuthoringFixtures class >> firstDefineRaisesLineNumber [
+        "Probed, as above."
+        <category: 'half-succeeding manifests'>
+        ^2
+    ]
+
     AuthoringFixtures class >> fourProblemContents [
         "FOUR problems, and every one of them reachable together: no
          name, a version that does not parse, no fileIns, and a

@@ -67,13 +67,26 @@ real curated child run.'>
     "---- S3: the pinned pure composition ----"
 
     testChildCommandForIsThePinnedComposition [
+        "RE-PINNED AT SPRINT 19'S RED (§8 decision 77, declared on issue
+         #21). The composition gains -g (--no-gc-message): the image
+         rebuild wrote 'Global garbage collection... done' to the
+         child's stderr, which is text on the operator's terminal that
+         Parley did not write. exec cannot use the redirect decision 63
+         gives the plumbing children, because its one child is also the
+         AUTHOR'S PROGRAM and shares that stream with it — so the
+         message is stopped at the source instead. Probed on this exact
+         shape: stderr 55 bytes to 19, the script's own line and nothing
+         else; stdout byte-identical; exit code unchanged.
+
+         Three settled files carry this literal and all three moved in
+         the same change, which is what makes the pinning worth having."
         | runner scope |
         runner := RecordingRunner new.
         scope := ExecutionScope on: self emptySet
             target: 'tmp/parley-scopecmd-target'
             runner: runner.
         self assert: (scope childCommandFor: 'tmp/s.st')
-            = 'gst -i -I tmp/parley-scopecmd-target/parley.im --no-user-files tmp/s.st'.
+            = 'gst -g -i -I tmp/parley-scopecmd-target/parley.im --no-user-files tmp/s.st'.
         self assert: runner commands = #()
     ]
 
@@ -83,7 +96,7 @@ real curated child run.'>
             target: 'tmp/parley-other-target'
             runner: RecordingRunner new.
         self assert: (scope childCommandFor: 'tmp/parley-w/script.st')
-            = 'gst -i -I tmp/parley-other-target/parley.im --no-user-files tmp/parley-w/script.st'
+            = 'gst -g -i -I tmp/parley-other-target/parley.im --no-user-files tmp/parley-w/script.st'
     ]
 
     "---- the plan is the installed set's, untouched ----"
@@ -222,7 +235,7 @@ real curated child run.'>
             runner: runner.
         self assert: (scope run: 'tmp/compose.st') = 4.
         self assert: runner commands = (Array with:
-            'gst -i -I tmp/parley-compose-target/parley.im --no-user-files tmp/compose.st')
+            'gst -g -i -I tmp/parley-compose-target/parley.im --no-user-files tmp/compose.st')
     ]
 ]
 
