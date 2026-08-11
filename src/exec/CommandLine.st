@@ -264,6 +264,11 @@ equality (the decision-23 precedent).'>
          consumer is. The same file kind, read from opposite ends of
          the ecosystem, each naming it the way ITS operator can act
          on.
+         From Sprint 19 the FIFTH sender is Configuration, reading the
+         operator's own parley.config.st under the new
+         #'parley-config' 1 schema (Doc B §5.7): a file at the project
+         root that an operator writes by hand is a deserialization
+         boundary by exactly the argument this table was built on.
          ManifestFile is
          declared alongside them because it reads an operator-editable
          file by a DIFFERENT mechanism (file-in, not the reader) and is
@@ -286,7 +291,9 @@ equality (the decision-23 precedent).'>
             (Array with: (Array with: SparseIndexSource
                 with: 'version listings')
                 with: (Array with: Publisher
-                    with: 'version listings'))
+                    with: 'version listings')
+                with: (Array with: Configuration
+                    with: 'parley.config.st'))
     ]
 
     "---- the declared path boundaries (Doc E §4.1, §8 decisions 59/60/72) ----"
@@ -312,11 +319,26 @@ equality (the decision-23 precedent).'>
          a row added without a driver fails the suite rather than
          quietly widening the claim.
 
-         NINE ROWS AN OPERATOR REACHES BY RUNNING A VERB, and three the
+         TEN ROWS AN OPERATOR REACHES BY RUNNING A VERB, and three the
          tool reaches on its own behalf. The wiring state directory,
          the archive cache and the index cache are rows like any other;
          what they lack is a remedy sentence of their OWN, because an
          operator does not choose where the content store lives.
+
+         THE THIRTEENTH ROW ARRIVED WITH THE TABLE'S FULL DISCIPLINE
+         (§8 decision 65, Sprint 19). parley.config.st is a new
+         operator-editable file, and the cheapest moment to give a new
+         boundary the diagnosis every other boundary earned is the
+         sprint that introduces it — the only moment when nothing has
+         shipped depending on the wrong behaviour. Its carrier is
+         ExecutionError by decision 72's precedent applied a second
+         time: the settled carrier for a filesystem precondition in the
+         '<path>: ...' grammar, at the composition root, and A CARRIER
+         RATHER THAN AN ATTRIBUTION — a malformed configuration has
+         nothing to do with executing anything. The alternatives fail on
+         their own stated grounds: SourceError batches for a project
+         where this is one file with one defect, and LockError's checked
+         remedy names parley update, which cannot repair a config.
 
          THE WIRING STATE DIRECTORY'S ERROR IS A CARRIER, NOT AN
          ATTRIBUTION (§8 decision 72). CommandLine creates
@@ -382,7 +404,9 @@ equality (the decision-23 precedent).'>
                 with: (Array with: 'the archive cache (write)' with: #write
                     with: InstallError with: #guarded)
                 with: (Array with: 'the index cache (write)' with: #write
-                    with: SourceError with: #guarded))
+                    with: SourceError with: #guarded)
+                with: (Array with: 'parley.config.st (read)' with: #read
+                    with: ExecutionError with: #guarded))
     ]
 
     CommandLine class >> wrongTypeStateDirectoryTail [
@@ -455,13 +479,15 @@ equality (the decision-23 precedent).'>
          grammar, and hand the remaining arguments to the settled CLI
          unchanged."
         <category: 'private'>
-        | args |
+        | args choice |
         args := self withoutLeadingMarker: anArgvArray.
         "The two question flags are answered ahead of verb dispatch and
          BEFORE any state directory is created (§8 decision 57): asking
          a tool what it is or how to use it is not running a command in
          a project, so neither needs a working directory and neither may
-         leave one behind."
+         leave one behind. They are also answered before the
+         CONFIGURATION is read, for the same reason and one more: a
+         question must not fail on a file it does not need."
         (self isVersionRequest: args) ifTrue: [^self versionResult].
         (self isHelpRequest: args) ifTrue: [^self helpResult].
         "The source flags are mutually exclusive: both given is a usage
@@ -469,6 +495,22 @@ equality (the decision-23 precedent).'>
          like a working command. Checked before anything is created or
          built, so a usage error touches nothing."
         (self sourceRowsIn: args) size > 1 ifTrue: [^self usageResult].
+        "THE PRECEDENCE DECISION, AND IT IS THIS ONE LINE (§8 decision
+         64; Doc E §4.2). An explicit flag always wins, and the
+         configuration is then NEVER CONSULTED — not per key, not for the
+         keys the argv left absent, not at all. Filling each absent key
+         from the file independently would pass every law that drives a
+         flag against a file declaring the SAME key, and would wire
+         --git from the file alongside an explicit --source, which the
+         settled mutually-exclusive grammar above answers with the usage
+         lines: recording a source would break overriding it, on the
+         first command anyone types after writing the file.
+         It happens BEFORE the usage determination, because a malformed
+         configuration must be diagnosed as a broken file and not as an
+         operator who forgot a flag; and BEFORE createStateDirectories,
+         because a refused command leaves the filesystem as it found
+         it."
+        choice := self sourceChoiceIn: args.
         "AND NO OTHER USAGE ERROR CREATES PROJECT STATE EITHER (§8
          decision 57, second half). The question flags were placed above
          createStateDirectories because state created by a question is
@@ -481,27 +523,83 @@ equality (the decision-23 precedent).'>
          refuses to run leaves the filesystem as it found it, which is
          the rule publish already follows when it declines to create a
          destination it refuses (Doc F §1)."
-        (self answersUsageFor: args) ifTrue: [^self usageResult].
+        (self answersUsageFor: args withSource: choice notNil)
+            ifTrue: [^self usageResult].
         self createStateDirectories.
-        ^(self cliWithSourceIn: args) run: (self verbArgvIn: args)
+        ^(self cliWithSource: (self sourceFromChoice: choice))
+            run: (self verbArgvIn: args)
     ]
 
-    answersUsageFor: anArgvArray [
+    sourceChoiceIn: anArgvArray [
+        "Private — WHICH source this invocation uses, as a (row, value)
+         pair, or nil when it uses none. THE ONE PLACE PRECEDENCE IS
+         DECIDED, and the reason Configuration decides none: it reads a
+         file and answers values, and choosing between a value and a
+         flag is wiring.
+
+         It is a pair rather than a built source because the two must
+         happen at different moments: the CHOICE is needed before the
+         usage determination, and building a --git or --index source
+         creates its cache root under .parley/, which cannot happen
+         until createStateDirectories has run (3.2.5's Directory create:
+         is not recursive)."
+        <category: 'private-wiring'>
+        | rows |
+        rows := self sourceRowsIn: anArgvArray.
+        rows isEmpty ifFalse: [
+            ^Array with: rows first
+                with: (self valueOf: (rows first at: 1) in: anArgvArray)].
+        ^self configuredChoice
+    ]
+
+    configuredChoice [
+        "Private — the row the project's configuration records, with its
+         value, or nil when it records none or there is no file.
+
+         The declared table is asked in its own order, which is Doc B
+         §5.7's fixed key order: a file may record at most one source,
+         and the read boundary refuses one that records two, so the
+         first non-nil value is the only non-nil value."
+        <category: 'private-wiring'>
+        | config |
+        config := Configuration in: workingDir.
+        self class sourceFlags do: [:row |
+            | value |
+            value := config valueFor: (row at: 1).
+            value isNil ifFalse: [^Array with: row with: value]].
+        ^nil
+    ]
+
+    sourceFromChoice: aChoice [
+        "Private — the source a choice builds, nil when there is none.
+         The row says which message builds it, so adding a source is
+         adding a row and a builder — never a branch here, and never a
+         second branch for the configured case: a flag and a file that
+         name the same source build the same object."
+        <category: 'private-wiring'>
+        aChoice isNil ifTrue: [^nil].
+        ^self perform: ((aChoice at: 1) at: 3) with: (aChoice at: 2)
+    ]
+
+    answersUsageFor: anArgvArray withSource: aBoolean [
         "Private — whether this argv answers usage rather than running a
          verb, asked of the SETTLED CLI's own determination so the two
          can never disagree about what a verb is. Duplicating the verb
          grammar here would be the drift sourceFlags, publishLayouts and
          deserializationBoundaries each exist to prevent.
 
-         It is a function of the argv and of whether a source flag was
-         given — never of the source OBJECT, which is deliberate:
+         It is a function of the argv and of whether a source WILL BE
+         WIRED — never of the source OBJECT, which is deliberate:
          building a --git or --index source creates its cache root under
-         .parley/, so cliWithSourceIn: must stay BELOW
-         createStateDirectories, and a determination that needed the
-         built source could not run above it."
+         .parley/, so the build must stay BELOW createStateDirectories,
+         and a determination that needed the built source could not run
+         above it. From Sprint 19 the availability half comes from the
+         CHOICE rather than from the argv alone, because a project that
+         records its index in parley.config.st has a source without
+         naming one on the command line."
         <category: 'private-grammar'>
         ^(CLI verbRowFor: (self verbArgvIn: anArgvArray)
-            withSource: (self sourceRowsIn: anArgvArray) isEmpty not) isNil
+            withSource: aBoolean) isNil
     ]
 
     isVersionRequest: anArgvArray [
@@ -626,13 +724,6 @@ equality (the decision-23 precedent).'>
 
     "---- the wiring ----"
 
-    cliWithSourceIn: anArgvArray [
-        "Private — the settled CLI over the real collaborators, its
-         source built from whichever flag the argv carries."
-        <category: 'private-wiring'>
-        ^self cliWithSource: (self sourceIn: anArgvArray)
-    ]
-
     cliWithSource: aPackageSource [
         "Private — the settled CLI over the real collaborators. The
          store and target are derived from the WORKING DIRECTORY and
@@ -647,20 +738,6 @@ equality (the decision-23 precedent).'>
             store: (ContentStore on: self storePath)
             target: self targetPath
             runner: runner
-    ]
-
-    sourceIn: anArgvArray [
-        "Private — the source the argv's flag builds, nil when no flag
-         is present. The row says which message builds it, so adding a
-         source is adding a row and a builder — never a branch here."
-        <category: 'private-wiring'>
-        | rows row |
-        rows := self sourceRowsIn: anArgvArray.
-        rows isEmpty ifTrue: [^nil].
-        row := rows first.
-        ^self
-            perform: (row at: 3)
-            with: (self valueOf: (row at: 1) in: anArgvArray)
     ]
 
     directorySourceOn: aDirPath [

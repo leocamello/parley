@@ -377,7 +377,8 @@ tearDown.'>
                 expected add: 'gst-package --target-directory ',
                     target, ' ', target,
                     '/.parley-staging/', name, '.star'].
-        self assert: runner commands = expected asArray
+        self assert: runner commands
+            = (ChatterFixtures silencedPlan: expected asArray)
     ]
 
     "---- S14: the valid-pin fast path ----"

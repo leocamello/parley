@@ -124,9 +124,17 @@ declares, and one malformed-input law per declared boundary.'>
         self assert: senders
             = LockSchemaFixtures probeSenderFileNames
             description: 'the src/ walk answered ', senders printString.
+        "Re-pinned in Sprint 19's GREEN, by hand and deliberately not
+         derived: Configuration is the FIFTH sender (Doc B §5.7). The
+         list stays hand-written because this law's whole job is to be
+         an independent statement of what the walk should find — a list
+         computed from the walk would agree with it by construction.
+         Five is the limit of Array class >> with: on 3.2.5, which is
+         why the next sender will need a concatenation here."
         self assert: LockSchemaFixtures readerSenderClassNames
-            = (Array with: 'CLI' with: 'DirectorySource'
-                with: 'Publisher' with: 'SparseIndexSource')
+            = (Array with: 'CLI' with: 'Configuration'
+                with: 'DirectorySource' with: 'Publisher'
+                with: 'SparseIndexSource')
     ]
 
     testTheEnumerationSurvivesALineSplitSender [

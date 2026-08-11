@@ -120,9 +120,12 @@ lines name the flag while the verbs: line is unchanged.'>
          unchanged and still asserted below."
         | rows sparseRows |
         rows := CommandLine deserializationBoundaries.
+        "Re-pinned again in Sprint 19's GREEN, the same precedent this
+         comment already records: Configuration reads parley.config.st
+         through the settled reader, so the table gained a sixth row.
+         This law's own claim is unchanged."
         self assert: (LockSchemaFixtures namesOfBoundaryClassesIn: rows)
-            = #('CLI' 'DirectorySource' 'ManifestFile' 'Publisher'
-                'SparseIndexSource').
+            = LockSchemaFixtures boundaryClassNames.
         sparseRows := rows select: [:row |
             (row at: 1) name asString = 'SparseIndexSource'].
         self assert: sparseRows size = 1.

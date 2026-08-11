@@ -294,7 +294,8 @@ exec propagation — all over doubles, spawning nothing.'>
         self assert: (store containsHash: InstallFixtures digestC24).
         self assert: (InstallFixtures starFileCountIn: storeRoot) = 3.
         self assert: runner commands
-            = (self stagedPlanFor: target storeRoot: storeRoot)
+            = (ChatterFixtures silencedPlan:
+                (self stagedPlanFor: target storeRoot: storeRoot))
     ]
 
     "---- S14: the valid-pin fast path ----"
@@ -318,8 +319,9 @@ exec propagation — all over doubles, spawning nothing.'>
         self assert: (self lockContentsIn: work)
             = ExecFixtures diamondLockString.
         self assert: runner commands
-            = (self stagedPlanFor: 'tmp/parley-cli-fastpath-target'
-                storeRoot: storeRoot)
+            = (ChatterFixtures silencedPlan:
+                (self stagedPlanFor: 'tmp/parley-cli-fastpath-target'
+                    storeRoot: storeRoot))
     ]
 
     "---- S15: a stale pin re-resolves ----"

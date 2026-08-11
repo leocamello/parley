@@ -482,8 +482,9 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
             = SelectiveUpdateFixtures archiveBytesToolA110
             description: 'the stored archive is not the fetched bytes'.
         self assert: runner commands
-            = (ManifestEditFixtures addedRegistrationPlanIn: work)
-            description: 'the registration plan is not the settled update plan over the whole set'
+            = (ChatterFixtures silencedPlan:
+                (ManifestEditFixtures addedRegistrationPlanIn: work))
+            description: 'the registration plan is not the settled update plan over the whole set, silenced'
     ]
 
     "---- the shared deleted-held-pin diagnosis (the Sprint 12 gap) ----"

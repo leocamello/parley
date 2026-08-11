@@ -78,6 +78,28 @@ Stateless; uniqueness comes from per-test labels.'>
         ^'-g'
     ]
 
+    ChatterFixtures class >> silenced: aCommandString [
+        "aCommandString as the runner really receives it from Sprint 19
+         on: the composed line with the declared stdout redirect."
+        <category: 'declared silencing'>
+        ^aCommandString, self stdoutRedirectTail
+    ]
+
+    ChatterFixtures class >> silencedPlan: someCommandLines [
+        "A registration plan as the RECORDING RUNNER sees it — every
+         plan line silenced (§8 decision 63).
+
+         IT TAKES THE PLAN AND MAPS IT, which is the whole point of the
+         shape: the settled plan oracles keep answering THE PLAN,
+         byte-identical, and the six settled laws that assert what the
+         runner recorded say `the plan, silenced` rather than carrying a
+         second copy of the plan with a tail baked in. The plan is a
+         pure value Doc D §4 pins; silencing is a property of running
+         one."
+        <category: 'declared silencing'>
+        ^someCommandLines collect: [:each | self silenced: each]
+    ]
+
     ChatterFixtures class >> gcMessageMarker [
         "The plumbing fragment that must be ABSENT from exec''s captured
          stderr from this sprint on. Spelled as the words the toolchain
@@ -247,17 +269,6 @@ Stateless; uniqueness comes from per-test labels.'>
                 with: '/usr/bin/install -c')
             with: (Array with: 'the staging directory'
                 with: '.parley-staging')
-    ]
-
-    ChatterFixtures class >> markersMissingFrom: aText in: someMarkers [
-        "The labels of the markers aText does NOT carry — the fixture
-         side of the guard that keeps a chatter law from passing
-         vacuously. A law that only ever denies markers proves nothing
-         until something has been shown to produce them."
-        <category: 'foreign markers'>
-        ^(someMarkers reject: [:row |
-            CommandLineFixtures does: aText include: (row at: 2)])
-                collect: [:row | row at: 1]
     ]
 
     "---- the exec script, which writes to BOTH streams (S4) ----"

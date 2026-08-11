@@ -60,11 +60,20 @@ third-party content ever reaches a compiler pathway.'>
 
     IndexEntryReader class >> formatTags [
         "The whitelist: every format tag this Parley reads (Doc B §7).
-         #'parley-retired' joined it at Sprint 10 (Doc B §5.5) and
-         #'parley-listing' at Sprint 14 (Doc B §5.6), each as a
+         #'parley-retired' joined it at Sprint 10 (Doc B §5.5),
+         #'parley-listing' at Sprint 14 (Doc B §5.6) and
+         #'parley-config' at Sprint 19 (Doc B §5.7), each as a
          DECLARED settled-class exception — adding a tag is never a
          silent widening, because 'unknown tag is an error' is what
          makes the forward-evolution point real.
+
+         SPRINT 19'S ENTRY IS THE ONE THE ISSUE FIRST GOT WRONG, and the
+         correction is worth keeping here: a new schema tag was called a
+         reader CONSUMER rather than a reader change, which is true of
+         readers in general and false of this one — the whitelist is
+         enforced inside readFrom:, so an unlisted tag is refused there
+         and the operator's own configuration file would be unreadable.
+         Probed and ruled pre-RED on issue #21.
 
          It is a DECLARATION consumed twice: the check below tests
          membership in it, and the rejection message is RENDERED from
@@ -72,7 +81,8 @@ third-party content ever reaches a compiler pathway.'>
          in the same change, which is the rule the Sprint 10 RED review
          ruled (Doc B §7)."
         <category: 'reading'>
-        ^#(#'parley-index' #'parley-lock' #'parley-retired' #'parley-listing')
+        ^#(#'parley-index' #'parley-lock' #'parley-retired'
+           #'parley-listing' #'parley-config')
     ]
 
     IndexEntryReader class >> formatTagsText [

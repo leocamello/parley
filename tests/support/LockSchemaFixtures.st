@@ -493,9 +493,16 @@ uniqueness comes from per-test labels.'>
         "What the toolchain answered for readerSenderFileNames when this
          fixture was written — the fixture-correctness oracle. If a
          future sender lands, this list and the table both have to move,
-         which is the point."
+         which is the point.
+
+         SPRINT 19 IS THAT FUTURE SENDER, and the pair moved together:
+         Configuration reads parley.config.st through the settled reader
+         (Doc B §5.7), so it is a boundary by construction and the drift
+         law forced the row the moment the send shipped. Sorted the way
+         3.2.5 sorts, which folds case: exec/CLI.st still precedes
+         exec/Configuration.st."
         <category: 'drift law'>
-        ^#('exec/CLI.st' 'publish/Publisher.st'
+        ^#('exec/CLI.st' 'exec/Configuration.st' 'publish/Publisher.st'
             'source/DirectorySource.st' 'source/SparseIndexSource.st')
     ]
 

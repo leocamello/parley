@@ -151,7 +151,17 @@ setters; no value equality.'>
         listing := self perform: (layout at: 2).
         listing isEmpty ifFalse: [^PublishError signalProblems: listing].
         self stage.
-        code := runner run: self buildCommand.
+        "THE BUILD CHILD IS PLUMBING, AND ITS CHATTER IS DISCARDED AS THE
+         LINE IS RUN (§8 decision 63, Sprint 19). gst-package echoes the
+         five commands it runs — two mkdir, a symlink, a removal and the
+         zip — leaking /tmp/gstar-* and this stage directory above the
+         one line publish composes. The redirect goes on the line being
+         RUN and not into buildCommand, so the diagnosis below names the
+         command the operator can retype, byte-identical to the settled
+         wording. The exit code is still checked: silencing chatter must
+         never silence failure, and gst-package's own diagnostics are on
+         stderr, which the tail does not touch."
+        code := runner run: self silencedBuildCommand.
         code = 0 ifFalse: [
             ^PublishError signalProblems: (Array with:
                 'package build failed with exit code ', code printString,
@@ -484,10 +494,36 @@ setters; no value equality.'>
     buildCommand [
         "Private — the toolchain build: the stage is both the target
          directory and the home of the composed package.xml. It owns
-         the archive format; Parley never zips."
+         the archive format; Parley never zips.
+
+         UNCHANGED BY SPRINT 19, DELIBERATELY. This is the line the
+         failure diagnosis names, and it stays what an operator could
+         type themselves; the stdout redirect belongs to the ACT of
+         running it and is composed in silencedBuildCommand."
         <category: 'private-paths'>
         ^'gst-package --target-directory ', self stageDir, ' ',
             self stageDir, '/package.xml'
+    ]
+
+    silencedBuildCommand [
+        "Private — the build line with the stdout redirect appended
+         (§8 decision 63).
+
+         STDOUT ONLY, AND THE ABSENCE OF A STDERR REDIRECT IS THE WHOLE
+         BOUND: gst-package reports its own failures on stderr — probed,
+         a non-archive answers gst-package: Invalid argument there at
+         exit 1 — so a tail carrying 2>&1 would swallow the diagnosis
+         with the noise.
+
+         THE LITERAL HAS A SECOND DEFINITION IN ExecutionScope>>silenced:
+         AND THAT IS STATED RATHER THAN HIDDEN. Doc E §1 gives the
+         redirect to each composer at its own point of execution, and the
+         two composers share no home that is not the process seam, which
+         decision 63 leaves untouched. Both are pinned against ONE test
+         oracle, ChatterFixtures stdoutRedirectTail, by laws that fail
+         the moment either moves."
+        <category: 'private-paths'>
+        ^self buildCommand, ' > /dev/null'
     ]
 
     releaseName [

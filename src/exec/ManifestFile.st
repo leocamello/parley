@@ -170,22 +170,38 @@ one-problem ManifestError naming the path.'>
         authoringProblems isNil ifFalse: [
             ^ManifestError signalProblems:
                 (self batchFor: aPath problems: authoringProblems)].
+        "A RECOVERED ANCHOR IS ITSELF A FAILURE SIGNAL, AND IT IS CHECKED
+         BEFORE recorded (§8 decision 76, Sprint 19 — the third ordering
+         rule, and the one the two above have a blind spot for).
+         Those two govern the CAPTURED-ERROR SLOT, which only an error
+         passing through the gateway's handler reaches. A
+         doesNotUnderstand raised by a top-level statement never enters
+         it: gst's executeStatements abandons that statement and
+         continues. So a Package.st sending define: TWICE, where either
+         send raises, left recorded non-nil from the send that worked —
+         and this method threw the anchor away and answered that
+         manifest. The verb exited 0 with two orphan Object: nil
+         fragments and no diagnosis, which is the fail-wrong this
+         architecture exists to prevent, in software about to be tagged.
+         Doc E §3 has said since Sprint 9 that a Package.st with a broken
+         define: must never half-succeed. The sentence was true and
+         nothing below it could make it false; this line is what makes it
+         false.
+         THE ANCHOR ALSO OUTRANKS THE DEFINE-LESS LINE, which is where it
+         already stood (§8 decision 62) and why moving it costs nothing:
+         both states record nothing, so both used to answer 'no manifest
+         defined' — true of a file that never sent define:, and true only
+         in the letter about a file whose define: block died half way.
+         When the capture yielded a line number Parley says which line,
+         in its own voice; when it did not — the parse path, where
+         fileIn: returns normally and the capture is empty — the settled
+         literal stands unretoned, because it is true of both and the
+         information separating them is already on the operator's
+         terminal, on stderr."
+        anchor isNil ifFalse: [
+            ^ManifestError signalProblems: (Array with:
+                (self anchorProblemFor: aPath line: anchor))].
         recorded isNil ifTrue: [
-            "THE ANCHOR OUTRANKS THE DEFINE-LESS LINE WHEN THERE IS ONE,
-             and it is the same sentence's subject seen properly (§8
-             decision 62). Both states record nothing, so both used to
-             answer 'no manifest defined' — true of a file that never
-             sent define:, and true in the letter about a file whose
-             define: block died half way, which is not what its author
-             needs to read. When the capture yielded a line number Parley
-             says which line, in its own voice. When it did not — the
-             parse path, where fileIn: returns normally and the capture is
-             empty — the settled literal stands unretoned, because it is
-             true of both and the information separating them is already
-             on the operator's terminal, on stderr."
-            anchor isNil ifFalse: [
-                ^ManifestError signalProblems: (Array with:
-                    (self anchorProblemFor: aPath line: anchor))].
             ^ManifestError signalProblems: (Array with:
                 aPath, ': no manifest defined - the file never sent Parley define:')].
         ^recorded

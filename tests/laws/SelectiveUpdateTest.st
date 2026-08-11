@@ -320,7 +320,8 @@ update [<pkg>] argv grammar.'>
         self assert: (File name: storedPath) contents
             = SelectiveUpdateFixtures archiveBytesToolA110.
         self assert: runner commands
-            = (SelectiveUpdateFixtures toolsMovedRegistrationPlanIn: work)
+            = (ChatterFixtures silencedPlan:
+                (SelectiveUpdateFixtures toolsMovedRegistrationPlanIn: work))
     ]
 
     "---- the argv grammar: update [<pkg>] ----"

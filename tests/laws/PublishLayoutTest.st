@@ -384,9 +384,11 @@ producer from creating the index defect its own client reports.'>
          operator's file is not a boundary; it is a reader."
         | rows publisherRows |
         rows := CommandLine deserializationBoundaries.
+        "Re-pinned in Sprint 19's GREEN — Configuration is the sixth row
+         (Doc B §5.7). This law's own claim, that the Publisher row
+         exists once and names its file, is unchanged."
         self assert: (LockSchemaFixtures namesOfBoundaryClassesIn: rows)
-            = #('CLI' 'DirectorySource' 'ManifestFile' 'Publisher'
-                'SparseIndexSource').
+            = LockSchemaFixtures boundaryClassNames.
         publisherRows := rows select: [:row |
             (row at: 1) name asString = 'Publisher'].
         self assert: publisherRows size = 1.

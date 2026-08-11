@@ -115,6 +115,40 @@ PARLEY_ROOT=~/src/parley ~/src/parley/bin/parley --version
 
 An installation whose `bin/parley-main.st` is missing exits `70` naming the path it looked for — a broken install is a defect in Parley, and it will not pretend to have succeeded.
 
+### Recording your index once, in `parley.config.st`
+
+`--source`, `--git` and `--index` are how you tell Parley where your index is. You do not have to retype them on every command: write them once, in a `parley.config.st` at the **project root**, beside `Package.st` and `parley.lock`.
+
+```smalltalk
+#(#'parley-config' 1 #source '../my-index' #git '' #index '')
+```
+
+It is Parley's own literal format — the same one index entries and lockfiles use — read by the same reader. All three keys are present, in that order, and the empty string means *not set*. Declare **at most one**: a file naming two sources is refused, for the same reason `--source` with `--git` is a usage error rather than a silent preference.
+
+```sh
+parley resolve                  # uses ../my-index, from the file
+parley resolve --source ../other  # uses ../other; the file is not read at all
+```
+
+**A flag on the command line always wins**, and when you pass one the configuration file is not consulted at all — not for the flag you gave, and not for the ones you left out. That is what makes the file safe to add to a project that already works: it can only supply a default you did not type.
+
+It lives at the project root and **not** under `.parley/`, deliberately. That directory is regenerable state — the store, the caches, the package target — and deleting it is a fair way to clean a project. Your configuration is yours, and it survives that:
+
+```sh
+rm -rf .parley && parley resolve   # still finds your index
+```
+
+Four things can be wrong with the file, and each answers one line naming it at exit `1`, never a backtrace: it is not a regular readable file, it does not parse, it is not a `#'parley-config' 1` artifact, or its body is malformed — a missing, misordered or unknown key, a value that is not a string, or two sources at once.
+
+```
+$ parley resolve
+/home/you/project/parley.config.st: malformed configuration, the keys must be #source #git #index in that order - fix it or remove it and try again
+$ echo $?
+1
+```
+
+No Parley command writes this file, which is why every one of those lines ends the same way: fix it or remove it. Removing it always works — the tool goes back to the flags it always had.
+
 ## Publishing a package
 
 `parley publish <dir>` builds the archive with `gst-package` from your own manifest and lands a release in the index directory you give it. An index is a directory you own — a folder, a git repository you push, a path behind any web server. There is no hosted registry to sign up for.
@@ -179,10 +213,12 @@ parley exec run.st                     # → Hello, world!
 **1. `parley exec run.st`** — use this for anything repeatable. It composes the curated child for you:
 
 ```sh
-gst -i -I .parley/packages/parley.im --no-user-files run.st
+gst -g -i -I .parley/packages/parley.im --no-user-files run.st
 ```
 
 `-i` rebuilds the image from the kernel on every run, so **no state leaks between runs**. That reproducibility is the whole point, and it is what makes `exec` the right choice in CI.
+
+`-g` (`--no-gc-message`) is why your terminal stays clean. Rebuilding the image makes GNU Smalltalk write `"Global garbage collection... done"` to standard error — Parley's plumbing talking, in the middle of your program's own output. The flag stops it being written at all, which is the only way to remove it without touching the stream your script writes on: **your stdout and your stderr both reach you untouched**, and so does your exit code. Run the command by hand without `-g` and you will see the difference.
 
 **2. The same command by hand, without `-i`** — reuses the built image instead of rebuilding it:
 

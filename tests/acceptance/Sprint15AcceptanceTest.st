@@ -504,12 +504,17 @@ end-to-end loop that closes v1.0.'>
          malformed-input law the table's contract requires is S5."
         | rows senders |
         rows := CommandLine deserializationBoundaries.
-        self assert: rows size = 5
+        "Re-pinned in Sprint 19's GREEN: Configuration reads
+         parley.config.st through the settled reader (Doc B §5.7), so the
+         table has six rows. THIS SCENARIO'S OWN CLAIM IS UNCHANGED and
+         is the one asserted below — Publisher is a sender the walk sees
+         and a row the table declares. The count and the class list move
+         with the table by construction rather than by hand."
+        self assert: rows size = LockSchemaFixtures boundaryClassNames size
             description: 'the boundary table has ', rows size printString,
                 ' rows'.
         self assert: (LockSchemaFixtures namesOfBoundaryClassesIn: rows)
-            = #('CLI' 'DirectorySource' 'ManifestFile' 'Publisher'
-                'SparseIndexSource').
+            = LockSchemaFixtures boundaryClassNames.
         senders := LockSchemaFixtures readerSenderClassNames.
         self deny: senders isEmpty
             description: 'the src/ walk found no senders at all'.

@@ -462,13 +462,23 @@ half-succeeding manifest closed, and the README.'>
          path compares byte-for-byte.
 
          The runner is a double, so --git and --index spawn nothing:
-         whatever the two runs answer, they must answer the same thing."
+         whatever the two runs answer, they must answer the same thing.
+
+         THE WORK-DIR LABEL CARRIES -work- (corrected in GREEN, and the
+         correction is a fixture label rather than a claim). Written as
+         's19-9-<flag>' it collided with the --source index fixture,
+         's19-9-index': the third iteration's directoryNamed: swept and
+         recreated the very directory the first iteration had populated,
+         and tearDown then removed one path twice and raised out of
+         PathFixtures unlock:. Every assertion in this scenario passed
+         both before and after; what failed was teardown, reported as an
+         ERROR against the scenario."
         CommandLine sourceFlags do: [:row |
             | flag value work flagged configured |
             flag := row at: 1.
             value := self valueForFlag: flag.
             work := ConfigFixtures workDirTracking: self tracker
-                named: 's19-9-', (flag copyFrom: 3 to: flag size)
+                named: 's19-9-work-', (flag copyFrom: 3 to: flag size)
                 contents: (ConfigFixtures contentsDeclaring: flag
                     value: value).
             flagged := self resultOf: (Array with: 'resolve'

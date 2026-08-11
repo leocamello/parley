@@ -374,8 +374,9 @@ identical fixture.'>
             = SelectiveUpdateFixtures archiveBytesToolA110
             description: 'the stored archive is not the fetched bytes'.
         self assert: runner commands
-            = (SelectiveUpdateFixtures toolsMovedRegistrationPlanIn: work)
-            description: 'the registration plan is not the settled update plan'
+            = (ChatterFixtures silencedPlan:
+                (SelectiveUpdateFixtures toolsMovedRegistrationPlanIn: work))
+            description: 'the registration plan is not the settled update plan, silenced'
     ]
 
     testS12_TheArgvGrammar [
