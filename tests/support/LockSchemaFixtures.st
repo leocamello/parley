@@ -197,10 +197,21 @@ uniqueness comes from per-test labels.'>
          Array, a tuple of the wrong arity, a missing #sha256 marker, a
          non-String field. They are one question and one repair, and the
          settled #dependencies and #archive problems are worded on
-         exactly this principle."
+         exactly this principle.
+
+         SPRINT 21 (issue #23) RE-PINS IT TO NAME BOTH ACCEPTED FORMS,
+         in RED and for the same reason ExecFixtures usageLines is
+         re-pinned there. Doc B §5.3 gives the pin tuple one declared
+         ALTERNATIVE form, #(<name> <version> #path <declared path>),
+         and this sentence is the ONLY place an operator learns what
+         this build accepts - so widening the acceptance without
+         widening the sentence would make it state something false, the
+         Sprint 10 and Sprint 14 tag-whitelist rule applied to the tuple
+         family. The settled form stays in the sentence unchanged; the
+         laws driving the settled #sha256 shapes are non-movers."
         <category: 'pinned wordings'>
         ^self lockProblemFor: aPath defect:
-            '#packages must be an array of #(<name> <version> #sha256 <hex digest>) tuples'
+            '#packages must be an array of #(<name> <version> #sha256 <hex digest>) or #(<name> <version> #path <declared path>) tuples'
     ]
 
     LockSchemaFixtures class >> unparseableLockVersionProblemFor: aPath value: aString package: aName [

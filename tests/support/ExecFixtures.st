@@ -382,15 +382,34 @@ stream close', SourceFixtures newline
          SelectiveUpdateFixtures, InspectionFixtures and
          ReleaseHardeningTest now delegate here — five copies of one
          sentence were five movers no oracle grep could see, which is
-         the F18 lesson this sprint paid for."
+         the F18 lesson this sprint paid for.
+
+         SPRINT 21 (issue #23) RE-PINS IT FROM SIX LINES TO EIGHT, and
+         re-pins it IN RED for Sprint 20's own stated reason: the
+         operator reviews the new rows beside the laws that rest on
+         them. The header gains the two MODE FLAGS and the flags: block
+         gains a row for each. Neither is a sourceFlags row - they are
+         valueless and build nothing (§8 decisions 68, 69, 83; Doc E
+         §4.2) - and the verbs: row does NOT move, because this sprint
+         adds no verb. A flag the help hides is a flag that does not
+         exist, which is why the block grows rather than these two
+         living only in the README.
+
+         THE FLAG COLUMN IS SIXTEEN CHARACTERS WIDE and every row pads
+         to it; the two new rows state the GUARD INVARIANT each flag
+         asserts rather than describing a thing it builds, because
+         neither builds anything."
         <category: 'pinned wordings'>
         ^(Array
-            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
+            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>] [--offline] [--locked]'
             with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | remove <pkg> | search <term> | info <pkg> | outdated | exec <script> | publish <dir> | why <pkg> | tree | check'
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
             with: '       --index <base>  index entries fetched per package from a sparse index'),
-            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
+            (Array
+                with: '       --layout <name> flat (default) or sparse, the index layout publish writes'
+                with: '       --offline       this invocation spawns no git and no curl'
+                with: '       --locked        this invocation does not change parley.lock')
     ]
 
     ExecFixtures class >> initSuccessLines [
