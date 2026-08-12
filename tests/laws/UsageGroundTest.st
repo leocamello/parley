@@ -268,6 +268,22 @@ block alone at exit 0.'>
     ]
 
     testTheUnknownLayoutSentenceNamesEveryDeclaredLayout [
+        "The sentence names every layout the table declares.
+
+         THE EMPTINESS GUARD BELOW IS THIS LAW'S OWN (CF-6, cleared at
+         Sprint 21's Gate A). The carried gap read this law as borrowing
+         PublishLayoutTest's `deny: rows isEmpty` — an empty table makes
+         the iteration prove nothing. THE PROBE REFUTES THAT READING:
+         stubbing CommandLine publishLayouts to #() makes this law FAIL
+         rather than pass vacuously, because the byte-pinned first
+         assertion catches the empty table on its own — GrammarFixtures
+         unknownLayoutReasonFor: is a LITERAL and does not move with the
+         table, so a table that loses a layout, gains one, or empties
+         breaks the sentence comparison before the loop is ever reached.
+         The guard is kept regardless: it costs one line, it makes the
+         non-vacuity local instead of a consequence of another method's
+         current shape, and it is what would still hold the day that
+         oracle is derived from the table rather than written out."
         | work dest first |
         work := self freshDir: 'ug-layoutnames-work'.
         dest := self freshDir: 'ug-layoutnames-dest'.
@@ -276,6 +292,8 @@ block alone at exit 0.'>
         self assert: first
             = (GrammarFixtures unknownLayoutReasonFor: 'nonsense')
             description: 'the unknown-layout line is ', first printString.
+        self deny: CommandLine publishLayouts isEmpty
+            description: 'publishLayouts is empty - the iteration below would prove nothing'.
         CommandLine publishLayouts do: [:row |
             self assert: (CommandLineFixtures does: first
                 include: (row at: 1))
