@@ -162,13 +162,22 @@ fi
 # recorded in five comments that never reached the hand that needed them.
 # Textual, bound stated (decision 43's standard): comments and strings are
 # stripped, parenthesized sends collapse to a placeholder so nested chains
-# count PER RECEIVER, and '.', ';', '[' and ']' break a chain — so the flat
-# shape that bites is caught, not every conceivable spelling (a chain whose
-# argument is a multi-statement block escapes; none has ever been written).
+# count PER RECEIVER, and '.', ';', '[' and ']' break a chain. THE SCAN
+# CHECKS EVERY PARENTHESIS DEPTH — the first build checked only the fully
+# collapsed text, so a chain inside an argument's parentheses (the commonest
+# test shape) escaped and the defect recurred in Sprint 21's RED before the
+# lint saw it. A chain broken by a block argument's own statements still
+# escapes; none has ever been written.
 WITH_CHAIN_SCAN='undef $/; $_ = <>;
 s/"[^"]*"/ /gs; s/\x27[^\x27]*\x27/ S /gs; s/\s+/ /g;
-1 while s/\(([^()]*)\)/ A /g;
-print "$ARGV\n" if /(\bwith: [^.;\[\]]*?){5}\bwith:/;'
+my $chain = qr/(?:\bwith: [^.;\[\]]*?){5}\bwith:/;
+while (/\(/) {
+  for my $g (/\(([^()]*)\)/g) {
+    if ($g =~ $chain) { print "$ARGV\n"; exit }
+  }
+  last unless s/\(([^()]*)\)/ A /g;
+}
+print "$ARGV\n" if $_ =~ $chain;'
 MATCHES=$(find src tests -name '*.st' -exec perl -e "$WITH_CHAIN_SCAN" {} \; 2>/dev/null || true)
 if [[ -n "$MATCHES" ]]; then
   fail_hard_ban 105 \
