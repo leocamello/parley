@@ -456,20 +456,54 @@ live I/O mid-resolution.'>
     ]
 
     testTheOverlayComposesBeforeResolutionBegins [
-        "THE PURITY PROOF (Doc C §7). The composed snapshot is a sealed
-         VALUE: a resolution driven against it touches no source at all,
-         proved by handing the resolver a snapshot composed over a base
-         whose every protocol message signals. If the overlay had left a
-         lazy read behind, the trap would fire during the search rather
-         than during composition."
+        "THE COMPOSITION REACHES THE SEARCH LOOP (Doc C §7). The overlay
+         composes into a sealed snapshot BEFORE resolution begins, so a
+         resolver handed something entirely ordinary — one plain
+         constraint edge — still lands on the sibling's declared version
+         and answers the EMPTY DIGEST that says the release is described
+         by its provenance (§8 decisions 68, 69).
+
+         THE ROOT DECLARES AN ORDINARY EDGE, AND THAT IS THE POINT
+         (amended mid-sprint, GREEN step 2). As frozen it declared
+         `dependency:path:` and handed the manifest straight to the
+         Resolver — but `Resolver>>resolve:against:` seeds the ledger
+         from `aManifest dependencies` alone, and a path dependency
+         lives in `pathDependencies`, so the root contributed NO EDGE
+         and the resolution came back EMPTY. Probed: the frozen shape
+         answers `isResolution=true names=()` and `versionOf:` raises
+         NotFound. No permitted build satisfied it — `dependencies` is
+         frozen by LibraryManifest's declared bound, `Resolver` is
+         halt-and-ask (§8 decision 40), and composing the resolution
+         view is the CLI's job, which this law deliberately bypasses.
+         Giving the resolver a plain edge proves the same claim in a
+         stronger form: nothing about the search knows a path was
+         involved. The path-DECLARING route is covered end to end by S1,
+         S2, S3 and S31 once the CLI wires it.
+
+         WHERE THE SIGNALLING-BASE PROOF ACTUALLY LIVES: not here. This
+         law composes over NO base at all (the standalone case, §8
+         decision 83's second state), so there is no source for a
+         resolution to touch. `SnapshotAndFetchTrapSource` signals ON
+         `snapshot`, which composition itself must call, so it can never
+         be this law's base. The no-I/O-while-seeding proof over that
+         real trap is `testSeededWithAnswersANewDecoratorAndPerformsNoIo`
+         above, and the sealed-value proof is
+         `testTheSnapshotIsSealedAgainstALaterSiblingEdit` below. This
+         comment said otherwise as frozen; it was describing a mechanism
+         the code did not wire."
         | snapshot outcome manifest work |
         self sibling: 'po-purity-text'.
         work := self workDirNamed: 'po-purity-work'.
         snapshot := (self overlayOver: nil
             paths: (Array with: (self pathDependencyOn: 'po-purity-text'))
             in: work) snapshot.
-        ExecFixtures writePackage: (PathDepFixtures rootDeclaring:
-            (PathDepFixtures declaredPathFor: 'po-purity-text')) in: work.
+        ExecFixtures writePackage: 'Parley define: [:pkg |
+    pkg
+        name: ''my-app'';
+        version: ''1.0.0'';
+        fileIns: #(''App.st'');
+        dependency: ''kernel-text'' constraint: ''*'' ]',
+            SourceFixtures newline in: work.
         manifest := ManifestFile load: work, '/Package.st'.
         outcome := (Resolver strategy: BacktrackingStrategy new)
             resolve: manifest against: snapshot.
@@ -478,7 +512,10 @@ live I/O mid-resolution.'>
                 outcome printString.
         self assert: (outcome versionOf: 'kernel-text')
             = (Version fromString: '1.2.0')
-            description: (outcome versionOf: 'kernel-text') printString
+            description: (outcome versionOf: 'kernel-text') printString.
+        self assert: (outcome sha256Of: 'kernel-text') = ''
+            description: 'an overlaid release carried a digest: ',
+                (outcome sha256Of: 'kernel-text') printString
     ]
 
     testTheSnapshotIsSealedAgainstALaterSiblingEdit [
