@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Parley loop harness — unified verification gate (phase-aware).
 #
-# Phase 1: deterministic hard-ban linters (AGENTS.md §2). Exit 101-104.
+# Phase 1: deterministic hard-ban linters (AGENTS.md §2). Exit 101-104,
+#          plus 105 — the finding-F23 toolchain lint (with:-chain cap).
 # Phase 2: axiomatic SUnit suite via scripts/run-tests.st on gst 3.2.5.
 #
 # TDD phases (read from the 'phase:' line of .parley/scope; the
@@ -150,6 +151,31 @@ if MATCHES=$(grep -rPzl '\b(\w+):\s*(\w+)\s*\[\s*\1\s*:=\s*\2\s*\.?\s*\]' src/do
     "DEFECT: Public mutation setter detected in src/domain/ (files listed below)." \
     "All domain objects are immutable: class-side constructors validate and normalize;" \
     "every operation answers a new instance." \
+    "$MATCHES"
+fi
+
+# Ban 105 — no single receiver takes six or more with: keywords in one send
+# (finding F23; not an AGENTS.md §2 ban — a toolchain-fact lint). 3.2.5's
+# kernel caps the with:-family constructors at FIVE arguments; a sixth is a
+# doesNotUnderstand at the FIRST send of the composed method, and it cost a
+# full verifier increment in Sprint 20 (881 -> 605 in one run) after being
+# recorded in five comments that never reached the hand that needed them.
+# Textual, bound stated (decision 43's standard): comments and strings are
+# stripped, parenthesized sends collapse to a placeholder so nested chains
+# count PER RECEIVER, and '.', ';', '[' and ']' break a chain — so the flat
+# shape that bites is caught, not every conceivable spelling (a chain whose
+# argument is a multi-statement block escapes; none has ever been written).
+WITH_CHAIN_SCAN='undef $/; $_ = <>;
+s/"[^"]*"/ /gs; s/\x27[^\x27]*\x27/ S /gs; s/\s+/ /g;
+1 while s/\(([^()]*)\)/ A /g;
+print "$ARGV\n" if /(\bwith: [^.;\[\]]*?){5}\bwith:/;'
+MATCHES=$(find src tests -name '*.st' -exec perl -e "$WITH_CHAIN_SCAN" {} \; 2>/dev/null || true)
+if [[ -n "$MATCHES" ]]; then
+  fail_hard_ban 105 \
+    "DEFECT: six or more consecutive 'with:' keywords sent to ONE receiver (files below)." \
+    "GNU Smalltalk 3.2.5 caps the with:-family constructors at FIVE arguments; a sixth is a" \
+    "doesNotUnderstand at the first send of the composed method (finding F23)." \
+    "Recovery: group the elements — an Array of Arrays — as verbRows' own comment records." \
     "$MATCHES"
 fi
 
