@@ -48,6 +48,8 @@ Parley define: [:pkg |
 
 **The byte-preservation laws compare against hand-written oracles**, never oracles computed by the same splice — Sprint 13's rule, and it binds harder for deletion: an oracle produced by the splice under test cannot fail when the splice is wrong, and the wrong splice here is precisely the one that yields an unloadable file.
 
+**The recognizer covers `dependency:constraint:` clauses, and the bound is stated rather than silent** (Sprint 21). A `dependency:path:` or `devDependency:constraint:` clause is a shape `add` and `remove` do not recognize, so both answer the settled refusal — the exact text to paste or delete, the file byte-identical — which is honest and costs the operator one hand edit. Teaching the recognizer the two new clause kinds is deferred with a trigger: the first user who reports that refusal as a blocker (the roadmap §3 constraint-editing row's own shape).
+
 **Fetched archives are outside that claim, and deliberately so** (narrowed at the Sprint 13 close-out; §8 decision 49). An archive a failed `add` had already fetched may remain in the content-addressed store, where it is **inert until a lock pins it**: it is hash-verified, it is re-used rather than re-fetched on the next run, and no verb reports store contents, so it is not observable project state. The pair above is what the atomicity claim is *for* — it is the pair that can manufacture the `PinVerification` failure — and the store cannot produce that state however it is left. Erasing an archive to satisfy a wider sentence would add machinery to delete something inert that another pin may legitimately share. If the store ever becomes observable as state — pruning, a size budget, a verb that reports contents — this narrowing is what reopens.
 
 ### 2.2 The toolchain's own voice: capture, then re-voice — never echo, never silence (Sprint 18)
@@ -97,6 +99,8 @@ Each vocabulary word is a **real method with a method comment** (comments become
 | `fileIns:` | array of `.st` file names | required, non-empty; **order is semantic** (§6) |
 | `dependency:constraint:` | `(name, constraintString)` pair | constraint parsed at `build` |
 | `dependency:` | `(name, '*')` | sugar for an unconstrained dependency |
+| `dependency:path:` | `(name, pathString)` pair | **path dependency** (Sprint 21, §8 decisions 68/69) — root-manifest-only; never serialized into an entry; the path is recorded as the author's declared string, resolved relative to the manifest's directory at use |
+| `devDependency:constraint:` | `(name, constraintString)` pair, into the dev collection | **dev dependency** (Sprint 21, §8 decision 69) — root-manifest-only; never serialized into an entry; constraint parsed at `build` |
 
 Vocabulary messages **record raw strings only** — no parsing mid-cascade. All parsing and validation happens in `build` so the author receives one complete error report per run.
 
@@ -121,8 +125,9 @@ Performs, in one pass, collecting ALL problems before failing:
 1. Required fields present (`name`, `version`, non-empty `fileIns`).
 2. Package name format: lowercase letters, digits, hyphens; must start with a letter.
 3. `version` parses via `Version fromString:`.
-4. Every dependency constraint parses via `VersionConstraint fromString:`.
-5. No duplicate dependency names; no self-dependency.
+4. Every dependency constraint parses via `VersionConstraint fromString:` — dev dependencies included (Sprint 21).
+5. No duplicate dependency names; no self-dependency. **Both rules quantify over all three declared kinds together** (Sprint 21): a name may be declared as an index dependency, a path dependency or a dev dependency, and only as one of them, and never as the package itself.
+6. Every path dependency's path is a non-empty String (Sprint 21, §8 decision 69). The path is **recorded raw** — existence is not this pass's question; a missing or unreadable sibling is diagnosed where the path is *used* (Doc C §1.3), naming the sibling's path.
 
 On any problems: signal **one `ManifestError`** carrying the full problem list (an author fixes a file per edit-run cycle, not per error). On success: answer an immutable `LibraryManifest`. Immutability begins at that exact instant.
 
@@ -130,9 +135,9 @@ On any problems: signal **one `ManifestError`** carrying the full problem list (
 
 ## 4. Manifests
 
-- **`LibraryManifest`** — name, version (`Version`), summary/author/license, fileIns (ordered), dependencies (collection of `Dependency` with **loose** constraints). Immutable; read-only accessors.
+- **`LibraryManifest`** — name, version (`Version`), summary/author/license, fileIns (ordered), dependencies (collection of `Dependency` with **loose** constraints). From Sprint 21 (§8 decision 69) it also carries **pathDependencies** (collection of `Parley.PathDependency`, `src/domain/` — an immutable `(name, declared path string)` value) and **devDependencies** (ordinary `Dependency` values in their own collection). **Both collections are root-manifest-only vocabulary and are never serialized into an index entry** — the entry writer reads neither. Immutable; read-only accessors.
 - **`ApplicationManifest`** — a `LibraryManifest` plus the application's lockfile association. Applications commit lockfiles; libraries never ship pins as constraints (the Bundler Gemfile/gemspec lesson — prevents graph deadlock).
-- `LibraryManifest class >> fromIndexEntry:` reconstructs a manifest from a parsed index entry; constraints re-parse through `VersionConstraint fromString:`, landing in the exact same normalized objects the builder produced. **Author path and resolver path converge on identical values** — provable via the round-trip law (§7).
+- `LibraryManifest class >> fromIndexEntry:` reconstructs a manifest from a parsed index entry; constraints re-parse through `VersionConstraint fromString:`, landing in the exact same normalized objects the builder produced. **Author path and resolver path converge on identical values** — provable via the round-trip law (§7). It reconstructs **no path or dev dependency**, because an entry never carries one (§8 decision 69): both collections are empty on that path by construction.
 
 ---
 
@@ -169,6 +174,8 @@ Fixed key order; ALL keys always present (empty string / empty array when unset)
   #archive #('kernel-json-0.3.1.star' #sha256 'ab12…'))
 ```
 
+**This schema does not move for Sprint 21** (§8 decision 69): `path:` and `devDependency:` are root-manifest-only vocabulary and are never serialized, so `#'parley-index' 1` is byte-identical and every entry published to date stays valid. `publish` **refuses** a manifest declaring a path dependency (Doc F §1) rather than dropping it, and dev dependencies never reach the writer.
+
 ### 5.3 Lockfile schema (`#'parley-lock'`, format 1)
 
 ```smalltalk
@@ -180,6 +187,14 @@ Fixed key order; ALL keys always present (empty string / empty array when unset)
 ```
 
 `packages` sorted by name; exact versions only (three components), no constraints. Each `#sha256` is **64 lowercase hex characters, or the empty string** — validated as that shape from Sprint 11 (§7.1, §8 decision 42), so a mistyped digest is a lockfile diagnosis rather than a corruption report from the store. The empty string is not a mistyped digest but **recorded absence**: it is what the writer renders for a pin whose entry declares `#archive #()`, and it keeps reaching the settled `Installer` diagnosis (`no published archive — the resolution carries an empty sha256`) rather than being rejected at the lock boundary. A boundary that refused it would refuse Parley's own output.
+
+**A pin no index supplied records its provenance instead of a digest** (Sprint 21, §8 decision 69). The pin tuple has one declared **alternative form** beside the settled one:
+
+```smalltalk
+#('kernel-text' '1.2.0' #path '../kernel-text')
+```
+
+Third position the literal symbol `#path`, fourth a **non-empty String** — the body-shape validation (Doc E §4.1) accepts exactly the two forms and nothing between them. The recorded path is the **author's declared string, byte-preserved** — a lock travels with its checkout, so it carries `'../kernel-text'` and never one machine's absolute expansion — and is **resolved relative to the manifest's directory at use**. The tag, the format version and the two keys are unchanged: every pre-Sprint-21 lock is valid unchanged, and a lock written for a manifest with no path dependencies is byte-identical to what Sprint 20 wrote. Dev-dependency pins are deliberately **not** marked in the lock — they land in `#packages` undistinguished, and any future per-pin dev question derives from the manifest, never from a lock key (§8 decision 69 states the condition a re-proposal must meet). `install`'s treatment of a `#path` pin is **no-fetch, no-store, no-register**, distinct from the empty-sha256 diagnosis above, which keeps governing exactly the index pins it was written about.
 
 ### 5.4 Canonical rendering (byte-stability)
 
