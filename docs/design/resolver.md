@@ -58,6 +58,13 @@ Resolution answers exactly one of two **values** (never search-loop exceptions):
 
 The strategy seam: `Resolver strategy: BacktrackingStrategy new`. A future `PubGrubStrategy` must be an additive swap — this doc's value objects (`Term`, `Incompatibility`) are PubGrub's clauses; only the loop changes.
 
+**The snapshot answers two enumerations for the reporting verbs, and both are additive** (Sprint 20, Doc E §4.1). The accessors above are all keyed by a name the caller already holds, which is right for resolution and insufficient for a verb that must *find* a name or *list* what a name has. So the sealed value answers, in addition and changing nothing:
+
+- **the package names it holds**, sorted — the enumeration `search` needs and the one nothing previously offered. It is an accessor on the snapshot rather than a new `PackageSource` selector, because a snapshot is a value every source already answers and adding to the protocol would change three settled sources for a question none of them needs to be asked.
+- **every version of a name, retired ones included** — deliberately **distinct from `versionsOf:`**, which excludes retired releases by design (§2.1) so the resolver never has to know they exist. `info` reports on what an index *published*, which is a different question from what resolution may *select*, and collapsing the two would either leak retirement into the search loop or hide it from the operator.
+
+**Neither is reachable from the `Resolver`**, and that is the point: they exist for verbs that read and explain (§8 decision 40), the resolver calls neither, and the purity contract above is untouched. Package **metadata** — summary, author, license — is *not* here and must not be added: a release record is `{Version. sha256. dependencies}`, and metadata is answered by the source protocol's settled `manifestFor:version:` (§1).
+
 ### 2.1 Retirement lives in the snapshot, and the resolver never learns about it (Sprint 10)
 
 A retired release (Doc B §5.5) must be invisible to fresh resolution and still reachable for an existing lock. Both fall out of the snapshot's existing shape with **zero resolver change**, and that is the point — the resolver stays a pure function of (root manifest, snapshot), unaware that retirement exists:
