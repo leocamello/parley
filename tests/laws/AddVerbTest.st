@@ -547,7 +547,9 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
                 with: '--source' with: index)
             in: work runner: RecordingRunner new.
         self assert: result exitCode = 2.
-        self assert: result lines = ManifestEditFixtures addUsageLines.
+        self assert: result lines = ManifestEditFixtures addUsageLines
+            description: 'add with no constraint answered ',
+                result lines printString.
         self assert: (self packageIn: work)
             = ManifestEditFixtures withDependenciesContents
     ]
@@ -562,6 +564,8 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
             in: work runner: RecordingRunner new.
         self assert: result exitCode = 2.
         self assert: result lines = ManifestEditFixtures addUsageLines
+            description: 'add with three arguments answered ',
+                result lines printString
     ]
 
     testAddWithNoSourceAnswersUsage [
@@ -576,8 +580,11 @@ deleted-held-pin diagnosis on both add and update, and the add <pkg>
             target: 'tmp/parley-add-nosource-target'
             runner: runner) run: #('add' 'tool-a' '^1.0').
         self assert: result exitCode = 2.
-        self assert: result lines = ManifestEditFixtures addUsageLines.
-        self assert: (CommandLineFixtures does: (result lines at: 2)
+        self assert: result lines
+            = ManifestEditFixtures addNoSourceUsageLines
+            description: 'a source-less add answered ', result lines printString.
+        self assert: (CommandLineFixtures does:
+            (GrammarFixtures verbsRowIn: result lines)
             include: 'add <pkg> <constraint>')
             description: 'the verbs: line does not name add <pkg> <constraint>'.
         self assert: runner commands isEmpty

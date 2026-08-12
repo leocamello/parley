@@ -472,13 +472,37 @@ stream close', SourceFixtures newline
     "---- pinned git commands and the git failure problem ----"
 
     PublishFixtures class >> cloneCommandFor: aRepoPath cache: aCacheDir [
+        "AMENDED AT SPRINT 20's RED (issue #22, finding F19, §8 decision
+         77): the composed line gains --quiet. git wrote `Cloning into
+         '<cache>'` and `done.` to stderr on every cold snapshot, naming
+         a .parley/git/<sha256> path the operator never chose — the
+         plumbing-chatter family Sprint 19 abolished everywhere else,
+         at the one composer that sprint's enumeration missed.
+
+         THE FLAG SILENCES CHATTER AND NOT FAILURE, which is the half
+         worth stating: probed on this exact shape, a clone of a
+         repository that does not exist still answers
+         `fatal: repository ... does not exist` at exit 128.
+
+         THIS ORACLE MOVES A SHIPPED SENTENCE, not only a test
+         expectation: gitFailureProblemFor:code: EMBEDS the command
+         line, so a failed clone now names `git clone --quiet ...` to
+         the operator. That is correct — the diagnosis names the command
+         actually run — and it is declared because it is
+         operator-visible."
         <category: 'pinned wordings'>
-        ^'git clone ', aRepoPath, ' ', aCacheDir
+        ^'git clone --quiet ', aRepoPath, ' ', aCacheDir
     ]
 
     PublishFixtures class >> pullCommandFor: aCacheDir [
+        "AMENDED AT SPRINT 20's RED: the same flag on the other composed
+         line. A warm cache answered `Already up to date.` on STDOUT,
+         above Parley's own answer, and a warm cache whose index had
+         MOVED answered a diffstat of the index repository's files —
+         the shape Sprint 19 existed to abolish, on the stream the
+         record called clean."
         <category: 'pinned wordings'>
-        ^'git -C ', aCacheDir, ' pull --ff-only'
+        ^'git -C ', aCacheDir, ' pull --ff-only --quiet'
     ]
 
     PublishFixtures class >> gitFailureProblemFor: aCommandString code: anInteger [

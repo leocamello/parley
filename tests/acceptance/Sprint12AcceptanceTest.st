@@ -392,9 +392,13 @@ identical fixture.'>
             runner: RecordingRunner new) run: #('update' 'tool-a').
         self assert: result exitCode = 2.
         self assert: result lines
-            = SelectiveUpdateFixtures selectiveUsageLines.
-        self assert: ((result lines at: 2) indexOf: $|) > 0.
-        self assert: (CommandLineFixtures does: (result lines at: 2)
+            = SelectiveUpdateFixtures selectiveNoSourceUsageLines
+            description: 'a source-less update <pkg> answered ',
+                result lines printString.
+        self assert: ((GrammarFixtures verbsRowIn: result lines)
+            indexOf: $|) > 0.
+        self assert: (CommandLineFixtures does:
+            (GrammarFixtures verbsRowIn: result lines)
             include: 'update [<pkg>]')
             description: 'the verbs: line does not name update [<pkg>]'.
         work := self pinnedToolsWork: 's12-s12-work'.
@@ -406,6 +410,8 @@ identical fixture.'>
         self assert: result exitCode = 2.
         self assert: result lines
             = SelectiveUpdateFixtures selectiveUsageLines
+            description: 'update with two packages answered ',
+                result lines printString
     ]
 ]
 

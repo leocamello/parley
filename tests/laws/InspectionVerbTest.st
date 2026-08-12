@@ -335,7 +335,7 @@ and the argv grammar rows.'>
         | result |
         result := self resultOf: #() in: (self freshDir: 'ivt-usage-work').
         self assert: result exitCode = 2.
-        self assert: (result lines at: 2)
+        self assert: (GrammarFixtures verbsRowIn: result lines)
             = InspectionFixtures usageVerbsLine
     ]
 
@@ -344,17 +344,19 @@ and the argv grammar rows.'>
          three verbs take the source's snapshot, so all three are
          source-requiring: without a flag they answer the usage lines
          at exit 2, exactly as resolve does."
-        | work usage |
+        | work |
         work := self freshDir: 'ivt-nosource-work'.
-        usage := self resultOf: #() in: work.
         (Array
-            with: #('why' 'kernel-c')
-            with: #('tree')
-            with: #('check')) do: [:argv |
+            with: (Array with: #('why' 'kernel-c') with: 'why')
+            with: (Array with: #('tree') with: 'tree')
+            with: (Array with: #('check') with: 'check')) do: [:row |
                 | result |
-                result := self resultOf: argv in: work.
+                result := self resultOf: (row at: 1) in: work.
                 self assert: result exitCode = 2.
-                self assert: result lines = usage lines]
+                self assert: result lines = (GrammarFixtures
+                    usageAnswerFor: #needsIndex subject: (row at: 2))
+                    description: (row at: 1) printString, ' answered ',
+                        result lines printString]
     ]
 
     testAWrongArityInspectionVerbAnswersUsage [
@@ -362,20 +364,28 @@ and the argv grammar rows.'>
          why without a package, tree and check with a stray argument:
          unknown argv, the settled usage answer — and it must stay
          that way once the verbs exist."
-        | work index usage |
+        | work index |
         work := self pinnedWorkDir: 'ivt-arity-work'.
         index := self inspectionIndex: 'ivt-arity-index'.
-        usage := self resultOf: #() in: work.
         (Array
-            with: (Array with: 'why' with: '--source' with: index)
-            with: (Array with: 'tree' with: 'extra'
-                with: '--source' with: index)
-            with: (Array with: 'check' with: 'extra'
-                with: '--source' with: index)) do: [:argv |
-                | result |
-                result := self resultOf: argv in: work.
-                self assert: result exitCode = 2.
-                self assert: result lines = usage lines]
+            with: (Array
+                with: (Array with: 'why' with: '--source' with: index)
+                with: 'why')
+            with: (Array
+                with: (Array with: 'tree' with: 'extra'
+                    with: '--source' with: index)
+                with: 'tree')
+            with: (Array
+                with: (Array with: 'check' with: 'extra'
+                    with: '--source' with: index)
+                with: 'check')) do: [:row |
+                    | result |
+                    result := self resultOf: (row at: 1) in: work.
+                    self assert: result exitCode = 2.
+                    self assert: result lines = (GrammarFixtures
+                        usageAnswerFor: #wrongArguments subject: (row at: 2))
+                        description: (row at: 1) printString, ' answered ',
+                            result lines printString]
     ]
 ]
 

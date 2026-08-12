@@ -476,14 +476,16 @@ end to end so it cannot regress.'>
          else."
         | work |
         work := self freshDir: 's16-s11-work'.
-        ReadinessFixtures usageErrorArgvs do: [:argv |
+        ReadinessFixtures usageErrorRows do: [:row |
             | result |
-            result := self resultOf: argv in: work runner: TrapRunner new.
+            result := self resultOf: (row at: 1) in: work
+                runner: TrapRunner new.
             self assert: result exitCode = 2
-                description: argv printString, ' answered exit ',
+                description: (row at: 1) printString, ' answered exit ',
                     result exitCode printString.
-            self assert: result lines = ExecFixtures usageLines
-                description: argv printString, ' answered ',
+            self assert: result lines = (GrammarFixtures
+                usageAnswerFor: (row at: 2) subject: (row at: 3))
+                description: (row at: 1) printString, ' answered ',
                     result lines printString]
     ]
 
@@ -625,9 +627,9 @@ end to end so it cannot regress.'>
          decision 45 consumer constraint rather than instead of it, and
          --help wherever --version appears."
         | verbs readme undocumented |
-        verbs := PublishLayoutFixtures verbsIn:
-            ((self resultOf: #() in: (self freshDir: 's16-s15-work')
-                runner: TrapRunner new) lines at: 2).
+        verbs := PublishLayoutFixtures verbsIn: (GrammarFixtures
+            verbsRowIn: (self resultOf: #() in: (self freshDir: 's16-s15-work')
+                runner: TrapRunner new) lines).
         self deny: verbs isEmpty
             description: 'no verbs were extracted - the scenario would be vacuous'.
         readme := PublishLayoutFixtures readmeSource.
@@ -672,7 +674,8 @@ end to end so it cannot regress.'>
             self assert: result exitCode = 2
                 description: argv printString, ' answered exit ',
                     result exitCode printString.
-            self assert: result lines = ExecFixtures usageLines
+            self assert: (result lines copyFrom: 2 to: result lines size)
+                = ExecFixtures usageLines
                 description: argv printString, ' answered ',
                     result lines printString.
             self deny: (self exists:

@@ -514,11 +514,17 @@ tearDown.'>
             storeRoot: 'tmp/parley-s19-store'
             target: 'tmp/parley-s19-target'
             runner: RecordingRunner new.
-        #(#('conjure') #('exec')) do: [:argv |
-            | result |
-            result := cli run: argv.
-            self assert: result exitCode = 2.
-            self assert: result lines = ExecFixtures usageLines].
+        (Array
+            with: (Array with: #('conjure') with: #unknownVerb with: 'conjure')
+            with: (Array with: #('exec') with: #wrongArguments with: 'exec'))
+                do: [:row |
+                    | result |
+                    result := cli run: (row at: 1).
+                    self assert: result exitCode = 2.
+                    self assert: result lines = (GrammarFixtures
+                        usageAnswerFor: (row at: 2) subject: (row at: 3))
+                        description: (row at: 1) printString,
+                            ' answered ', result lines printString].
         noSource := self cliIn: 'tmp/parley-s19-work'
             source: nil
             storeRoot: 'tmp/parley-s19-store'
@@ -528,7 +534,10 @@ tearDown.'>
             | result |
             result := noSource run: (Array with: verb).
             self assert: result exitCode = 2.
-            self assert: result lines = ExecFixtures usageLines]
+            self assert: result lines = (GrammarFixtures
+                usageAnswerFor: #needsIndex subject: verb)
+                description: verb, ' without a source answered ',
+                    result lines printString]
     ]
 ]
 

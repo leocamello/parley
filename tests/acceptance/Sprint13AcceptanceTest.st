@@ -471,8 +471,11 @@ both add and update.'>
             target: 'tmp/parley-s13-s12-target'
             runner: RecordingRunner new) run: #('add' 'tool-a' '^1.0').
         self assert: result exitCode = 2.
-        self assert: result lines = ManifestEditFixtures addUsageLines.
-        self assert: (CommandLineFixtures does: (result lines at: 2)
+        self assert: result lines
+            = ManifestEditFixtures addNoSourceUsageLines
+            description: 'a source-less add answered ', result lines printString.
+        self assert: (CommandLineFixtures does:
+            (GrammarFixtures verbsRowIn: result lines)
             include: 'add <pkg> <constraint>')
             description: 'the verbs: line does not name add <pkg> <constraint>'.
         work := self track:
@@ -482,12 +485,16 @@ both add and update.'>
                 with: 'add' with: 'tool-a' with: '--source' with: index)
             in: work runner: RecordingRunner new.
         self assert: result exitCode = 2.
-        self assert: result lines = ManifestEditFixtures addUsageLines.
+        self assert: result lines = ManifestEditFixtures addUsageLines
+            description: 'add with no constraint answered ',
+                result lines printString.
         result := self resultOf: (Array with: 'add' with: 'a' with: 'b'),
                 (Array with: 'c' with: '--source' with: index)
             in: work runner: RecordingRunner new.
         self assert: result exitCode = 2.
-        self assert: result lines = ManifestEditFixtures addUsageLines.
+        self assert: result lines = ManifestEditFixtures addUsageLines
+            description: 'add with three arguments answered ',
+                result lines printString.
         self assert: (self packageIn: work)
             = ManifestEditFixtures withDependenciesContents
             description: 'a usage answer touched the manifest'

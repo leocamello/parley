@@ -693,28 +693,38 @@ labels.'>
     ]
 
     SelectiveUpdateFixtures class >> usageVerbsLine [
-        "What the verbs: usage line becomes when update learns its
-         optional package. ExecFixtures usageLines is re-pinned to
-         match in GREEN, together with the CLI change (the Sprint 11
-         precedent)."
+        "The verbs: row, pinned here as a literal at Sprint 12's RED
+         when update learned its optional package.
+
+         AMENDED AT SPRINT 20's RED (issue #22): it delegates to the one
+         oracle and locates the row by its start. A second literal copy
+         of one sentence is a mover no `grep ExecFixtures usageLines`
+         can find, and this suite carried five of them."
         <category: 'pinned wordings'>
-        ^'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
+        ^GrammarFixtures usageVerbsLine
     ]
 
     SelectiveUpdateFixtures class >> selectiveUsageLines [
-        "The full pinned usage block with the new verbs: line — the
-         other lines are the settled ones, --index re-pinned at Sprint
-         14 and --layout at Sprint 15 (the flags: block grew; the
-         verbs: line did not, because --layout is a flag on a settled
-         verb)."
+        "The whole usage answer its two laws drive: `update` with more
+         arguments than the grammar takes, WITH a source wired.
+
+         AMENDED AT SPRINT 20's RED: a usage error is one REASON LINE
+         followed by the block (§8 decision 79), and the ground here is
+         the arity — `update a b` names a verb the tool really has.
+
+         ITS TWO NO-SOURCE CONSUMERS MOVED TO THE SIBLING BELOW:
+         `update tool-a` has exactly the arguments the grammar takes and
+         lacks only an index, so its ground is #needsIndex. The two were
+         the same sentence before this sprint and are two different
+         sentences after it, which is the whole of §8 decision 81."
         <category: 'pinned wordings'>
-        ^(Array
-            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
-            with: self usageVerbsLine
-            with: 'flags: --source <dir>  index entries in a local directory'
-            with: '       --git <repo>    index entries in a git repository'
-            with: '       --index <base>  index entries fetched per package from a sparse index'),
-            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
+        ^GrammarFixtures usageAnswerFor: #wrongArguments subject: 'update'
+    ]
+
+    SelectiveUpdateFixtures class >> selectiveNoSourceUsageLines [
+        "The answer for a well-formed selective update with no index."
+        <category: 'pinned wordings'>
+        ^GrammarFixtures usageAnswerFor: #needsIndex subject: 'update'
     ]
 ]
 

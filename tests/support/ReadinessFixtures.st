@@ -242,7 +242,7 @@ Stateless; uniqueness comes from per-test labels.'>
     ]
 
     ReadinessFixtures class >> usageErrorArgvs [
-        "The settled usage-error grammar this sprint must leave exactly
+        "The settled usage-error grammar Sprint 16 had to leave exactly
          where it found it: no argv at all, an unknown verb, and a
          TRAILING question flag on a verb. Failing to say what you want
          is an error even though asking for help is not, and the
@@ -251,11 +251,35 @@ Stateless; uniqueness comes from per-test labels.'>
          silently change without touching a line of the laws that rest
          on it."
         <category: 'question flags'>
+        ^self usageErrorRows collect: [:row | row at: 1]
+    ]
+
+    ReadinessFixtures class >> usageErrorRows [
+        "THE SAME ARGVS, EACH WITH THE GROUND IT NOW ANSWERS FOR, and
+         its subject: (argv, ground, subject).
+
+         AMENDED AT SPRINT 20's RED (issue #22, §8 decisions 79 and 81).
+         The list above was a list of argvs because every one of them
+         answered BYTE-IDENTICAL output; once a usage error names what
+         was wrong, they stop being interchangeable and the fixture has
+         to say which ground each one is.
+
+         THE LAST TWO ARE THE FOURTH GROUND, and the ruling that
+         restored it. This fixture's own comment calls them `a trailing
+         question flag on a verb`, which describes the ARGV and not the
+         GROUND: `resolve --help` names a verb the tool really has, and
+         probed with a source wired it STILL answers usage — so its
+         ground is the arity and never the index."
+        <category: 'question flags'>
         ^(Array
-            with: #()
-            with: (Array with: 'nonsense')
-            with: (Array with: 'resolve' with: '--help'))
-            , (Array with: (Array with: 'resolve' with: '--version'))
+            with: (Array with: #() with: #noVerb with: '')
+            with: (Array with: (Array with: 'nonsense')
+                with: #unknownVerb with: 'nonsense'))
+            , (Array
+                with: (Array with: (Array with: 'resolve' with: '--help')
+                    with: #wrongArguments with: 'resolve')
+                with: (Array with: (Array with: 'resolve' with: '--version')
+                    with: #wrongArguments with: 'resolve'))
     ]
 
     ReadinessFixtures class >> stateCreatingUsageArgvs [

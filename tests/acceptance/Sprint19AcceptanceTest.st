@@ -444,8 +444,12 @@ half-succeeding manifest closed, and the README.'>
             description: 'a source-less resolve answered exit ',
                 result exitCode printString, ': ',
                 result lines printString.
-        self assert: result lines = settled lines
-            description: 'the usage lines moved: ', result lines printString
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #needsIndex subject: 'resolve')
+            description: 'the usage lines moved: ', result lines printString.
+        self assert: (result lines copyFrom: 2 to: result lines size)
+            = (settled lines copyFrom: 2 to: settled lines size)
+            description: 'the two usage answers stopped sharing the block'
     ]
 
     "---- S9: all three declared flags, honoured identically ----"

@@ -227,7 +227,9 @@ together are a usage error.'>
             run: (Array with: 'resolve' with: '--source' with: index
                 with: '--git') , (Array with: repo).
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines.
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #bothSourceFlags subject: '')
+            description: 'two source flags answered ', result lines printString.
         self deny: (self exists: work, '/parley.lock')
             description: 'a usage error resolved something'.
         self deny: (self exists: (LockBoundaryFixtures gitCacheRootIn: work))
@@ -245,7 +247,9 @@ together are a usage error.'>
             run: (Array with: 'resolve' with: '--git' with: repo
                 with: '--source') , (Array with: index).
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #bothSourceFlags subject: '')
+            description: 'two source flags answered ', result lines printString
     ]
 
     "---- the settled flag does not move ----"

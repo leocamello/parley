@@ -359,20 +359,34 @@ stream close', SourceFixtures newline
     "---- pinned CLI wordings (posted on issue #8) ----"
 
     ExecFixtures class >> usageLines [
-        "The pinned usage answer: SIX lines, exit code 2. The verbs:
-         line gained the three inspection verbs at Sprint 11 (issue
-         #13) and update's optional package at Sprint 12 (issue #14);
-         the header and flags: lines gained --index at Sprint 14
-         (issue #16); the flags: block gained --layout at Sprint 15
-         (issue #17), while the verbs: line did NOT move, because
-         --layout is a flag on a settled verb and no verb moves this
-         sprint — each re-pin sanctioned at its RED review and applied
-         in GREEN with the class change, extending the settled block
-         rather than replacing it."
+        "THE BLOCK: six lines, and from Sprint 20 the ONE definition of
+         it in the whole suite. The verbs: line gained the three
+         inspection verbs at Sprint 11 (issue #13) and update's optional
+         package at Sprint 12 (issue #14); the header and flags: lines
+         gained --index at Sprint 14 (issue #16); the flags: block
+         gained --layout at Sprint 15 (issue #17), while the verbs: line
+         did not move, because --layout is a flag on a settled verb.
+
+         SPRINT 20 (issue #22) re-pins the verbs: line from TEN verbs to
+         FOURTEEN — remove, search, info and outdated join it in Doc E
+         §4's own grammar order — and re-pins it IN RED rather than in
+         GREEN, where the operator can review the new row beside the
+         laws that rest on it.
+
+         WHAT THIS FIXTURE STOPPED BEING IS ALSO PART OF THE RE-PIN. It
+         is no longer `the whole usage answer`: under §8 decision 79 a
+         usage error is one REASON LINE followed by this block, and
+         --help is this block ALONE at exit 0. Its twenty consumers were
+         amended in the same change, and the four literal copies of this
+         block or its verbs row that lived in ManifestEditFixtures,
+         SelectiveUpdateFixtures, InspectionFixtures and
+         ReleaseHardeningTest now delegate here — five copies of one
+         sentence were five movers no oracle grep could see, which is
+         the F18 lesson this sprint paid for."
         <category: 'pinned wordings'>
         ^(Array
             with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
-            with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
+            with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | remove <pkg> | search <term> | info <pkg> | outdated | exec <script> | publish <dir> | why <pkg> | tree | check'
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
             with: '       --index <base>  index entries fetched per package from a sparse index'),

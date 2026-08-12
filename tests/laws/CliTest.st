@@ -118,7 +118,9 @@ exec propagation — all over doubles, spawning nothing.'>
             runner: RecordingRunner new.
         result := cli run: #().
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines
+        self assert: result lines
+            = (GrammarFixtures usageAnswerFor: #noVerb subject: '')
+            description: 'an empty argv answered ', result lines printString
     ]
 
     testAnUnknownVerbAnswersUsage [
@@ -130,7 +132,9 @@ exec propagation — all over doubles, spawning nothing.'>
             runner: RecordingRunner new.
         result := cli run: #('conjure').
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #unknownVerb subject: 'conjure')
+            description: 'an unknown verb answered ', result lines printString
     ]
 
     testExecWithoutAScriptAnswersUsage [
@@ -143,7 +147,9 @@ exec propagation — all over doubles, spawning nothing.'>
             runner: runner.
         result := cli run: #('exec').
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines.
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #wrongArguments subject: 'exec')
+            description: 'exec without a script answered ', result lines printString.
         self assert: runner commands = #()
     ]
 
@@ -158,7 +164,10 @@ exec propagation — all over doubles, spawning nothing.'>
             | result |
             result := cli run: (Array with: verb).
             self assert: result exitCode = 2.
-            self assert: result lines = ExecFixtures usageLines]
+            self assert: result lines = (GrammarFixtures
+                usageAnswerFor: #needsIndex subject: verb)
+                description: verb, ' without a source answered ',
+                    result lines printString]
     ]
 
     "---- S10: init ----"

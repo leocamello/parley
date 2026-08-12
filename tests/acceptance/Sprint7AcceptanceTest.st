@@ -444,7 +444,10 @@ under tmp/ and are removed recursively in tearDown.'>
             runner: RecordingRunner new.
         result := cli run: #('publish').
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #wrongArguments subject: 'publish')
+            description: 'publish without a directory answered ',
+                result lines printString
     ]
 
     "---- S18: the ecosystem loop closes (the sprint's exit) ----"

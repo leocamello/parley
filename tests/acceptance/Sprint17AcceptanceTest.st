@@ -835,9 +835,9 @@ location contract.'>
          documented: the permission diagnostics, and the installation
          route, which was pointless to document while it was broken."
         | verbs readme undocumented |
-        verbs := PublishLayoutFixtures verbsIn:
-            ((self resultOf: #() in: (self freshDir: 's17-s17-work')
-                runner: TrapRunner new) lines at: 2).
+        verbs := PublishLayoutFixtures verbsIn: (GrammarFixtures
+            verbsRowIn: (self resultOf: #() in: (self freshDir: 's17-s17-work')
+                runner: TrapRunner new) lines).
         self deny: verbs isEmpty
             description: 'no verbs were extracted - the scenario would be vacuous'.
         readme := PublishLayoutFixtures readmeSource.

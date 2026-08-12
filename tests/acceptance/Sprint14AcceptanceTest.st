@@ -528,13 +528,14 @@ end-to-end exit criterion.'>
                 with: '--source') , (Array with: base)
             runner: TrapRunner new.
         self assert: usage exitCode = 2.
-        self assert: (usage lines at: 1)
+        self assert: (GrammarFixtures headerRowIn: usage lines)
             = SparseIndexFixtures usageHeaderLine.
         self assert: (usage lines includes:
             SparseIndexFixtures indexFlagUsageLine)
             description: 'no flags: line describes --index'.
-        self assert: (usage lines at: 2) = (ExecFixtures usageLines at: 2)
-            description: 'the verbs: line moved, and no verb moves this sprint'.
+        self assert: (GrammarFixtures verbsRowIn: usage lines)
+            = GrammarFixtures usageVerbsLine
+            description: 'the verbs: line is not the block''s own'.
         usage := self runIn: work
             argv: (Array with: 'resolve' with: '--git' with: base
                 with: '--index') , (Array with: baseUrl)

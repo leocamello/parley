@@ -397,20 +397,38 @@ update <pkg> with its over-narrowing guard on each.'>
     ]
 
     testTheUsageLinesDidNotMove [
-        "--help prints the EXISTING usage block and adds no line to it,
-         so the pinned oracle needs no re-pin: the same lines the CLI
-         already answers for an argv that says nothing, at a different
-         exit code. Asserted against what the tool answers today, not
-         against a second copy."
-        | work help usage |
+        "STRENGTHENED AT SPRINT 20's RED, never deleted and never
+         weakened (issue #22, §8 decisions 79 and 81).
+
+         It asserted `help lines = usage lines`, and under decision 79
+         that claim GOES FALSE: a usage error now names what was wrong
+         on line one, while --help is a question and has nothing to
+         apologise for. The relationship the equality was really
+         protecting survives and is now stated directly - the usage
+         error's TAIL IS EXACTLY THE HELP BLOCK, and its first line is
+         the reason - which pins the shared text AND the added line in
+         one assertion where the old form pinned only equality.
+
+         It locates the block by its START rather than by an offset, so
+         a further line arriving above it fails here loudly instead of
+         silently changing what this law is about."
+        | work help usage tail |
         work := self freshDir: 'ready-help-samelines'.
         help := self resultOf: (Array with: ReadinessFixtures helpFlag)
             in: work runner: TrapRunner new.
         usage := self resultOf: #() in: work runner: TrapRunner new.
-        self assert: help lines = usage lines
-            description: '--help and the usage answer print different lines'.
         self assert: help exitCode = 0.
-        self assert: usage exitCode = 2
+        self assert: usage exitCode = 2.
+        self assert: usage lines size = (help lines size + 1)
+            description: 'the usage answer is ', usage lines size printString,
+                ' lines beside a block of ', help lines size printString.
+        tail := usage lines copyFrom: 2 to: usage lines size.
+        self assert: tail = help lines
+            description: 'the usage answer''s tail is not the help block: ',
+                tail printString.
+        self assert: usage lines first = GrammarFixtures noVerbReason
+            description: 'the usage answer opens with ',
+                usage lines first printString
     ]
 
     testTheHelpFlagSurvivesTheLeadingMarker [
@@ -463,14 +481,16 @@ update <pkg> with its over-narrowing guard on each.'>
          them."
         | work |
         work := self freshDir: 'ready-help-trailing'.
-        ReadinessFixtures usageErrorArgvs do: [:argv |
+        ReadinessFixtures usageErrorRows do: [:row |
             | result |
-            result := self resultOf: argv in: work runner: TrapRunner new.
+            result := self resultOf: (row at: 1) in: work
+                runner: TrapRunner new.
             self assert: result exitCode = 2
-                description: argv printString, ' answered exit ',
+                description: (row at: 1) printString, ' answered exit ',
                     result exitCode printString.
-            self assert: result lines = ExecFixtures usageLines
-                description: argv printString, ' answered ',
+            self assert: result lines = (GrammarFixtures
+                usageAnswerFor: (row at: 2) subject: (row at: 3))
+                description: (row at: 1) printString, ' answered ',
                     result lines printString]
     ]
 

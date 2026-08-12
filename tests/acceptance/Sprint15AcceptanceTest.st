@@ -484,11 +484,16 @@ end-to-end loop that closes v1.0.'>
         names := CommandLine publishLayouts collect: [:row | row at: 1].
         self assert: names = #('flat' 'sparse')
             description: 'publishLayouts declares ', names printString.
-        self assert: (usage lines at: 1)
+        self assert: (GrammarFixtures headerRowIn: usage lines)
             = SparseIndexFixtures usageHeaderLine
             description: 'the usage header moved'.
-        self assert: (usage lines at: 2) = (ExecFixtures usageLines at: 2)
-            description: 'the verbs: line moved, and no verb moves this sprint'.
+        self assert: (GrammarFixtures verbsRowIn: usage lines)
+            = GrammarFixtures usageVerbsLine
+            description: 'the verbs: line is not the block''s own'.
+        self assert: usage lines first = (GrammarFixtures
+            unknownLayoutReasonFor: 'nonsense')
+            description: 'an unrecognized layout answered ',
+                usage lines first printString.
         self assert: (usage lines includes:
             PublishLayoutFixtures layoutFlagUsageLine)
             description: 'no flags: line describes --layout'
@@ -628,9 +633,9 @@ end-to-end loop that closes v1.0.'>
          documentation fails the suite rather than quietly shipping
          undocumented."
         | verbs readme undocumented |
-        verbs := PublishLayoutFixtures verbsIn:
-            ((self runIn: (self freshDir: 's15-s15-work')
-                argv: #() runner: TrapRunner new) lines at: 2).
+        verbs := PublishLayoutFixtures verbsIn: (GrammarFixtures
+            verbsRowIn: (self runIn: (self freshDir: 's15-s15-work')
+                argv: #() runner: TrapRunner new) lines).
         self deny: verbs isEmpty
             description: 'no verbs were extracted - the scenario would be vacuous'.
         readme := PublishLayoutFixtures readmeSource.

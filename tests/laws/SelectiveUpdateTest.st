@@ -339,7 +339,9 @@ update [<pkg>] argv grammar.'>
         result := cli run: #('update' 'tool-a').
         self assert: result exitCode = 2.
         self assert: result lines
-            = SelectiveUpdateFixtures selectiveUsageLines.
+            = SelectiveUpdateFixtures selectiveNoSourceUsageLines
+            description: 'a source-less update <pkg> answered ',
+                result lines printString.
         self assert: runner commands isEmpty
     ]
 
@@ -356,7 +358,9 @@ update [<pkg>] argv grammar.'>
             in: work runner: RecordingRunner new.
         self assert: result exitCode = 2.
         self assert: result lines
-            = SelectiveUpdateFixtures selectiveUsageLines.
+            = SelectiveUpdateFixtures selectiveUsageLines
+            description: 'update with two packages answered ',
+                result lines printString.
         self assert: (self lockContentsIn: work)
             = SelectiveUpdateFixtures toolsLockString
     ]

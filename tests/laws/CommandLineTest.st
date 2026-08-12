@@ -165,7 +165,9 @@ diagnosis boundary.'>
         result := (self commandLineIn: work runner: RecordingRunner new)
             run: #('frobnicate' '--source' 'tmp/parley-nowhere').
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #unknownVerb subject: 'frobnicate')
+            description: 'an unknown verb answered ', result lines printString
     ]
 
     testASourceRequiringVerbWithoutASourceIsUsageAtExitTwo [
@@ -180,7 +182,9 @@ diagnosis boundary.'>
         result := (self commandLineIn: work runner: RecordingRunner new)
             run: #('resolve').
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines.
+        self assert: result lines = (GrammarFixtures
+            usageAnswerFor: #needsIndex subject: 'resolve')
+            description: 'a source-less resolve answered ', result lines printString.
         self deny: (File name: work, '/parley.lock') exists
     ]
 
@@ -365,7 +369,9 @@ diagnosis boundary.'>
         result := (self commandLineIn: work runner: RecordingRunner new)
             run: #().
         self assert: result exitCode = 2.
-        self assert: result lines = ExecFixtures usageLines
+        self assert: result lines
+            = (GrammarFixtures usageAnswerFor: #noVerb subject: '')
+            description: 'an empty argv answered ', result lines printString
     ]
 
     testNoFailingOutcomeAnswersExitZero [

@@ -224,12 +224,21 @@ guards.'>
     usageVerbsLine [
         "The CLI's own verbs line, read LIVE from the running tool
          rather than from a pinned fixture: the README is compared
-         against what the tool actually answers today."
+         against what the tool actually answers today.
+
+         AMENDED AT SPRINT 20's RED (issue #22, §8 decision 79): it read
+         `lines at: 2`, which stopped being the verbs row the moment a
+         reason line arrived above the block. The failure would not have
+         been loud in the useful way - indexOfSubstring: answers 0 when
+         absent, so verbsIn: would have sliced the HEADER and split it
+         on its three pipes, extracting `parley`, `--git` and `--index`
+         as verbs and then reporting them as undocumented. The row is
+         located by its own start instead."
         | result |
         result := self runIn: (self freshDir: 'readme-usage')
             argv: #()
             runner: TrapRunner new.
-        ^result lines at: 2
+        ^GrammarFixtures verbsRowIn: result lines
     ]
 
     testTheReadmeNamesEveryVerbTheUsageLineDeclares [

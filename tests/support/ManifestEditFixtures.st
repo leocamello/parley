@@ -755,30 +755,54 @@ Parley define: [:pkg |
     ]
 
     ManifestEditFixtures class >> usageVerbsLine [
-        "What the verbs: usage line becomes when the grammar gains add.
-         The position is Doc E §4's own grammar order, between update
-         and exec. ExecFixtures usageLines, SelectiveUpdateFixtures
-         usageVerbsLine and InspectionFixtures usageVerbsLine are
-         re-pinned to match in GREEN, together with the CLI change (the
-         Sprint 11/12 precedent)."
+        "The verbs: row. Sprint 13 pinned it here as a LITERAL, in the
+         RED that added add to the grammar, and the settled oracle was
+         re-pinned to match in GREEN.
+
+         AMENDED AT SPRINT 20's RED (issue #22): it delegates. A second
+         literal copy of one sentence is a mover no oracle grep can see
+         — `grep ExecFixtures usageLines` finds neither this method nor
+         its consumers — and this suite carried FIVE such copies until
+         the pre-RED ruling enumerated them. The row is located by its
+         START rather than by an offset, because §8 decision 79 forbids
+         a law claiming a neighbour's position.
+
+         AMENDED BY THE REVIEWER AT GATE A: it located the row with its
+         own inline detect:, which was a SIXTH implementation of the
+         locator in the sprint that removed the other five, and it
+         carried no ifNone: - so a block that lost its verbs row would
+         have failed here with 3.2.5's generic detect: error instead of
+         naming what was missing. It delegates like its two siblings."
         <category: 'pinned wordings'>
-        ^'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
+        ^GrammarFixtures usageVerbsLine
     ]
 
     ManifestEditFixtures class >> addUsageLines [
-        "The full pinned usage block with the new verbs: line - the
-         other lines are the settled ones, --index re-pinned at Sprint
-         14 and --layout at Sprint 15 (the flags: block grew; the
-         verbs: line did not, because --layout is a flag on a settled
-         verb)."
+        "The whole usage answer for an argv that names no verb Parley
+         has in that shape.
+
+         AMENDED AT SPRINT 20's RED: it is no longer the block alone. A
+         usage error is one REASON LINE followed by the block (§8
+         decision 79), and the four consumers of this fixture drive an
+         add argv of the wrong arity WITH a source wired — so the ground
+         is #wrongArguments and the subject is the verb. The block half
+         delegates to the one oracle.
+
+         ITS TWO NO-SOURCE CONSUMERS MOVED TO A SIBLING, because they
+         are a different ground and the ruling that split them is the
+         reason this sprint exists: `add tool-a ^1.0` has exactly the
+         arguments add takes and lacks only an index, and telling that
+         operator their arguments are wrong would be a sentence nothing
+         checked."
         <category: 'pinned wordings'>
-        ^(Array
-            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
-            with: self usageVerbsLine
-            with: 'flags: --source <dir>  index entries in a local directory'
-            with: '       --git <repo>    index entries in a git repository'
-            with: '       --index <base>  index entries fetched per package from a sparse index'),
-            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
+        ^GrammarFixtures usageAnswerFor: #wrongArguments subject: 'add'
+    ]
+
+    ManifestEditFixtures class >> addNoSourceUsageLines [
+        "The answer for a well-formed add with no index (§8 decision
+         81's #needsIndex ground)."
+        <category: 'pinned wordings'>
+        ^GrammarFixtures usageAnswerFor: #needsIndex subject: 'add'
     ]
 ]
 

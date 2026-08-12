@@ -268,14 +268,15 @@ lines name the flag while the verbs: line is unchanged.'>
         result := (CommandLine in: work runner: TrapRunner new)
             run: (Array with: 'frobnicate').
         self assert: result exitCode = 2.
-        self assert: (result lines at: 1)
+        self assert: (GrammarFixtures headerRowIn: result lines)
             = SparseIndexFixtures usageHeaderLine
             description: 'the usage header does not offer --index'.
         self assert: (result lines includes:
             SparseIndexFixtures indexFlagUsageLine)
             description: 'no flags: line describes --index'.
-        self assert: (result lines at: 2) = (ExecFixtures usageLines at: 2)
-            description: 'the verbs: line moved, and no verb moves this sprint'
+        self assert: (GrammarFixtures verbsRowIn: result lines)
+            = GrammarFixtures usageVerbsLine
+            description: 'the verbs: line is not the block''s own'
     ]
 ]
 

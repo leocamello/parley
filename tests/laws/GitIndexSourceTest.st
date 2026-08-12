@@ -11,11 +11,20 @@
      class-side construction, zero public setters, no value equality;
      construction is pathname-passive (no I/O, no process), so a
      source can be built before its repository exists;
-   - snapshot is the one git moment: 'git clone <repo> <cache>' when
-     the cache is ABSENT, 'git -C <cache> pull --ff-only' when it is
-     present, then the inner DirectorySource's snapshot — the pinned
-     command lines are PublishFixtures cloneCommandFor:cache: and
-     pullCommandFor:;
+   - snapshot is the one git moment: 'git clone --quiet <repo> <cache>'
+     when the cache is ABSENT, 'git -C <cache> pull --ff-only --quiet'
+     when it is present, then the inner DirectorySource's snapshot —
+     the pinned command lines are PublishFixtures cloneCommandFor:cache:
+     and pullCommandFor:. BOTH GAINED --quiet AT SPRINT 20 (issue #22,
+     finding F19, §8 decision 77): git wrote 'Cloning into <cache>' and
+     'done.' to stderr on every cold snapshot, 'Already up to date.' to
+     STDOUT on every warm one, and a whole diffstat of the index
+     repository's own files whenever upstream had moved — text Parley
+     did not compose, naming a .parley/git/<sha256> path the operator
+     never chose. The flag silences the chatter and NOT the failure: a
+     clone of a repository that does not exist still answers
+     'fatal: repository ... does not exist' at exit 128, which is what
+     the two failure laws below hold it to;
    - a nonzero git exit signals ONE SourceError whose single problem
      carries the exact command line and the exit code
      (gitFailureProblemFor:code:) and never any stderr text: the
@@ -129,6 +138,44 @@ the command and code, and the delegating messages run no git at all.'>
     ]
 
     "---- the two git command lines ----"
+
+    testBothComposedGitLinesCarryTheQuietFlag [
+        "The composition is the subject, and BOTH halves of it are
+         reached here - the clone branch by an absent cache, the pull
+         branch by a populated one - because they are two different
+         composed lines behind one predicate and a law that drove only
+         one would leave the other silently noisy, which is how F19
+         survived a whole sprint of chatter work.
+
+         THE LINES ARE READ OFF THE RECORDING RUNNER, never off the
+         fixture: an oracle asked whether it carries the flag it was
+         just given is an oracle agreeing with itself, and it would pass
+         before the source composed anything at all."
+        | absent cloneRunner cache pullRunner |
+        absent := self absentPath: 'git-quiet-clone-cache'.
+        cloneRunner := RecordingRunner new.
+        (GitIndexSource repo: 'tmp/parley-git-quiet-repo'
+            cache: absent
+            runner: cloneRunner) snapshot.
+        self assert: cloneRunner commands size = 1
+            description: 'a cold snapshot ran ',
+                cloneRunner commands printString.
+        self assert: (CommandLineFixtures does: cloneRunner commands first
+            include: GrammarFixtures quietFlag)
+            description: 'the clone line is ', cloneRunner commands first.
+        cache := self freshDir: 'git-quiet-pull-cache'.
+        InstallFixtures populateInstallDiamondIn: cache.
+        pullRunner := RecordingRunner new.
+        (GitIndexSource repo: 'tmp/parley-git-quiet-repo'
+            cache: cache
+            runner: pullRunner) snapshot.
+        self assert: pullRunner commands size = 1
+            description: 'a warm snapshot ran ',
+                pullRunner commands printString.
+        self assert: (CommandLineFixtures does: pullRunner commands first
+            include: GrammarFixtures quietFlag)
+            description: 'the pull line is ', pullRunner commands first
+    ]
 
     testAnExistingCachePullsRatherThanClones [
         | cache runner source snap |

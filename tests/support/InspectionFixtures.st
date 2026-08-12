@@ -240,17 +240,18 @@ and the S13 line-split sender tree.'>
     "---- pinned renderings: usage (the GREEN re-pin target) ----"
 
     InspectionFixtures class >> usageVerbsLine [
-        "What the verbs: usage line becomes when the three inspection
-         verbs join it. ExecFixtures usageLines is re-pinned to match
-         in GREEN, together with the CLI change — re-pinning it in RED
-         would fail every settled usage law against a CLI that has not
-         moved yet. Re-pinned again at Sprint 12 (issue #14) when
-         update gained its optional package — the same sanctioned
-         GREEN re-pin, in the same increment as the CLI usage change;
-         SelectiveUpdateFixtures usageVerbsLine pinned the new
-         rendering in that sprint's RED."
+        "The verbs: row, pinned here as a literal at Sprint 11's RED
+         when why, tree and check joined the grammar, and re-pinned at
+         Sprint 12 when update gained its optional package.
+
+         AMENDED AT SPRINT 20's RED (issue #22): it delegates to the one
+         oracle. Three sprints each pinned this row into their own
+         fixture class, and those three copies plus the block's two made
+         five movers no `grep ExecFixtures usageLines` could ever find —
+         which is exactly the F18 failure this sprint's pre-RED round
+         had to enumerate by hand."
         <category: 'pinned wordings'>
-        ^'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
+        ^GrammarFixtures usageVerbsLine
     ]
 
     "---- the malformed-digest lock (S10, Doc B §5.3) ----"
