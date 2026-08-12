@@ -81,15 +81,42 @@ and the publish pre-flight refusal.'>
     testEachNewWordCarriesAMethodComment [
         "Comments become hover documentation, and the DSL surface is API
          (§8 decision 17). A vocabulary word without one is a word the
-         author can send and cannot read about."
+         author can send and cannot read about.
+
+         THE CHECK IS TEXTUAL, AND THE BOUND IS STATED WITH IT (§8
+         decision 43's shape; amended mid-sprint, GREEN step 1). As first
+         written this law sent `methodComment` to a CompiledMethod —
+         a Pharo-shaped selector 3.2.5 DOES NOT HAVE, and it has no
+         `comment` either (both probed). The law could never pass on this
+         toolchain: it was a protocol assumed rather than probed, and the
+         obligation Doc B §3.2 states went unchecked behind it.
+
+         `methodSourceString` DOES retain the leading double-quoted block
+         after file-in — probed on both methods under test, at 876 and
+         730 characters with the comment opening immediately after the
+         body bracket — so the comment is read out of the source text.
+
+         WHAT THIS CLAIMS, and what it does not: the source carries a
+         terminated, non-blank double-quoted block. It does NOT parse
+         Smalltalk, so a double quote inside a string literal placed
+         ahead of the comment would fool it. No vocabulary word is
+         written that way, the check is scoped to the two this sprint
+         declares, and the honest statement of that limit is the point of
+         decision 43's standard rather than a caveat on it."
         (Array with: #dependency:path: with: #devDependency:constraint:)
             do: [:selector |
-                | comment |
-                comment := (ManifestBuilder compiledMethodAt: selector)
-                    methodComment.
-                self deny: comment isNil
+                | source open close |
+                source := (ManifestBuilder compiledMethodAt: selector)
+                    methodSourceString.
+                open := source indexOf: $".
+                self deny: open = 0
                     description: selector printString, ' has no comment'.
-                self deny: comment isEmpty
+                close := source indexOf: $" startingAt: open + 1.
+                self deny: close = 0
+                    description: selector printString,
+                        ' has an unterminated comment'.
+                self deny: (source copyFrom: open + 1 to: close - 1)
+                    trimSeparators isEmpty
                     description: selector printString, ' has an empty comment']
     ]
 
@@ -248,7 +275,20 @@ and the publish pre-flight refusal.'>
          renders the same entry bytes as the same manifest declaring
          neither — proved against a HAND-WRITTEN oracle rather than
          against the writer's own other output, so a writer that learned
-         about both collections could not satisfy it."
+         about both collections could not satisfy it.
+
+         THE ORACLE COMPARISON IS PARENTHESISED, AND IT HAS TO BE
+         (amended mid-sprint, GREEN step 1). As first written the second
+         assertion read `= '#(...)', SourceFixtures newline` — and `=`
+         and `,` are both BINARY, so it parsed as
+         `(contents = '#(...)') , newline`, sending `,` to a Boolean.
+         The law could never pass in either direction: it was not a weak
+         pin, it was no pin at all. This is Sprint 11's hexDigestCorpus
+         defect returned — a binary comma binding past what the author
+         meant — and that one was caught at Gate A while this one shipped
+         through it. The oracle bytes themselves were correct and are
+         probed: the writer's real output for the rich manifest equals
+         this string plus one newline, exactly."
         | rich plain richBytes plainBytes |
         rich := self manifestFrom: [:pkg |
             pkg
@@ -274,8 +314,8 @@ and the publish pre-flight refusal.'>
         IndexEntryWriter write: plain on: plainBytes.
         self assert: richBytes contents = plainBytes contents
             description: 'the entries differ: ', richBytes contents printString.
-        self assert: richBytes contents = '#(#''parley-index'' 1 #name ''kernel-json'' #version ''0.3.1'' #summary ''a reader and writer'' #author ''Leonardo'' #license ''MIT'' #fileIns #(''Json.st'') #dependencies #() #archive #())',
-            SourceFixtures newline
+        self assert: richBytes contents = ('#(#''parley-index'' 1 #name ''kernel-json'' #version ''0.3.1'' #summary ''a reader and writer'' #author ''Leonardo'' #license ''MIT'' #fileIns #(''Json.st'') #dependencies #() #archive #())',
+            SourceFixtures newline)
             description: 'the settled entry rendering moved: ',
                 richBytes contents printString
     ]
