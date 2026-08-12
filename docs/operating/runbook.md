@@ -58,6 +58,12 @@ The agent has written the full test suite, satisfied the red gate, posted its **
      grep -hoE '^    test[A-Za-z0-9_]+' <the sprint's new test files> | sed 's/^ *//' | sort -u > /tmp/all.txt
      comm -23 /tmp/all.txt /tmp/failing.txt     # every new test that PASSES in red
      ```
+     **RECONCILE `all.txt` AGAINST `run` BEFORE TRUSTING `comm`** (Sprint 20, carry-forward CF-5). The second command enumerates *the sprint's new test files*, so **a new law added to a settled file falls outside it entirely** and its red-phase pass is never checked. The arithmetic is what exposes that: `wc -l < /tmp/all.txt` must equal `run` minus the pre-sprint baseline, and when it comes up short the missing selectors are new laws living in settled files —
+     ```bash
+     git diff -U0 <baseline-sha> -- tests/ | grep -E '^\+ {4}test[A-Za-z0-9_]+ \['   # new laws in amended files
+     ```
+     — add them to `all.txt` and re-run `comm`. Sprint 20's count was 71 against a `run` delta of 72, and the missing selector was a legitimate new law in a settled file that no enumeration keyed to new *files* could see. **Require the agent to declare a new-law-in-a-settled-file in its own category**, since a "New (N) / Amended (M)" split conceals it: a settled file growing a law is a different act from a settled file being re-pinned, and only one of them is covered by a declared mover list.
+
      Diff that against the declared passes-in-red list in the kickoff and the test files' headers. **An undeclared pass is a finding**, even when the test turns out to be a legitimate guard — the declaration is what makes a red-phase pass reviewable at all. Cross-check with the arithmetic: `passed` should equal the settled law count plus exactly the number of passes you can name.
    - **Derivations:** for pinned conflict-proof narrations, hand-trace the strategy semantics (selection order, collapse points, exhaustion order) to confirm the pinned lines are what the spec's reference shape actually produces.
 4. **Independently run the red gate:** `./scripts/verify-sprint.sh` — every test file loads (`PARLEY-TESTFILE` per file), zero parse errors, prior sprints' tests still pass, new failures are MNU/missing-behavior, overall suite FAILS.
