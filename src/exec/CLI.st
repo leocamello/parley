@@ -94,12 +94,23 @@ construction; zero public setters.'>
 
     "---- dispatch ----"
 
-    CLI class >> row: aGuardBlock verb: aSelector args: anIndexArray [
+    CLI class >> row: aGuardBlock verb: aSelector args: anIndexArray named: aVerbName [
         "Private — one dispatch row: a pure guard on (argv, has-source),
-         the verb selector it selects, and the argv indices its
-         arguments come from."
+         the verb selector it selects, the argv indices its arguments
+         come from, and THE VERB'S OWN NAME.
+
+         The fourth column is a DECLARATION, never the first keyword of
+         the row's selector (§8 decision 81). The two agree today only
+         by a coincidence of spelling, and they stop agreeing the first
+         time a verb and the method that runs it are named apart —
+         #publish:layoutNamed: is already the row where that coincidence
+         is doing the most work. The name is what tells an unknown verb
+         apart from a known verb given arguments it does not take, and
+         a diagnosis that inferred it from a selector would be reading
+         the implementation to describe the grammar."
         <category: 'dispatch'>
         ^Array with: aGuardBlock with: aSelector with: anIndexArray
+            with: aVerbName
     ]
 
     CLI class >> verbRows [
@@ -119,6 +130,14 @@ construction; zero public setters.'>
          parallel lists that happened to agree today would buy nothing
          the first time a verb was added to only one of them.
 
+         THE ROWS ARE BUILT IN GROUPS OF AT MOST FIVE AND CONCATENATED,
+         which is a toolchain fact and not a style: 3.2.5's Array class
+         answers with:with:with:with:with: and nothing longer, so a
+         sixth with: in one group is a doesNotUnderstand at the first
+         send of this method — which is every verb, every usage
+         determination and every law that reaches either. Add a group
+         rather than a keyword.
+
          Row order is the settled chain's order and stays significant
          only where guards could overlap; publish's two shapes are
          disjoint by arity. publish <dir> --layout <name> reads its own
@@ -128,41 +147,54 @@ construction; zero public setters.'>
         <category: 'dispatch'>
         ^(Array
             with: (self row: [:a :s | a size = 1 and: [(a at: 1) = 'init']]
-                verb: #init args: #())
+                verb: #init args: #() named: 'init')
             with: (self row: [:a :s | a size = 2 and: [(a at: 1) = 'exec']]
-                verb: #exec: args: #(2))
+                verb: #exec: args: #(2) named: 'exec')
             with: (self row: [:a :s | a size = 2 and: [(a at: 1) = 'publish']]
-                verb: #publish: args: #(2))
+                verb: #publish: args: #(2) named: 'publish')
             with: (self row: [:a :s | a size = 4
                     and: [(a at: 1) = 'publish'
                     and: [(a at: 3) = CommandLine publishLayoutFlag]]]
-                verb: #publish:layoutNamed: args: #(2 4))
+                verb: #publish:layoutNamed: args: #(2 4) named: 'publish')
             with: (self row: [:a :s | s and: [a size = 2
                     and: [(a at: 1) = 'why']]]
-                verb: #why: args: #(2))),
+                verb: #why: args: #(2) named: 'why')),
         (Array
             with: (self row: [:a :s | s and: [a size = 2
                     and: [(a at: 1) = 'update']]]
-                verb: #update: args: #(2))
+                verb: #update: args: #(2) named: 'update')
             with: (self row: [:a :s | s and: [a size = 3
                     and: [(a at: 1) = 'add']]]
-                verb: #add:constraint: args: #(2 3))
+                verb: #add:constraint: args: #(2 3) named: 'add')
+            with: (self row: [:a :s | s and: [a size = 2
+                    and: [(a at: 1) = 'remove']]]
+                verb: #remove: args: #(2) named: 'remove')
             with: (self row: [:a :s | s and: [a size = 1
                     and: [(a at: 1) = 'resolve']]]
-                verb: #resolve args: #())
+                verb: #resolve args: #() named: 'resolve')
             with: (self row: [:a :s | s and: [a size = 1
                     and: [(a at: 1) = 'install']]]
-                verb: #install args: #())
+                verb: #install args: #() named: 'install')),
+        (Array
             with: (self row: [:a :s | s and: [a size = 1
                     and: [(a at: 1) = 'update']]]
-                verb: #update args: #())),
+                verb: #update args: #() named: 'update')
+            with: (self row: [:a :s | s and: [a size = 2
+                    and: [(a at: 1) = 'search']]]
+                verb: #search: args: #(2) named: 'search')
+            with: (self row: [:a :s | s and: [a size = 2
+                    and: [(a at: 1) = 'info']]]
+                verb: #info: args: #(2) named: 'info')
+            with: (self row: [:a :s | s and: [a size = 1
+                    and: [(a at: 1) = 'outdated']]]
+                verb: #outdated args: #() named: 'outdated')),
         (Array
             with: (self row: [:a :s | s and: [a size = 1
                     and: [(a at: 1) = 'tree']]]
-                verb: #tree args: #())
+                verb: #tree args: #() named: 'tree')
             with: (self row: [:a :s | s and: [a size = 1
                     and: [(a at: 1) = 'check']]]
-                verb: #check args: #()))
+                verb: #check args: #() named: 'check'))
     ]
 
     CLI class >> verbRowFor: anArgvArray withSource: aBoolean [
@@ -184,6 +216,83 @@ construction; zero public setters.'>
         ^nil
     ]
 
+    CLI class >> declaredVerbNames [
+        "Every verb name the grammar declares, read from the fourth
+         column of the one table. A verb that exists is a verb with a
+         row, so the diagnosis and the dispatch can never disagree about
+         what a verb is."
+        <category: 'dispatch'>
+        ^self verbRows collect: [:row | row at: 4]
+    ]
+
+    CLI class >> usageGroundFor: anArgvArray withSource: aBoolean [
+        "WHY this argv answers usage rather than running a verb, as one
+         of §8 decision 81's declared grounds. PURE, exactly as
+         verbRowFor:withSource: is and for the same reason: CommandLine
+         asks it before any state directory exists.
+
+         THE GROUND IS DERIVED FROM THE DECLARED TABLE, never re-listed
+         beside it. An empty argv is its own ground. Availability is
+         tested by running the SAME guards twice — once as if a source
+         were wired and once as if none were — which buys the
+         needs-an-index ground with no second declaration at all. What
+         is left splits on the verb-name column.
+
+         AVAILABILITY IS TESTED BEFORE ARITY, and the order is the
+         ruling rather than a preference: `parley resolve` has exactly
+         the arguments resolve takes and lacks only an index, so an
+         arity-first derivation would tell the operator their arguments
+         are wrong — a sentence nothing checked, on the commonest usage
+         error there is."
+        <category: 'dispatch'>
+        anArgvArray isEmpty ifTrue: [^#noVerb].
+        ((self verbRowFor: anArgvArray withSource: true) notNil
+            and: [(self verbRowFor: anArgvArray withSource: false) isNil])
+                ifTrue: [^#needsIndex].
+        ^(self declaredVerbNames includes: (anArgvArray at: 1))
+            ifTrue: [#wrongArguments]
+            ifFalse: [#unknownVerb]
+    ]
+
+    CLI class >> usageSubjectFor: anArgvArray [
+        "The word a reason line names: the verb the operator typed, or
+         the empty string when they typed none. One definition, because
+         two grounds interpolate it and a third does not."
+        <category: 'dispatch'>
+        ^anArgvArray isEmpty ifTrue: [''] ifFalse: [anArgvArray at: 1]
+    ]
+
+    CLI class >> usageBlock [
+        "THE BLOCK: what the tool offers, and the ONE definition of it.
+
+         A usage error is one reason line followed by this block;
+         --help is this block ALONE at exit 0 (§8 decision 79). The
+         shared artifact is the block and NEITHER answer is derived from
+         the other's finished one, so the two can never print different
+         texts about what the tool offers and neither can inherit the
+         other's claim about what just happened.
+
+         The verbs: row renders each verb exactly as Doc E §4's argv
+         grammar spells it, optional argument included."
+        <category: 'usage'>
+        ^(Array
+            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
+            with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | remove <pkg> | search <term> | info <pkg> | outdated | exec <script> | publish <dir> | why <pkg> | tree | check'
+            with: 'flags: --source <dir>  index entries in a local directory'
+            with: '       --git <repo>    index entries in a git repository'
+            with: '       --index <base>  index entries fetched per package from a sparse index'),
+            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
+    ]
+
+    CLI class >> usageLinesFor: aGroundSymbol subject: aSubject [
+        "One reason line, then the block. The composition, class-side
+         and pure, so the composition root can answer usage without
+         building a CLI it will never run."
+        <category: 'usage'>
+        ^(Array with: (CommandLine usageReasonFor: aGroundSymbol
+            subject: aSubject)), self usageBlock
+    ]
+
     run: anArgvArray [
         "Dispatch the argv and answer a CliResult. Unknown input, a
          missing exec script, wrong arity, or a source-requiring verb
@@ -195,7 +304,10 @@ construction; zero public setters.'>
         <category: 'running'>
         | row |
         row := self class verbRowFor: anArgvArray withSource: source notNil.
-        row isNil ifTrue: [^self usage].
+        row isNil ifTrue: [
+            ^self usageFor: (self class
+                usageGroundFor: anArgvArray withSource: source notNil)
+                subject: (self class usageSubjectFor: anArgvArray)].
         ^self perform: (row at: 2)
             withArguments: ((row at: 3) collect: [:i | anArgvArray at: i])
     ]
@@ -414,6 +526,74 @@ construction; zero public setters.'>
             unheld: unheld restoring: original lock: lock
     ]
 
+    remove: aName [
+        "Delete one dependency clause from Package.st and move the
+         project off it in one operation (Doc E §4.1, §8 decision 67).
+
+         THE SAME RULING AS add, APPLIED TO THE OPPOSITE OPERATION, and
+         stated separately because deletion has a failure mode insertion
+         does not: an insertion that recognizes too little REFUSES,
+         while a deletion that recognizes too little DAMAGES. The
+         mechanism is the settled ManifestEditor's, the verification is
+         the settled reader's, and the atomicity is add's own tail —
+         nothing here is new machinery.
+
+         IT FREES THE PIN IT IS REMOVING (heldVersionsOf:except:, the
+         parameter update <pkg> already uses). Holding every pin
+         including the one being removed would be sound and would
+         answer the wrong sentence in one real case: an index owner who
+         DELETES an entry leaves the operator a pin the index no longer
+         publishes, removing that dependency is exactly the repair, and
+         a held-pin refusal would blame the package the operator is
+         already getting rid of.
+
+         Its three diagnoses, all exit 1: no Package.st (the settled
+         missing-manifest line, signaled by load: so the sentence keeps
+         one definition); a shape the editor cannot recognize (one line
+         naming the file and the clause to delete, THE FILE
+         BYTE-IDENTICAL); and a name the cascade does not declare (one
+         line, the why precedent, and NOTHING written — not the
+         manifest, not the lock). Removing the only dependency is
+         ordinary success: what remains re-loads and the lock is
+         rewritten with no pins."
+        <category: 'verbs'>
+        | original editor before pinned held unheld narrowed deleted lock after |
+        (PathGuard isReadableFile: self packagePath) ifFalse: [
+            ^self loadManifest].
+        original := self packageContents.
+        editor := ManifestEditor on: original.
+        editor isRecognized ifFalse: [
+            ^CliResult
+                lines: (Array with: (self unrecognizedRemovalLineFor: aName))
+                exitCode: 1].
+        (editor constraintFor: aName) isNil ifTrue: [
+            ^CliResult
+                lines: (Array with: (self notDeclaredLineFor: aName))
+                exitCode: 1].
+        before := self loadManifest.
+        pinned := self pinnedResolution.
+        held := self heldVersionsOf: pinned except: aName.
+        unheld := self seededSource snapshot.
+        narrowed := unheld holding: held.
+        deleted := self deletedHeldPinLineIn: held against: narrowed.
+        deleted notNil ifTrue: [
+            ^CliResult lines: (Array with: deleted) exitCode: 1].
+        lock := self lockContents.
+        self writePackage: (editor textWithoutDependency: aName).
+        after := [self loadManifest]
+            on: ManifestError
+            do: [:e |
+                self restore: original lock: lock.
+                ^CliResult lines: e problems exitCode: 1].
+        (self manifest: after removes: aName from: before) ifFalse: [
+            self restore: original lock: lock.
+            ^CliResult
+                lines: (Array with: self editVerificationLine)
+                exitCode: 1].
+        ^self addResolving: after against: narrowed
+            unheld: unheld restoring: original lock: lock
+    ]
+
     exec: aScriptPath [
         "Run the script in the curated child; the CliResult carries
          the child's exit code and no lines of the CLI's own (the
@@ -504,7 +684,8 @@ construction; zero public setters.'>
         <category: 'verbs'>
         | row |
         row := CommandLine publishLayoutNamed: aLayoutName.
-        row isNil ifTrue: [^self usage].
+        row isNil ifTrue: [
+            ^self usageFor: #unknownLayout subject: aLayoutName].
         ^self publish: aDestDir layout: row
     ]
 
@@ -628,6 +809,264 @@ construction; zero public setters.'>
                 lines: (Array with: 'parley.lock is healthy - pins satisfy Package.st and nothing pinned is retired')
                 exitCode: 0].
         ^CliResult lines: problems asArray exitCode: 1
+    ]
+
+    "---- the verbs that close the grammar (Doc E §4.1, Sprint 20) ----"
+
+    search: aTerm [
+        "Substring match over the package names the index publishes: one
+         line per hit, sorted, exit 0 (§8 decision 80).
+
+         IT REFUSES OVER A TRANSPORT THAT CANNOT ANSWER IT, and the
+         refusal comes FIRST, before the source is ever consulted — a
+         refusal that fetched would have begun answering the question it
+         says it cannot answer. A sparse index publishes one listing per
+         package and no catalogue, so a search over the snapshot such a
+         source answers would return the operator's own closure: the
+         packages they already depend on, dressed as a complete result
+         and indistinguishable from one.
+
+         NO MATCH IS AN ANSWER, NOT AN ERROR (§8 decision 57): one line
+         naming the term and the index, at exit 0. An operator who asked
+         a question got it answered, and apt, cargo, npm and gem all
+         agree. The contrast is info, which exits 1 for a name the index
+         does not publish — there the operator ASSERTED something and it
+         was false."
+        <category: 'verbs'>
+        | seeded snapshot hits |
+        (CommandLine canSearch: source) ifFalse: [
+            ^CliResult
+                lines: (Array with: self searchRefusalLine)
+                exitCode: 1].
+        seeded := self seededSource.
+        snapshot := seeded snapshot.
+        hits := snapshot packageNames select: [:name |
+            self name: name includes: aTerm].
+        hits isEmpty ifTrue: [
+            ^CliResult
+                lines: (Array with: (self noMatchLineFor: aTerm))
+                exitCode: 0].
+        ^CliResult
+            lines: (hits collect: [:name |
+                self searchLineFor: name in: snapshot source: seeded])
+            exitCode: 0
+    ]
+
+    info: aName [
+        "One package's metadata: name, latest version, summary, author,
+         license, dependencies, and every published version with the
+         retired ones MARKED.
+
+         IT SEEDS THE NAME IT WAS ASKED ABOUT, through the settled
+         private add already uses for the identical reason (§8 decision
+         51). A name in neither Package.st nor parley.lock is invisible
+         to a sparse closure, so without the seed a package the index
+         really publishes would answer `not published` — a false
+         diagnosis, and §8 decision 80's own harm class one door down,
+         in the verb that same decision uses to justify refusing search.
+         The seed is a no-op for a scanning source, which answers self.
+
+         THE METADATA COMES FROM THE SOURCE PROTOCOL, NOT THE SNAPSHOT
+         (Doc C §2): a release record is {Version. sha256.
+         dependencies} and carries none of it. manifestFor:version:
+         answers a LibraryManifest that carries exactly these fields.
+
+         THE VERSION LIST COMES FROM allVersionsOf:, which keeps retired
+         releases and bypasses the held map — info reports what the
+         index PUBLISHED, which is a different question from what a
+         resolution may select or what this project happens to pin."
+        <category: 'verbs'>
+        | seeded snapshot versions latest manifest lines |
+        seeded := self seededSourceAdding: aName.
+        snapshot := seeded snapshot.
+        versions := snapshot allVersionsOf: aName.
+        versions isEmpty ifTrue: [
+            ^CliResult
+                lines: (Array with: (self notPublishedLineFor: aName))
+                exitCode: 1].
+        latest := self newestLiveIn: versions of: aName in: snapshot.
+        manifest := seeded manifestFor: aName version: latest.
+        lines := OrderedCollection new.
+        lines add: 'name: ', aName.
+        lines add: 'latest: ', latest printString.
+        lines add: 'summary: ', manifest summary.
+        lines add: 'author: ', manifest author.
+        lines add: 'license: ', manifest license.
+        lines add: 'dependencies: ',
+            (self dependencyTextOf: manifest).
+        lines add: 'versions:'.
+        versions do: [:each |
+            lines add: (self versionLineFor: each of: aName in: snapshot)].
+        ^CliResult lines: lines asArray exitCode: 0
+    ]
+
+    outdated [
+        "For each lock pin, TWO COLUMNS: the newest non-retired release
+         the manifest's constraint still allows, and separately the
+         newest the index publishes at all.
+
+         CONFLATING THEM WOULD BE A WRONG CLAIM. `You can upgrade` and
+         `you would have to widen your constraint` are different facts
+         with different actions, so they are rendered apart and never
+         merged into one arrow. A RETIRED newer release is offered in
+         NEITHER: it is not an upgrade, whichever column it would land
+         in.
+
+         A TRANSITIVE PIN RENDERS A MARKER IN THE ALLOWED COLUMN (§8
+         decision 82). A pin the root manifest never names has no
+         constraint of the operator's, and both tempting defaults lie:
+         treating absence as `every version is allowed` makes the two
+         columns coincide and recommends an upgrade the dependency graph
+         may forbid, while omitting the pin answers `nothing is
+         outdated` over a lock carrying a stale transitive release. The
+         published column is reported unchanged, because that fact is
+         true whoever owns the constraint.
+
+         A fully current project answers one line saying so at exit 0 —
+         the resolve-with-no-dependencies precedent, because a verb that
+         prints nothing reads as a verb that did nothing."
+        <category: 'verbs'>
+        | pinned manifest snapshot lines |
+        pinned := self pinnedResolution.
+        pinned isNil ifTrue: [^self reportMissingLock].
+        manifest := self loadManifest.
+        snapshot := self seededSource snapshot.
+        lines := OrderedCollection new.
+        pinned packageNames do: [:name |
+            | line |
+            line := self outdatedLineFor: name
+                pinned: (pinned versionOf: name)
+                manifest: manifest
+                snapshot: snapshot.
+            line notNil ifTrue: [lines add: line]].
+        lines isEmpty ifTrue: [
+            ^CliResult
+                lines: (Array with: self nothingOutdatedLine)
+                exitCode: 0].
+        ^CliResult lines: lines asArray exitCode: 0
+    ]
+
+    "---- what the three reading verbs compute ----"
+
+    name: aName includes: aTerm [
+        "Private — whether aTerm appears anywhere in aName. A substring
+         match rather than a prefix, so an operator who remembers half a
+         name still finds the package. An empty term matches
+         everything, which is the honest reading of asking for nothing
+         in particular."
+        <category: 'private-reporting'>
+        aTerm isEmpty ifTrue: [^true].
+        1 to: aName size - aTerm size + 1 do: [:i |
+            (aName copyFrom: i to: i + aTerm size - 1) = aTerm
+                ifTrue: [^true]].
+        ^false
+    ]
+
+    newestLiveIn: someVersions of: aName in: aSnapshot [
+        "Private — the newest of someVersions the index has NOT retired,
+         or the newest of all when the index has retired every one of
+         them. someVersions arrives sorted ascending.
+
+         The fallback is deliberate rather than a shortcut: a package
+         whose every release is retired is still published, still has a
+         latest release, and still has metadata to report — answering
+         nothing about it would be the silent partial answer §8
+         decision 80 refuses."
+        <category: 'private-reporting'>
+        someVersions reverseDo: [:each |
+            (aSnapshot retirementReasonFor: aName version: each) isNil
+                ifTrue: [^each]].
+        ^someVersions last
+    ]
+
+    newestAllowedOf: aName in: aSnapshot by: aConstraint [
+        "Private — the newest non-retired release of aName the
+         constraint admits, or nil when it admits none of them."
+        <category: 'private-reporting'>
+        (aSnapshot allVersionsOf: aName) reverseDo: [:each |
+            ((aSnapshot retirementReasonFor: aName version: each) isNil
+                and: [aConstraint allows: each]) ifTrue: [^each]].
+        ^nil
+    ]
+
+    newestPublishedOf: aName in: aSnapshot [
+        "Private — the newest non-retired release of aName, whatever any
+         constraint says; nil when every release is retired."
+        <category: 'private-reporting'>
+        ^self newestAllowedOf: aName in: aSnapshot
+            by: VersionConstraint any
+    ]
+
+    outdatedLineFor: aName pinned: aVersion manifest: aManifest snapshot: aSnapshot [
+        "Private — one pin's two columns, or nil when the pin has
+         nowhere to go and contributes no line."
+        <category: 'private-reporting'>
+        | dependency published allowed allowedText |
+        published := self newestPublishedOf: aName in: aSnapshot.
+        published isNil ifTrue: [^nil].
+        dependency := aManifest dependencies
+            detect: [:each | each name = aName]
+            ifNone: [nil].
+        allowed := dependency isNil
+            ifTrue: [nil]
+            ifFalse: [self newestAllowedOf: aName in: aSnapshot
+                by: dependency constraint].
+        (published > aVersion
+            or: [allowed notNil and: [allowed > aVersion]]) ifFalse: [^nil].
+        allowedText := allowed isNil
+            ifTrue: [self class unconstrainedAllowedMarker]
+            ifFalse: [allowed printString].
+        ^aName, ' ', aVersion printString, '  allowed ', allowedText,
+            '  published ', published printString
+    ]
+
+    dependencyTextOf: aManifest [
+        "Private — a manifest's dependencies as one line, sorted by name
+         exactly as every other rendering of them is, or the word none."
+        <category: 'private-reporting'>
+        | out sorted |
+        aManifest dependencies isEmpty ifTrue: [^'none'].
+        sorted := aManifest dependencies asSortedCollection:
+            [:a :b | a name <= b name].
+        out := WriteStream on: String new.
+        sorted
+            do: [:each | out nextPutAll: each name;
+                nextPutAll: ' ';
+                nextPutAll: each constraint printString]
+            separatedBy: [out nextPutAll: ', '].
+        ^out contents
+    ]
+
+    versionLineFor: aVersion of: aName in: aSnapshot [
+        "Private — one line of info's version list, indented two spaces
+         like every other nested rendering this tool composes, and
+         MARKED when the index owner has retired it — carrying their
+         reason verbatim through the settled
+         retirementReasonFor:version:, which gains its second reader
+         here (the first is check)."
+        <category: 'private-reporting'>
+        | reason |
+        reason := aSnapshot retirementReasonFor: aName version: aVersion.
+        ^reason isNil
+            ifTrue: ['  ', aVersion printString]
+            ifFalse: ['  ', aVersion printString, '  retired: ', reason]
+    ]
+
+    searchLineFor: aName in: aSnapshot source: aPackageSource [
+        "Private — one search hit: the name, the newest release an
+         operator may actually take, and the summary, two spaces between
+         columns. The latest column skips a retired release for the same
+         reason outdated never offers one.
+
+         The source is passed in rather than re-seeded per hit: seeding
+         answers a NEW source, and taking one per line would re-read the
+         index once per package for an answer already in hand."
+        <category: 'private-reporting'>
+        | latest |
+        latest := self newestLiveIn: (aSnapshot allVersionsOf: aName)
+            of: aName in: aSnapshot.
+        ^aName, '  ', latest printString, '  ',
+            (aPackageSource manifestFor: aName version: latest) summary
     ]
 
     collectChainsTo: aTarget from: someDependencies chain: aChainString visited: aVisitedSet resolution: aResolution snapshot: aSnapshot into: aCollection [
@@ -804,6 +1243,31 @@ construction; zero public setters.'>
         ^(aNewManifest dependencies
             detect: [:dep | dep name = aName]
             ifNone: [nil]) notNil
+    ]
+
+    manifest: aNewManifest removes: aName from: anOldManifest [
+        "Private — the semantic verification for deletion (Doc B §2.1),
+         the mirror of manifest:adds:to:. The reloaded manifest no
+         longer declares aName and is OTHERWISE EQUAL to the one loaded
+         before the edit — same name, version, fileIns ORDER and every
+         other dependency still there.
+
+         The fileIns comparison is not ceremony: it is gst-package load
+         order, it is semantic in Smalltalk, and a splice that removed
+         the wrong span could reorder or drop one while still answering
+         a manifest that has one fewer dependency."
+        <category: 'private-add'>
+        aNewManifest name = anOldManifest name ifFalse: [^false].
+        aNewManifest version = anOldManifest version ifFalse: [^false].
+        aNewManifest fileIns asArray = anOldManifest fileIns asArray
+            ifFalse: [^false].
+        aNewManifest dependencies size
+            = (anOldManifest dependencies size - 1) ifFalse: [^false].
+        aNewManifest dependencies do: [:dep |
+            (anOldManifest dependencies includes: dep) ifFalse: [^false]].
+        ^(aNewManifest dependencies
+            detect: [:dep | dep name = aName]
+            ifNone: [nil]) isNil
     ]
 
     restore: anOriginalText lock: aLockTextOrNil [
@@ -1187,10 +1651,22 @@ construction; zero public setters.'>
     ]
 
     seededSourceAdding: aName [
-        "Private — the add verb's seeded source: add snapshots BEFORE
-         it edits Package.st, so the added name is in neither file the
-         seed set is otherwise built from and must be seeded
-         explicitly (issue #16 S16)."
+        "Private — a source seeded with one further name beyond the
+         decision-51 set, for the two verbs that ask about a package the
+         project does not yet mention.
+
+         add snapshots BEFORE it edits Package.st, so the added name is
+         in neither file the seed set is otherwise built from and must
+         be seeded explicitly (issue #16 S16).
+
+         info IS THE SECOND CALLER, and it is here for the identical
+         reason (Sprint 20, issue #22): the package an operator asks
+         about is in neither Package.st nor parley.lock, so over a
+         sparse index the closure would never fetch its listing and the
+         verb would answer `not published` about a package the index
+         really publishes. Same mechanism, same sentence, no new
+         machinery — and a no-op for a scanning source, which answers
+         self."
         <category: 'private'>
         | names |
         names := self seedNames.
@@ -1338,17 +1814,13 @@ construction; zero public setters.'>
 
     "---- results ----"
 
-    usage [
-        "Private — the pinned usage lines, exit 2."
+    usageFor: aGroundSymbol subject: aSubject [
+        "Private — a usage error: the ground's own reason line, then the
+         block, exit 2. The block is class-side and shared; the reason
+         is what this invocation did."
         <category: 'private'>
         ^CliResult
-            lines: (Array
-                with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
-                with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | exec <script> | publish <dir> | why <pkg> | tree | check'
-                with: 'flags: --source <dir>  index entries in a local directory'
-                with: '       --git <repo>    index entries in a git repository'
-                with: '       --index <base>  index entries fetched per package from a sparse index'),
-                (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
+            lines: (self class usageLinesFor: aGroundSymbol subject: aSubject)
             exitCode: 2
     ]
 
@@ -1411,6 +1883,34 @@ construction; zero public setters.'>
             aName, ''' constraint: ''', aConstraintString, ''''
     ]
 
+    unrecognizedRemovalLineFor: aName [
+        "Private — remove's shape refusal (pinned in RED, issue #22).
+         It names the file AND the clause to delete, because a refusal
+         that does not say what to do has cost the operator more than it
+         saved (§8 decisions 31 and 44).
+
+         IT NAMES THE CLAUSE BY ITS PACKAGE rather than by its exact
+         bytes, and that is the honest half: a shape the recognizer
+         could not read is a shape whose CONSTRAINT it could not read
+         either, so a refusal quoting one would be asserting something
+         it never checked — §8 decision 58's standard, in the sentence
+         that exists to help."
+        <category: 'private'>
+        ^self packagePath,
+            ': no single Parley define: cascade to edit - delete the dependency: ''',
+            aName, ''' clause by hand'
+    ]
+
+    notDeclaredLineFor: aName [
+        "Private — remove asked about a dependency the manifest does not
+         declare (pinned in RED, issue #22). The why precedent and the
+         why shape: the operator asked about something they do not have,
+         which is their question and never a defect. Nothing is
+         written."
+        <category: 'private'>
+        ^aName printString, ' is not declared in Package.st'
+    ]
+
     alreadyDeclaredLineFor: aName constraint: aConstraintString [
         "Private — the different-constraint refusal (pinned in RED),
          naming the constraint already in the file."
@@ -1448,6 +1948,67 @@ construction; zero public setters.'>
         <category: 'private'>
         ^self packagePath,
             ': the edited manifest did not load as the edit intended - Package.st was restored unchanged'
+    ]
+
+    CLI class >> unconstrainedAllowedMarker [
+        "What outdated renders in the allowed column for a pin the root
+         manifest does not constrain (§8 decision 82, pinned in RED).
+
+         ONE DECLARED WORDING CONSUMED TWICE — the renderer above and
+         the law that holds it read this, and neither carries a copy.
+         It is deliberately NOT version-shaped: the column means `what
+         YOUR constraint allows`, a transitive pin has no such
+         constraint, and the neutral element is the most dangerous
+         default a report can pick — `no constraint` rendered as
+         `anything goes` reads identically to a checked allowance, and
+         a reader cannot tell an answer that was computed from an
+         answer that was skipped."
+        <category: 'usage'>
+        ^'(transitive - no constraint of yours)'
+    ]
+
+    searchRefusalLine [
+        "Private — search over a transport that publishes no catalogue
+         (§8 decision 80, pinned in RED). It names the transport, WHY
+         the question cannot be answered there, and the flags that CAN
+         answer it, in the settled '<subject>: <cause> - <remedy>'
+         grammar every other boundary uses.
+
+         Exit 1 rather than 2, because the argv is well formed and the
+         transport is the limit. Both flag lists are composed from the
+         declared sourceFlags table, so a fourth source cannot drift out
+         of the sentence that offers it."
+        <category: 'private'>
+        ^CommandLine unsearchableFlag,
+            ': a sparse index publishes one listing per package and no catalogue - use ',
+            (CommandLine list: CommandLine searchableFlagNames
+                conjunction: 'or'),
+            ' to search'
+    ]
+
+    noMatchLineFor: aTerm [
+        "Private — search found nothing (pinned in RED). A question
+         answered is not an error, so this is exit 0."
+        <category: 'private'>
+        ^'no package matching ', aTerm printString,
+            ' in the configured index'
+    ]
+
+    notPublishedLineFor: aName [
+        "Private — info was asked about a package the index does not
+         publish (pinned in RED). Exit 1, and the contrast with search's
+         empty answer is the whole reason the two codes differ: the
+         operator ASSERTED this package exists and it does not."
+        <category: 'private'>
+        ^aName printString, ' is not published by the configured index'
+    ]
+
+    nothingOutdatedLine [
+        "Private — every pin is already the newest the index publishes
+         (pinned in RED). A line rather than silence: the
+         resolve-with-no-dependencies precedent."
+        <category: 'private'>
+        ^'nothing is outdated - every pin is the newest the index publishes'
     ]
 
     reportConflict: aReport [

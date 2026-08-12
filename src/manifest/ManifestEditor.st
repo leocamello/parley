@@ -41,7 +41,27 @@
  immediately after the last clause's final character, at that line's
  own indentation, and the closing bracket, the trailing newline, the
  comments, the blank lines and the author's spacing all travel through
- untouched."
+ untouched.
+
+ DELETION IS THE SAME RULING AND IT OWNS THE JOIN (Sprint 20, §8
+ decision 67; Doc B §2.1). parley remove <pkg> changes the same file
+ under the same trust framing, and it is stated separately because
+ deletion has a failure mode insertion does not: an insertion that
+ recognizes too little REFUSES, while a deletion that recognizes too
+ little DAMAGES. Removing a clause's text and leaving what bound it to
+ its neighbours produces a dangling `;', two fused clauses, or a
+ cascade with no terminating bracket — a Package.st that no longer
+ loads, written by the tool.
+
+ So textWithoutDependency: deletes the clause AND ITS JOIN: the one
+ before it, except for the first clause, which owns the one after it.
+ That exception is forced rather than tidy — the first clause shares
+ its span with the cascade RECEIVER, so there is no join before it to
+ take, and leaving `pkg;' in front of the next message is a parse
+ error where leaving `pkg' alone is not (probed on 3.2.5 at Gate A).
+ Everything between the join and the clause goes with it, including a
+ comment the author wrote above that clause, which is a comment about
+ the dependency being removed; every other byte is preserved."
 
 Namespace current: Parley.
 
@@ -52,9 +72,11 @@ Object subclass: ManifestEditor [
 one Package.st. Class-side construction; zero public setters; no file
 I/O and no collaborators. isRecognized answers whether the text is the
 one Doc B §2 cascade shape this editor edits, constraintFor: answers
-what that cascade already declares, and textWithDependency:constraint:
-answers NEW text with one clause inserted and every other byte
-preserved — or nil, the refusal, when the shape is unfamiliar.'>
+what that cascade already declares, textWithDependency:constraint:
+answers NEW text with one clause inserted, and textWithoutDependency:
+answers NEW text with one clause and the join that bound it deleted —
+each of them preserving every other byte, or answering nil, the
+refusal, when the shape is unfamiliar or the name is not declared.'>
 
     ManifestEditor class >> on: aString [
         "Answer an editor over the text of one Package.st. All
@@ -99,6 +121,43 @@ preserved — or nil, the refusal, when the shape is unfamiliar.'>
         ^nil
     ]
 
+    textWithoutDependency: aName [
+        "Answer NEW text with aName's dependency clause AND THE JOIN
+         THAT BOUND IT deleted, or nil when the shape is not recognized
+         or the cascade does not declare aName.
+
+         A DELETION OWNS ITS SEPARATOR (§8 decision 67). An insertion
+         that recognizes too little refuses; a deletion that recognizes
+         too little DAMAGES — it leaves a dangling `;`, fuses two
+         clauses, or strands a cascade with no terminating `]`, and
+         every one of those is a Package.st that no longer loads,
+         written by the tool, in a file its author owns.
+
+         WHICH join, amended at Sprint 20's Gate A after a probe: a
+         clause owns the join BEFORE it, EXCEPT the first, which owns
+         the join AFTER it. The exception is forced rather than tidy.
+         The recognizer splits clauses from the block argument bar, so
+         clause one holds the cascade RECEIVER as well as its message:
+         deleting clause one's span verbatim deletes `pkg`, and taking
+         the join before it is impossible because there is none. Taking
+         the join after it is what leaves `pkg` standing in front of the
+         next message — probed on 3.2.5: `pkg;` followed by a keyword
+         message does not parse, and `pkg` alone does.
+
+         Everything between the join and the clause's last character
+         goes with it: the indentation, any blank line, and any comment
+         the author wrote ABOVE the clause — which is a comment about
+         the dependency being removed. Everything else is preserved
+         byte for byte, and the receiver is not part of the clause."
+        <category: 'editing'>
+        | index pair |
+        index := self clauseIndexDeclaring: aName.
+        index isNil ifTrue: [^nil].
+        pair := self deletionSpanAt: index.
+        ^(text copyFrom: 1 to: (pair at: 1) - 1),
+            (text copyFrom: (pair at: 2) + 1 to: text size)
+    ]
+
     textWithDependency: aName constraint: aConstraintString [
         "Answer NEW text carrying one further dependency:constraint:
          clause after the cascade's last clause, or nil when the shape
@@ -118,6 +177,76 @@ preserved — or nil, the refusal, when the shape is unfamiliar.'>
             'dependency: ', (self literalFor: aName),
             ' constraint: ', (self literalFor: aConstraintString),
             (text copyFrom: insertAt to: text size)
+    ]
+
+    "---- locating one clause and the span a deletion takes ----"
+
+    clauseIndexDeclaring: aName [
+        "Private — the position in the cascade of the clause declaring
+         aName, or nil when the shape is unrecognized or nothing
+         declares it. Read from the CODE, exactly as constraintFor: is:
+         a clause spelled inside a comment is prose, and the settled
+         init template ships one."
+        <category: 'private-clauses'>
+        self isRecognized ifFalse: [^nil].
+        1 to: clauses size do: [:i |
+            | dep |
+            dep := self dependencyOfClauseFrom: ((clauses at: i) at: 1)
+                to: ((clauses at: i) at: 2).
+            (dep notNil and: [(dep at: 1) = aName]) ifTrue: [^i]].
+        ^nil
+    ]
+
+    deletionSpanAt: anIndex [
+        "Private — the (first, last) character indices a deletion takes:
+         the clause's own text plus the ONE separator that bound it.
+
+         For every clause but the first, the span opens just past the
+         PREVIOUS clause's last character — so it swallows the join, the
+         author's indentation, any blank line and any comment sitting
+         above this clause — and closes on this clause's own last
+         character, which leaves the closing bracket and the trailing
+         newline exactly where they were.
+
+         For the FIRST clause the span opens just past the cascade
+         RECEIVER, which shares clause one, and closes on the join
+         AFTER it (§8 decision 67 as amended). A first clause that is
+         also the only one has no join to take and closes on its own
+         last character."
+        <category: 'private-clauses'>
+        | pair last |
+        pair := clauses at: anIndex.
+        last := self lastClauseEndFrom: (pair at: 1) to: (pair at: 2).
+        anIndex > 1 ifTrue: [
+            | previous |
+            previous := clauses at: anIndex - 1.
+            ^Array
+                with: (self lastClauseEndFrom: (previous at: 1)
+                    to: (previous at: 2)) + 1
+                with: last].
+        ^Array
+            with: (self receiverEndOfClause: pair) + 1
+            with: (anIndex < clauses size
+                ifTrue: [((clauses at: anIndex + 1) at: 1) - 1]
+                ifFalse: [last])
+    ]
+
+    receiverEndOfClause: aPair [
+        "Private — the last character of the cascade receiver, which
+         shares the first clause with its message. It is everything
+         before the clause's first keyword token, trailing whitespace
+         and comments trimmed — so `pkg` survives a deletion and the
+         author's spacing in front of it survives with it."
+        <category: 'private-clauses'>
+        | tokens first end |
+        tokens := self keywordTokensFrom: (aPair at: 1) to: (aPair at: 2).
+        first := ((tokens at: 1) at: 2) - ((tokens at: 1) at: 1) size.
+        end := self lastClauseEndFrom: (aPair at: 1) to: first - 1.
+        "A cascade whose first clause carries no receiver at all is not
+         a shape this editor can be handed by a loadable Package.st, but
+         it is a shape the recognizer admits — so the span opens at the
+         clause instead of arithmetic on nil."
+        ^end isNil ifTrue: [(aPair at: 1) - 1] ifFalse: [end]
     ]
 
     "---- recognition, decided once at construction ----"

@@ -142,6 +142,60 @@ equality (the decision-23 precedent).'>
                 with: #indexSourceOn:)
     ]
 
+    CommandLine class >> unsearchableFlag [
+        "The one declared source flag whose transport cannot answer
+         parley search (§8 decision 80).
+
+         A sparse index publishes one listing per package at
+         <base>/<name>/… and NO catalogue, and a base URL cannot be
+         enumerated over the transport — so the names such a source can
+         reach are exactly the seeded closure and nothing else. That is
+         a property of the BACKEND, declared here beside the flag that
+         builds it, and never a new PackageSource protocol selector,
+         which would change three settled sources to record a property
+         of one."
+        <category: 'source flags'>
+        ^'--index'
+    ]
+
+    CommandLine class >> canSearch: aPackageSource [
+        "Whether a search can be answered over aPackageSource.
+
+         KEYED OFF sourceFlags, the declaration the wiring already
+         holds: the class comes from the row rather than from a literal
+         here, so this predicate and the builder can never disagree
+         about what --index constructs. It is a TABLE LOOKUP, not an
+         isKindOf: chain and not a respondsTo:, which is a kind-check
+         spelled differently.
+
+         The table itself does not grow a column: SourceFlagTest holds
+         every row to exactly three, and a fourth would be an undeclared
+         change to the one row shape this suite pins."
+        <category: 'source flags'>
+        | row |
+        aPackageSource isNil ifTrue: [^true].
+        row := self sourceFlagRowNamed: self unsearchableFlag.
+        row isNil ifTrue: [^true].
+        ^(aPackageSource class == (row at: 2)) not
+    ]
+
+    CommandLine class >> sourceFlagRowNamed: aFlag [
+        "Private — the declared row for aFlag, or nil when the table
+         declares none."
+        <category: 'source flags'>
+        self sourceFlags do: [:row |
+            (row at: 1) = aFlag ifTrue: [^row]].
+        ^nil
+    ]
+
+    CommandLine class >> searchableFlagNames [
+        "Every declared flag whose transport CAN answer a search —
+         derived by subtraction from the one table, so a fourth source
+         joins this list by joining that one."
+        <category: 'source flags'>
+        ^self sourceFlagNames reject: [:each | each = self unsearchableFlag]
+    ]
+
     "---- the declared publish layouts (Doc F §8.1, §8 decision 53) ----"
 
     CommandLine class >> publishLayouts [
@@ -174,6 +228,86 @@ equality (the decision-23 precedent).'>
         ^Array
             with: (Array with: 'flat' with: Publisher flatLayout)
             with: (Array with: 'sparse' with: Publisher sparseLayout)
+    ]
+
+    "---- the declared usage reasons (Doc E §4, §8 decision 81) ----"
+
+    CommandLine class >> usageReasons [
+        "WHY a usage error happened, as a DECLARED TABLE: each row is a
+         ground and the sentence that names it. Six rows, consumed
+         twice — the composition reads them and a drift law reads the
+         same rows — exactly as sourceFlags, publishLayouts, verbRows
+         and deserializationBoundaries are.
+
+         FOUR GROUNDS ARE THE VERB GRAMMAR'S and two are decided outside
+         it: both source flags, refused here before any verb exists, and
+         an unrecognized --layout, refused inside publish after a row
+         already matched. NEITHER OF THOSE TWO COMPOSES ITS OWN
+         SENTENCE, and the shipped code shows why: usageResult used to
+         obtain its answer by running the settled CLI on an EMPTY argv,
+         so an operator who typed two source flags would have been told
+         `no verb given` — a false statement about their argv, produced
+         by the economy rather than by anyone's intent. Composing at the
+         site that refuses would replace one wrong sentence with two
+         wordings no law can see.
+
+         THE FLAG AND LAYOUT LISTS ARE COMPOSED FROM THEIR OWN TABLES,
+         never typed here: a fourth source or a third layout must not be
+         able to drift out of the sentence that offers it.
+
+         The rows are built in groups of at most five: 3.2.5's Array
+         answers no with: longer than that (see CLI class >> verbRows)."
+        <category: 'usage reasons'>
+        ^(Array
+            with: (Array with: #noVerb
+                with: [:subject | 'no verb given'])
+            with: (Array with: #unknownVerb
+                with: [:subject | subject, ' is not a parley verb'])
+            with: (Array with: #wrongArguments
+                with: [:subject | subject, ' does not take those arguments'])
+            with: (Array with: #needsIndex
+                with: [:subject | subject, ' needs an index - give ',
+                    (self list: self sourceFlagNames conjunction: 'or')])
+            with: (Array with: #bothSourceFlags
+                with: [:subject |
+                    (self list: self sourceFlagNames conjunction: 'and'),
+                        ' are mutually exclusive - give one'])),
+            (Array with: (Array with: #unknownLayout
+                with: [:subject | subject, ' is not an index layout - give ',
+                    (self list: self publishLayoutNames conjunction: 'or')]))
+    ]
+
+    CommandLine class >> usageReasonFor: aGroundSymbol subject: aSubject [
+        "The declared sentence for one ground. A ground with no row is a
+         defect in the caller, not a sentence to invent."
+        <category: 'usage reasons'>
+        self usageReasons do: [:row |
+            (row at: 1) = aGroundSymbol
+                ifTrue: [^(row at: 2) value: aSubject]].
+        ^self error: 'no declared usage reason for ',
+            aGroundSymbol printString
+    ]
+
+    CommandLine class >> list: someStrings conjunction: aWord [
+        "Private — someStrings as English: comma-separated, the last two
+         joined by aWord. Two items take no comma."
+        <category: 'usage reasons'>
+        | out |
+        out := WriteStream on: String new.
+        1 to: someStrings size do: [:i |
+            i = 1 ifFalse: [
+                i = someStrings size
+                    ifTrue: [out nextPutAll: ' ', aWord, ' ']
+                    ifFalse: [out nextPutAll: ', ']].
+            out nextPutAll: (someStrings at: i)].
+        ^out contents
+    ]
+
+    CommandLine class >> publishLayoutNames [
+        "Every layout the table declares, derived from it so a sentence
+         offering the layouts cannot name a set the wiring does not."
+        <category: 'publish layouts'>
+        ^self publishLayouts collect: [:row | row at: 1]
     ]
 
     "---- the version answer (Doc E §4.2, issue #17 S12/S13) ----"
@@ -494,7 +628,8 @@ equality (the decision-23 precedent).'>
          error, because silently preferring one would make a typo look
          like a working command. Checked before anything is created or
          built, so a usage error touches nothing."
-        (self sourceRowsIn: args) size > 1 ifTrue: [^self usageResult].
+        (self sourceRowsIn: args) size > 1 ifTrue: [
+            ^self usageResultFor: #bothSourceFlags subject: ''].
         "THE PRECEDENCE DECISION, AND IT IS THIS ONE LINE (§8 decision
          64; Doc E §4.2). An explicit flag always wins, and the
          configuration is then NEVER CONSULTED — not per key, not for the
@@ -524,7 +659,12 @@ equality (the decision-23 precedent).'>
          the rule publish already follows when it declines to create a
          destination it refuses (Doc F §1)."
         (self answersUsageFor: args withSource: choice notNil)
-            ifTrue: [^self usageResult].
+            ifTrue: [
+                | verbArgv |
+                verbArgv := self verbArgvIn: args.
+                ^self usageResultFor: (CLI usageGroundFor: verbArgv
+                    withSource: choice notNil)
+                    subject: (CLI usageSubjectFor: verbArgv)].
         self createStateDirectories.
         ^(self cliWithSource: (self sourceFromChoice: choice))
             run: (self verbArgvIn: args)
@@ -639,20 +779,29 @@ equality (the decision-23 precedent).'>
     ]
 
     helpResult [
-        "Private — the pinned usage lines at EXIT 0, which is the whole
-         point of §8 decision 57: the text was already printed for
-         --help, but at exit 2, so the first command a new user types
-         failed any set -e script or CI smoke check while --version
-         beside it succeeded. Same product, same kind of question, two
-         different answers.
+        "Private — THE BLOCK ALONE, at exit 0.
 
-         The lines are the SETTLED CLI's own usage answer, taken from
-         usageResult rather than restated, so the question and the usage
-         error can never print two different texts and the pinned usage
-         block needs no re-pin: --help prints what is already there and
-         adds no line to it."
+         Exit 0 is the whole point of §8 decision 57: the text was
+         already printed for --help, but at exit 2, so the first command
+         a new user types failed any set -e script or CI smoke check
+         while --version beside it succeeded.
+
+         IT NO LONGER TAKES THE USAGE ANSWER WHOLESALE, and the comment
+         that recorded that as a feature is gone with it (§8 decision
+         79). `The question and the usage error can never print two
+         different texts` was true and became the wrong economy the
+         moment a usage error started naming what was wrong: --help
+         would have inherited `no verb given`, asserting a fault in a
+         request that has none, which is the very thing decision 57
+         exists to prevent.
+
+         THE SHARED ARTIFACT IS THE BLOCK, NOT THE ANSWER. Both compose
+         CLI class >> usageBlock, so the two can still never disagree
+         about what the tool offers; neither is derived from the other's
+         finished answer, so neither can inherit the other's claim about
+         what just happened."
         <category: 'private'>
-        ^CliResult lines: self usageResult lines exitCode: 0
+        ^CliResult lines: CLI usageBlock exitCode: 0
     ]
 
     versionResult [
@@ -663,13 +812,20 @@ equality (the decision-23 precedent).'>
         ^CliResult lines: (Array with: self class versionLine) exitCode: 0
     ]
 
-    usageResult [
-        "Private — the usage answer for a flag-grammar violation. It is
-         the SETTLED CLI's own answer, obtained by handing a source-less
-         CLI the argv it already answers usage for, so the flag grammar
-         and the verb grammar can never print two different usages."
+    usageResultFor: aGroundSymbol subject: aSubject [
+        "Private — the ground's declared reason line, then the settled
+         block, exit 2.
+
+         It composes from the CLASS-SIDE declarations rather than by
+         running a source-less CLI on an empty argv, which is how this
+         method used to obtain its lines: that trick shared the whole
+         ANSWER where only the BLOCK is shared, so under decision 79 it
+         would have answered `no verb given` to an operator who gave a
+         verb and two source flags."
         <category: 'private'>
-        ^(self cliWithSource: nil) run: #()
+        ^CliResult
+            lines: (CLI usageLinesFor: aGroundSymbol subject: aSubject)
+            exitCode: 2
     ]
 
     "---- the flag grammar ----"

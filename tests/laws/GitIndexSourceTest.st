@@ -154,9 +154,17 @@ the command and code, and the delegating messages run no git at all.'>
         | absent cloneRunner cache pullRunner |
         absent := self absentPath: 'git-quiet-clone-cache'.
         cloneRunner := RecordingRunner new.
-        (GitIndexSource repo: 'tmp/parley-git-quiet-repo'
+        "A RECORDING RUNNER RECORDS AND NEVER CLONES, so the cache is
+         still absent when the inner scan runs and the snapshot signals
+         the settled missing-directory SourceError. The command line was
+         composed and recorded BEFORE that, which is the whole of what
+         this law asserts — so the failure is consumed through the
+         settled helper rather than avoided by populating a cache, which
+         would compose the OTHER branch and leave the clone line
+         untested."
+        self problemsFrom: [(GitIndexSource repo: 'tmp/parley-git-quiet-repo'
             cache: absent
-            runner: cloneRunner) snapshot.
+            runner: cloneRunner) snapshot].
         self assert: cloneRunner commands size = 1
             description: 'a cold snapshot ran ',
                 cloneRunner commands printString.

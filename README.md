@@ -18,6 +18,10 @@ parley resolve                  Resolve dependencies and write the lockfile
 parley install                  Resolve, fetch, and register dependencies
 parley update [<pkg>]           Re-resolve ignoring the lockfile — or move one package
 parley add <pkg> <constraint>   Declare a dependency and move the project onto it
+parley remove <pkg>             Delete a dependency and move the project off it
+parley search <term>            Find packages the index publishes by name
+parley info <pkg>               Show a package's versions, metadata and dependencies
+parley outdated                 Show which pins have newer releases, and which need a wider constraint
 parley publish <dir>            Build the archive and land a release in an index
 parley exec <script>            Run a program inside a curated, resolved environment
 parley why <pkg>                Explain what put a package in the lockfile

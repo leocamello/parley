@@ -4,7 +4,21 @@
  Hand-buildable from release tuples; answers versionsOf:,
  dependenciesOf:version: (pre-parsed Dependency values) and
  sha256For:version: ('' when absent). Built once before resolution
- begins — the resolver performs zero live I/O against it."
+ begins — the resolver performs zero live I/O against it.
+
+ IT ANSWERS TWO FURTHER ENUMERATIONS FOR THE REPORTING VERBS, and both
+ are purely additive (Sprint 20, Doc C §2): packageNames, sorted, and
+ allVersionsOf:, which keeps retired releases and bypasses the held
+ map. No existing selector changes behaviour and the Resolver calls
+ neither — they exist for verbs that read and explain, and a snapshot
+ whose two reporting accessors SIGNAL still resolves, which is how the
+ laws prove it rather than by reading the search loop.
+
+ The distinction between allVersionsOf: and versionsOf: is deliberate
+ and load-bearing: versionsOf: answers what a fresh resolution may
+ PICK, allVersionsOf: answers what the index PUBLISHED, and collapsing
+ the two would either leak retirement into the search loop or report
+ this project's own pin as the index's newest release."
 
 Namespace current: Parley.
 
@@ -126,6 +140,55 @@ construction is class-side; no operation mutates a built snapshot.'>
         ^((packages at: aName ifAbsent: [^#()])
             reject: [:rec | self isRetired: aName version: (rec at: 1)])
                 collect: [:rec | rec at: 1]
+    ]
+
+    packageNames [
+        "Every package name this snapshot holds, SORTED — the
+         enumeration the reporting verbs need and the one nothing
+         previously offered (Doc C §2, Sprint 20).
+
+         PURELY ADDITIVE, and the addition is an accessor on the
+         snapshot rather than a new PackageSource selector: a snapshot
+         is a value every source already answers, and growing the
+         protocol would change three settled sources for a question
+         none of them needs to be asked.
+
+         Sorted because the answer is RENDERED. A rendering that varied
+         with dictionary order would not be byte-stable, which is the
+         property every other answer this tool composes already has.
+
+         THE RESOLVER CALLS THIS NEVER. It exists for verbs that read
+         and explain (§8 decision 40), and the purity contract above is
+         untouched: nothing here is reachable from the search loop."
+        <category: 'reporting'>
+        ^(packages keys asSortedCollection: [:a :b | a <= b]) asArray
+    ]
+
+    allVersionsOf: aName [
+        "Every version of aName this snapshot holds, RETIRED ONES
+         INCLUDED, sorted ascending; empty when unknown.
+
+         DELIBERATELY DISTINCT FROM versionsOf:, and the distinction is
+         the point rather than an inconvenience. versionsOf: answers
+         what a FRESH RESOLUTION MAY PICK: it excludes retired releases
+         (§2.1) and it collapses a HELD name to exactly its held version
+         (§2.2). Both are right for resolution and wrong for a report —
+         a verb built on versionsOf: would tell an operator that their
+         own pin is the newest release the index carries, which is a
+         confident wrong answer about somebody else's index.
+
+         So this accessor answers what the index PUBLISHED: the held map
+         is bypassed and the retirement filter is not applied here.
+         Retirement is still reported, by the settled
+         retirementReasonFor:version: beside it — what an index
+         published and what it still recommends are two facts, and the
+         caller renders both rather than being handed one.
+
+         THE RESOLVER CALLS THIS NEVER, for the same reason as above."
+        <category: 'reporting'>
+        ^((packages at: aName ifAbsent: [^#()])
+            collect: [:rec | rec at: 1])
+                asSortedCollection asArray
     ]
 
     dependenciesOf: aName version: aVersion [

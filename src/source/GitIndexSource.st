@@ -6,7 +6,12 @@
 
  snapshot is the source's one I/O moment, git moment included: clone
  when the cache is absent, fast-forward pull when it is present, then
- the inner source's snapshot. A nonzero git exit is one SourceError —
+ the inner source's snapshot. BOTH COMPOSED LINES CARRY --quiet from
+ Sprint 20 (finding F19, §8 decision 77): this source used to print
+ git's own text on every snapshot — to stderr on a cold cache, and to
+ STDOUT above Parley's own answer on every warm one. The flag stops
+ the text being written and buffers nothing; a failing git still
+ answers fatal: … at exit 128. A nonzero git exit is one SourceError —
  the settled batched-scan error class, because a broken transport and a
  broken entry are both 'this source cannot answer'. Its single problem
  carries the exact command line and the exit code and never any stderr
@@ -100,11 +105,33 @@ until snapshot. Class-side construction; zero public setters.'>
     refreshCommand [
         "Private — the one git command line of a snapshot: clone into
          an absent cache, fast-forward an existing one. --ff-only
-         because an index checkout is a mirror, never a merge base."
+         because an index checkout is a mirror, never a merge base.
+
+         BOTH LINES CARRY --quiet (Sprint 20, finding F19, §8 decision
+         77's rule applied to the last member of the domain it named).
+         Without it this source printed text Parley did not compose on
+         every single snapshot, and the recorded description of the gap
+         understated it: a cold cache wrote `Cloning into '<cache>'` and
+         `done.` to STDERR, naming a .parley/git/<sha256> path the
+         operator never chose; a warm cache wrote `Already up to date.`
+         to STDOUT, ABOVE Parley's own answer; and a warm cache whose
+         index had moved wrote a whole diffstat of the index
+         repository's files there. Every run after the first put it on
+         the stream the record called clean.
+
+         THE FLAG STOPS TEXT BEING WRITTEN AND BUFFERS NOTHING, which
+         is what keeps it clear of the deferred output-capture row — the
+         same shape -g took for exec's child. And it silences chatter,
+         never failure: probed on this exact composition, a clone of a
+         repository that does not exist still answers `fatal: repository
+         … does not exist` at exit 128, and a diverged cache still
+         answers `fatal: Not possible to fast-forward, aborting.` at
+         128, so the settled SourceError still reaches the operator
+         naming the command actually run — flag included."
         <category: 'private'>
         ^(PathGuard exists: cache)
-            ifTrue: ['git -C ', cache, ' pull --ff-only']
-            ifFalse: ['git clone ', repo, ' ', cache]
+            ifTrue: ['git -C ', cache, ' pull --ff-only --quiet']
+            ifFalse: ['git clone --quiet ', repo, ' ', cache]
     ]
 ]
 
