@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 20
-phase: green
+sprint: 21
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -289,3 +289,76 @@ scope-19: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # docs/method/ remains operator-authored and is NOT agent-writable, as
 # scope-15 through scope-19 record.
 scope-20: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-21 is identical to scope-20: Sprint 21 introduces TWO NEW CLASSES —
+# Parley.PathOverlay (src/source/) and Parley.PathDependency (src/domain/) —
+# but NO new src/ directory: both land in directories scripts/run-tests.st
+# already files in, so that script is unchanged and must not be edited.
+#
+# Issue #23. Specs of record: Doc B §2/§3.2/§3.4/§4/§5.2/§5.3; Doc C
+# §1.2/§1.3/§2/§7; Doc E §4/§4.1/§4.2/§5; Doc F §1 step 0. Decisions 68, 69
+# and 83 landed BEFORE red at c86a754, with the doc changes citing them —
+# the spec you read is already correct.
+#
+# Declared settled-class exceptions this sprint are TEN, each bounded (the
+# full bounds live in issue #23's table — the issue is the contract):
+#
+#   ManifestBuilder  - the two vocabulary methods and their raw recording;
+#     build validation per Doc B §3.4 items 4-6. DNU path untouched.
+#   LibraryManifest  - pathDependencies and devDependencies (collections,
+#     accessors, construction); fromIndexEntry: reconstructs neither.
+#   Publisher        - Doc F §1 step 0, the path-dependency pre-flight
+#     refusal. Nothing else.
+#   CLI              - verbRows: resolve's guard drops its source
+#     requirement (§8 decision 83) — ONE guard, no other row; resolve's
+#     three states and overlay construction; the conflict-provenance line;
+#     the lock write rendering #path tuples and the path-free view handed
+#     to Installer; exec's sibling file-in input; the matrix legs of
+#     info/search/outdated/why/check; --locked at the lock-write site;
+#     usageBlock header + two flags rows. THE HOLDING MAP EXCLUDES
+#     PATH-PROVENANCE NAMES (§8 decision 68) — a path pin is never held.
+#   CommandLine      - the mode-flag declared table and extraction; the
+#     --offline wiring refusal keyed off the settled sourceFlags; handing
+#     the modes to the CLI; the two declared refusal wordings. sourceFlags
+#     itself UNTOUCHED — SourceFlagTest:149 must not move.
+#   IndexSnapshot    - the additive overlay composition with the provenance
+#     split (Doc C §2). src/resolver/ — most-reviewed lines.
+#   Resolution       - #path provenance: fromLockEntry:, a provenance
+#     accessor, the path-free view. src/resolver/.
+#   PinVerification  - the three-kinds extension. Existing wordings
+#     byte-identical. src/resolver/.
+#   IndexEntryWriter - writeLock:on: renders the #path tuple; a path-free
+#     lock's bytes IDENTICAL to Sprint 20's. Entry side untouched.
+#   ExecutionScope   - the child composition gains the path file-ins;
+#     unchanged when no path pins; register untouched.
+#
+# NOT exceptions, each a halt-and-ask on #23: ProcessRunner, Resolver and
+# every strategy and ConstraintLedger (§8 decision 40), DirectorySource,
+# GitIndexSource and SparseIndexSource (the overlay is a DECORATOR and the
+# re-seed rides the settled seededWith: — if a source change looks cleaner,
+# HALT), Installer/InstalledSet/ContentStore (the path-free view exists so
+# these never learn paths exist), ManifestFile, ManifestCapture,
+# ManifestEditor, PathGuard, Configuration, Sha256, Dependency.
+#
+# NO SCHEMA MOVES for entries: #'parley-index' 1 is byte-identical (§8
+# decision 69). The LOCK gains one declared alternative pin-tuple form,
+# #(<name> <version> #path '<declared path>') — tag, format version and
+# both keys unchanged; a path-free lock is byte-identical to Sprint 20's.
+#
+# DECLARED PASSES-IN-RED: EXACTLY ONE — S33's bound guard (a source-less
+# install still answers the #needsIndex usage error; §8 decision 83 defers
+# the mirror). Any OTHER pass in red is undeclared by definition and is a
+# finding at Gate A. Write NO dedicated no-overlay regression law: the 983
+# settled laws are that guard.
+#
+# THE CENSUS STAYS AT EIGHT. PathOverlay performs no direct File I/O —
+# siblings are read through the settled ManifestFile. If PathOverlay's
+# source acquires 'FileStream ', 'File name:', 'Directory create:' or
+# 'Directory workingName' it becomes a ninth class and
+# Sprint17AcceptanceTest>>testS13 fails by construction (§8 decision 60).
+#
+# bin/ stays in scope — the shipped binary is law-guarded from Sprint 8
+# onward, and this sprint's end-to-end workflow scenario (S10) spawns it.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-20 record.
+scope-21: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)

@@ -24,7 +24,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-*Nothing in flight. Sprint 21 is staged at Gate C against the list below.*
+- **Sprint 21 — dependencies you are developing.** §2 **item 6**, issue [#23](https://github.com/leocamello/parley/issues/23), **staged at Gate C 2026-08-12** against **983 laws**, `deferred 0×`, **undisplaced — the eleventh consecutive sprint the ranking won on its own merits.** `path:` and `devDependency:` as root-manifest-only vocabulary (the entry schema does not move), the overlay computed by the source layer, `--offline` and `--locked` as guard invariants, and the dependency-free-resolve rider (the plan's named orphan c, staged as S30–S33). §8 decisions **68, 69, 83** landed pre-RED at `c86a754` with the docs citing them. Carried gaps disposed at staging: **CF-1 re-deferred** with its reason (and this sprint's deliberate additions to its class declared), **CF-6 staged as a Gate A reviewer amendment**; F23's companion resolved by Ban 105 (`1f4cfce`).
 
 ### Recently delivered
 
@@ -109,10 +109,11 @@ roadmap item that wins on its own merits rather than a displacement.
    grounds, one declared table read twice) and **82** (a transitive pin renders a marker, never
    a version). The usage-error first lines and the **F19** carried gap rode along and both
    landed.
-6. **Dependencies you are developing** — *deferred 0×.* Path dependencies and dev-only
+6. **Dependencies you are developing** — *deferred 0×.* **Staged as Sprint 21 at Gate C,
+   2026-08-12, issue #23, undisplaced — see In flight above.** Path dependencies and dev-only
    dependencies. In an ecosystem with no published packages, two directories side by side is
    *the* workflow, and today it costs a `parley publish` per edit. Both are **root-manifest-only
-   vocabulary**, so the index entry schema does not move. §8 decisions 68, 69.
+   vocabulary**, so the index entry schema does not move. §8 decisions 68, 69, 83.
 7. **The release** — *deferred 0×.* CHANGELOG, the declared release manifest with a law over
    it, shell completions, the CI drift law, and the tag. §8 decisions 70, 71.
 
@@ -127,10 +128,13 @@ that nothing scheduled building. **A forward reference to an unscheduled thing i
 two-artifacts-disagreeing shape [§8 decision 60](design/architecture.md#8-decision-log) was ruled
 about**, so the fix is a slot rather than a memory.
 
-- **CI runs the one gate** — ⏱ *not started; **honoured at Sprint 18's Gate C**: it lands as one
-  `chore(ci):` commit immediately **before** the scope advance, so Sprint 18's first push is
-  observed.* Ruled rather than re-dated, because the commitment was to a date and re-dating a
-  written commitment is what §8 decision 60 was ruled about. **It is not folded into the sprint:**
+- **CI runs the one gate** — ✅ **landed at `39f95e4`** (the plan's H0), as ruled at Sprint 18's
+  Gate C: one `chore(ci):` commit immediately **before** the scope advance, so Sprint 18's first
+  push was observed — **green over every push since**. *(This entry read "not started" until
+  Sprint 21's Gate C, 2026-08-12 — stale against a workflow that had been running for three
+  sprints; corrected single-hand at that gate.)* Ruled rather than re-dated, because the
+  commitment was to a date and re-dating a written commitment is what §8 decision 60 was ruled
+  about. **It is not folded into the sprint:**
   the harness has never been sprint scope, and admitting it would make `verify-sprint.sh`'s own
   scope sentinel police the file that runs it. `scripts/verify-sprint.sh` is
   the single verification entry point and it runs on one laptop. This project's central public
