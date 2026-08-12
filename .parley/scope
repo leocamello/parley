@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 19
-phase: green
+sprint: 20
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -221,3 +221,71 @@ scope-18: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # docs/method/ remains operator-authored and is NOT agent-writable, as
 # scope-15 through scope-18 record.
 scope-19: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-20 is identical to scope-19: Sprint 20 introduces NO NEW CLASS and
+# no new src/ directory — the four verbs live in the settled CLI, deletion
+# lives in the settled ManifestEditor (src/manifest/) — so
+# scripts/run-tests.st is unchanged and must not be edited.
+#
+# Issue #22. Specs of record: Doc E §4, §4.1, §4.2; Doc B §2.1; Doc C §2;
+# Doc F §7.3. Decisions 67, 79 and 80 landed BEFORE red at 9b5d443, with
+# the doc changes citing them — the spec you read is already correct.
+#
+# Declared settled-class exceptions this sprint are FIVE, each bounded:
+#
+#   ManifestEditor  - gains the deletion recognizer and its splice. It
+#     recognizes the clause AND THE SEPARATOR binding it to its neighbours
+#     (§8 decision 67): a deletion that recognizes too little DAMAGES where
+#     an insertion that recognizes too little merely refuses. The insertion
+#     path is untouched.
+#   CLI             - four verb rows in verbRows and their dispatch; the
+#     usage composition split into BLOCK and REASON+BLOCK; and info
+#     SENDING THE SETTLED PRIVATE seededSourceAdding: — add's own,
+#     written for the identical reason (a name in neither Package.st nor
+#     parley.lock must be seeded explicitly, issue #16 S16). No new
+#     mechanism; that private's method comment gains its second-caller
+#     sentence, which is inside this bound. Existing verbs unchanged.
+#   CommandLine     - four usage rows; helpResult STOPS taking usageResult
+#     lines wholesale (§8 decision 79) and its settled method comment
+#     recording that coupling is rewritten; the search-capability predicate
+#     keyed off the settled sourceFlags declaration.
+#   IndexSnapshot   - TWO PURELY ADDITIVE ACCESSORS ONLY: a sorted package-
+#     name enumeration, and an all-versions-INCLUDING-RETIRED enumeration
+#     deliberately distinct from versionsOf:'s decision-37 filtered view.
+#     No existing selector changes behaviour and the Resolver calls
+#     neither. This is src/resolver/ — expect these two methods to be the
+#     sprint's most-reviewed lines.
+#   GitIndexSource  - refreshCommand's TWO COMPOSED LINES GAIN --quiet,
+#     nothing else (the F19 carried gap; §8 decision 77 applied to the
+#     domain member that finding named). The scan, the fetch:version:
+#     composition, the cache keying by Sha256 and the failure-diagnosis
+#     composition are untouched.
+#
+# GitIndexSource is on this list because Sprint 19's lineage above teaches
+# it in mirror: that block named Installer as an exception and the pre-RED
+# ruling withdrew it (Installer composes no command line at all), while
+# ExecutionScope and IndexEntryReader had to be GRANTED mid-flight. A rider
+# that edits settled code is declared here or it is a halt-and-ask.
+#
+# NOT exceptions, each a halt-and-ask: ProcessRunner (--quiet is a flag on
+# a COMPOSED LINE, never a change to the seam), Resolver and every strategy
+# (§8 decision 40 — the read-only verbs are proved by trap double never to
+# enter it), DirectorySource and SparseIndexSource (search's capability is
+# keyed off sourceFlags, NOT a new PackageSource protocol selector — if a
+# protocol method looks genuinely cleaner, HALT and say so on #22),
+# Publisher, PathGuard, ManifestBuilder, ManifestCapture, ManifestFile.
+#
+# NO SCHEMA MOVES. #'parley-index' 1 is byte-identical; §8 decision 80
+# REFUSES the sparse catalogue rather than building it.
+#
+# DECLARED PASSES-IN-RED: NONE. A sprint adding verbs and laws over new
+# declarations should have nothing passing before its code exists, so any
+# pass in red is undeclared by definition and is a finding at Gate A.
+#
+# bin/ stays in scope - the shipped binary is law-guarded from Sprint 8
+# onward, and S20-S22 spawn it to capture stdout AND stderr separately on
+# a --git verb, which NO existing law does. That hole is exactly why the
+# F19 gap shipped.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-19 record.
+scope-20: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
