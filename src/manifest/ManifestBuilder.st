@@ -7,7 +7,8 @@
 Namespace current: Parley.
 
 Object subclass: ManifestBuilder [
-    | name version summary author license fileIns dependencies |
+    | name version summary author license fileIns dependencies
+      pathDependencies devDependencies |
 
     <comment: 'Accumulates raw Package.st declarations for the duration of
 one Parley define: evaluation. The DSL vocabulary is the set of explicit
@@ -35,7 +36,9 @@ error path only. All parsing and validation happens in build.'>
         summary := ''.
         author := ''.
         license := ''.
-        dependencies := OrderedCollection new
+        dependencies := OrderedCollection new.
+        pathDependencies := OrderedCollection new.
+        devDependencies := OrderedCollection new
     ]
 
     "---- the manifest vocabulary (explicit methods; never DNU) ----"
@@ -95,6 +98,38 @@ error path only. All parsing and validation happens in build.'>
         dependencies add: aName -> '*'
     ]
 
+    dependency: aName path: aPathString [
+        "Declare a PATH dependency on aName, supplied by the directory
+         aPathString names relative to this manifest's own directory —
+         the package you are developing beside this one (Sprint 21, §8
+         decisions 68 and 69).
+
+         Root-manifest-only vocabulary: it is NEVER serialized into an
+         index entry, so a published release can never declare one and
+         publish refuses a manifest that does. The path is recorded RAW,
+         exactly as written: a lock travels with its checkout, so it
+         must carry the author's '../kernel-text' and not one machine's
+         expansion. Whether the directory exists is not this cascade's
+         question — that is diagnosed where the path is used."
+        <category: 'manifest vocabulary'>
+        pathDependencies add: aName -> aPathString
+    ]
+
+    devDependency: aName constraint: aConstraintString [
+        "Declare a DEVELOPMENT dependency on aName under the constraint
+         grammar in aConstraintString — resolved and installed for THIS
+         manifest alone (Sprint 21, §8 decision 69).
+
+         Root-manifest-only vocabulary: it is never serialized into an
+         index entry, so a consumer of a published package receives no
+         dev dependency of its author's, and a sibling's dev
+         dependencies are excluded from its overlay record exactly as
+         publish would exclude them. The constraint is parsed at build,
+         like every other."
+        <category: 'manifest vocabulary'>
+        devDependencies add: aName -> aConstraintString
+    ]
+
     "---- the error path ----"
 
     doesNotUnderstand: aMessage [
@@ -113,7 +148,7 @@ error path only. All parsing and validation happens in build.'>
          ManifestError carrying ALL problems, or answer an immutable
          LibraryManifest."
         <category: 'building'>
-        | problems parsedVersion deps seen |
+        | problems parsedVersion deps paths devs seen |
         problems := OrderedCollection new.
         name isNil
             ifTrue: [problems add: 'missing required field name']
@@ -134,26 +169,35 @@ error path only. All parsing and validation happens in build.'>
             ifTrue: [problems add:
                 'fileIns must declare at least one file to load'].
         deps := OrderedCollection new.
+        paths := OrderedCollection new.
+        devs := OrderedCollection new.
+        "THE DUPLICATE AND SELF RULES QUANTIFY OVER ALL THREE DECLARED
+         KINDS TOGETHER (Doc B §3.4 item 5, Sprint 21), which is what
+         the ONE shared seen set is: all three end up as pins in one
+         lock, so a name claimed twice is a project that cannot say
+         which declaration it meant. A rule enforced within each
+         collection separately would pass every single-kind fixture."
         seen := Set new.
         dependencies do: [:pair |
-            | depName parsed |
-            depName := pair key.
-            (seen includes: depName)
-                ifTrue: [problems add:
-                    'duplicate dependency ', depName printString]
-                ifFalse: [seen add: depName].
-            depName = name ifTrue: [
-                problems add: 'package ', name printString,
-                    ' cannot depend on itself'].
-            [parsed := VersionConstraint fromString: pair value]
-                on: ConstraintFormatError
-                do: [:e |
-                    problems add: 'invalid constraint ',
-                        pair value printString, ' for dependency ',
-                        depName printString.
-                    e return: nil].
+            | parsed |
+            self checkName: pair key seen: seen problems: problems.
+            parsed := self constraintOf: pair problems: problems.
             parsed notNil ifTrue: [
-                deps add: (Dependency name: depName constraint: parsed)]].
+                deps add: (Dependency name: pair key constraint: parsed)]].
+        pathDependencies do: [:pair |
+            self checkName: pair key seen: seen problems: problems.
+            (self isNonEmptyString: pair value)
+                ifTrue: [paths add:
+                    (PathDependency name: pair key path: pair value)]
+                ifFalse: [problems add: 'invalid path ',
+                    pair value printString, ' for dependency ',
+                    pair key printString]].
+        devDependencies do: [:pair |
+            | parsed |
+            self checkName: pair key seen: seen problems: problems.
+            parsed := self constraintOf: pair problems: problems.
+            parsed notNil ifTrue: [
+                devs add: (Dependency name: pair key constraint: parsed)]].
         problems isEmpty ifFalse: [^ManifestError signalProblems: problems].
         ^LibraryManifest
             name: name
@@ -163,6 +207,49 @@ error path only. All parsing and validation happens in build.'>
             license: license
             fileIns: fileIns asArray copy
             dependencies: deps asArray
+            paths: paths asArray
+            dev: devs asArray
+    ]
+
+    checkName: aName seen: aSeenSet problems: aProblemCollection [
+        "Private — the duplicate and self-dependency rules, applied to
+         one declared name whatever kind declared it. Extracted so the
+         three loops consume ONE definition of both sentences: two
+         copies of a settled wording is the drift §8 decision 28's rule
+         exists to prevent, and the sentences themselves are unchanged."
+        <category: 'private'>
+        (aSeenSet includes: aName)
+            ifTrue: [aProblemCollection add:
+                'duplicate dependency ', aName printString]
+            ifFalse: [aSeenSet add: aName].
+        aName = name ifTrue: [
+            aProblemCollection add: 'package ', name printString,
+                ' cannot depend on itself']
+    ]
+
+    constraintOf: aPair problems: aProblemCollection [
+        "Private — the settled constraint parse and its settled problem
+         sentence, extracted so index and dev dependencies consume one
+         definition (Doc B §3.4 item 4: dev dependencies included).
+         Answers nil when the constraint does not parse."
+        <category: 'private'>
+        ^[VersionConstraint fromString: aPair value]
+            on: ConstraintFormatError
+            do: [:e |
+                aProblemCollection add: 'invalid constraint ',
+                    aPair value printString, ' for dependency ',
+                    aPair key printString.
+                e return: nil]
+    ]
+
+    isNonEmptyString: aValue [
+        "Private — Doc B §3.4 item 6. Existence is NOT this pass's
+         question: a path is recorded raw and a missing or unreadable
+         sibling is diagnosed where the path is used, naming it. What
+         this asks is only whether the declaration describes anything
+         at all."
+        <category: 'private'>
+        ^(aValue isKindOf: String) and: [aValue isEmpty not]
     ]
 
     isValidPackageName: aString [

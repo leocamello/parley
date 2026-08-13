@@ -18,7 +18,7 @@
 Namespace current: Parley.
 
 Object subclass: ExecutionScope [
-    | installedSet target runner |
+    | installedSet target runner fileIns |
 
     <comment: 'The process-level sandbox: holds an InstalledSet, a
 target directory and a ProcessRunner immutably. register executes the
@@ -30,20 +30,45 @@ zero public setters.'>
     ExecutionScope class >> on: anInstalledSet target: aTargetDir runner: aProcessRunner [
         "Answer a scope over anInstalledSet, registering into and
          running against aTargetDir, spawning only through
-         aProcessRunner."
+         aProcessRunner.
+
+         THE SETTLED CONSTRUCTOR, UNCHANGED FOR EVERY SETTLED CALLER,
+         and it answers a scope with NO extra file-ins — which is what
+         makes the pinned child composition byte-identical when no path
+         pins exist (Sprint 21)."
+        <category: 'instance creation'>
+        ^self
+            on: anInstalledSet
+            target: aTargetDir
+            runner: aProcessRunner
+            fileIns: #()
+    ]
+
+    ExecutionScope class >> on: anInstalledSet target: aTargetDir runner: aProcessRunner fileIns: someFilePaths [
+        "The same, plus source files the child must file in AHEAD of
+         the script (Sprint 21, §8 decision 68): the fileIns of every
+         #path pin, in dependency order, read fresh at exec time.
+
+         They arrive as a VALUE the CLI composed. This class does not
+         read the lock, does not read a sibling's Package.st and does
+         not decide what belongs here — deciding what to load is the
+         verb's business, exactly as deciding whether there is anything
+         to run is (§8 decision 56's split)."
         <category: 'instance creation'>
         ^self new
             setInstalledSet: anInstalledSet
             target: aTargetDir
             runner: aProcessRunner
+            fileIns: someFilePaths
     ]
 
-    setInstalledSet: anInstalledSet target: aTargetDir runner: aProcessRunner [
+    setInstalledSet: anInstalledSet target: aTargetDir runner: aProcessRunner fileIns: someFilePaths [
         "Private — initialization from the class-side constructor."
         <category: 'private'>
         installedSet := anInstalledSet.
         target := aTargetDir.
-        runner := aProcessRunner
+        runner := aProcessRunner.
+        fileIns := someFilePaths
     ]
 
     registrationCommands [
@@ -126,7 +151,31 @@ zero public setters.'>
          and nothing else — stdout byte-identical, exit code unchanged,
          so decision 45's pass-through is untouched."
         <category: 'running'>
-        ^'gst -g -i -I ', target, '/parley.im --no-user-files ', aScriptPath
+        ^'gst -g -i -I ', target, '/parley.im --no-user-files ',
+            self fileInPrefix, aScriptPath
+    ]
+
+    fileInPrefix [
+        "Private — the path-supplied sources the child files in AHEAD of
+         the script, each followed by a space, or the empty string when
+         there are none (Sprint 21, §8 decision 68).
+
+         gst files in every .st argument in order, so putting the
+         sibling's own sources first is the whole mechanism: edit the
+         sibling, re-run exec, and the change is picked up WITH NO
+         PUBLISH. The ruled-out alternative — rebuild and re-register
+         the sibling's star per run — is publish-per-edit in mechanism,
+         the precise cost this feature exists to abolish.
+
+         WHEN THERE ARE NO PATH PINS THIS ANSWERS '' AND THE PINNED
+         COMPOSITION IS BYTE-IDENTICAL, which is what keeps the settled
+         child-command law from moving."
+        <category: 'private-running'>
+        | out |
+        fileIns isEmpty ifTrue: [^''].
+        out := WriteStream on: String new.
+        fileIns do: [:each | out nextPutAll: each; nextPut: Character space].
+        ^out contents
     ]
 
     run: aScriptPath [

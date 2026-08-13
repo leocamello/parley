@@ -23,7 +23,7 @@
 Namespace current: Parley.
 
 Object subclass: IndexSnapshot [
-    | packages retirements held |
+    | packages retirements held overlaid |
 
     <comment: 'An immutable in-memory index snapshot. packages maps a
 package name to the ordered collection of its (version, sha256,
@@ -69,7 +69,71 @@ construction is class-side; no operation mutates a built snapshot.'>
                 add: (Array
                     with: (tuple at: 2)
                     with: (tuple at: 3))].
-        held := Dictionary new
+        held := Dictionary new.
+        overlaid := Dictionary new
+    ]
+
+    overlaying: aDictionary [
+        "Answer a NEW snapshot in which every name in aDictionary is
+         supplied by a DIRECTORY rather than by the index — the Doc C §2
+         composition behind a path dependency (§8 decision 68), and the
+         holding: precedent applied a second time: an operation
+         answering a new value, the receiver unchanged.
+
+         aDictionary maps a package name to {Version. Array of
+         Dependency. declared path String}.
+
+         THE PROVENANCE SPLIT IS THE WHOLE OF THIS OPERATION, and it is
+         data on the value rather than a kind-check anywhere: the
+         RESOLUTION protocol answers the overlay for an overlaid name —
+         versionsOf: offers exactly the sibling's declared version, THE
+         WHOLE NAME, because a path dependency always wins over an index
+         release, which is what a path dependency is for — while the
+         REPORTING accessors keep answering the index alone, so
+         packageNames never lists an overlay-only name and
+         allVersionsOf: and retirementReasonFor:version: answer what the
+         index published, whoever overlays it. That split is what keeps
+         search, info and outdated honest (Doc E §4.1).
+
+         sha256For: answers '' for an overlaid release, because an
+         overlay release is described by its PROVENANCE, not a digest.
+         §8 decision 47's describability line forbids offering what
+         would write a lock tuple the boundary rejects — and the #path
+         tuple IS a tuple the boundary accepts (Doc B §5.3), so the line
+         holds rather than bends.
+
+         The Resolver calls nothing new: it selects from what
+         versionsOf: offers, exactly as it does for retirement and for
+         held pins, so a future PubGrubStrategy inherits path
+         dependencies for free."
+        <category: 'overlaying'>
+        ^self class new
+            setPackages: packages
+            retirements: retirements
+            held: held
+            overlaid: aDictionary
+    ]
+
+    pathProvenance [
+        "name -> declared path string for every overlaid name, as the
+         value the CLI hands Resolution>>withPaths: after a successful
+         resolution (Doc B §5.3).
+
+         It is here rather than on the overlay because provenance must
+         survive the composition: a TRANSITIVE path pin — a sibling's
+         own path dependency — is known to the walk and to nothing the
+         CLI still holds by then, and the lock must record it exactly as
+         it records a root-declared one.
+
+         PURELY ADDITIVE, and the Resolver calls it never: it is a
+         reporting accessor in the §2 sense, answering what the walk
+         recorded rather than anything resolution selects."
+        <category: 'reporting'>
+        | out |
+        out := Dictionary new.
+        overlaid keysAndValuesDo: [:name :record |
+            out at: name put: (record at: 3)].
+        ^out
     ]
 
     holding: aDictionary [
@@ -101,17 +165,26 @@ construction is class-side; no operation mutates a built snapshot.'>
             setPackages: packages
             retirements: retirements
             held: aDictionary
+            overlaid: overlaid
     ]
 
-    setPackages: aPackagesDictionary retirements: aRetirementsDictionary held: aHeldDictionary [
-        "Private — initialization of a narrowed derivation from
-         holding:. The built record dictionaries are shared (nothing
-         ever mutates them); the held map is copied so a caller
-         mutating its argument afterwards cannot reach inside."
+    setPackages: aPackagesDictionary retirements: aRetirementsDictionary held: aHeldDictionary overlaid: anOverlaidDictionary [
+        "Private — initialization of a derivation from holding: or
+         overlaying:. The built record dictionaries are shared (nothing
+         ever mutates them); the held and overlaid maps are copied so a
+         caller mutating its argument afterwards cannot reach inside.
+
+         holding: CARRIES THE OVERLAY FORWARD (Doc C §2: holding:
+         composes AFTER the overlay). The CLI's holding map excludes
+         path-provenance names, so an overlaid name is never held — and
+         if one ever were, dropping the overlay here would narrow to a
+         version the snapshot could no longer describe, which is §8
+         decision 47's collapse arriving by composition."
         <category: 'private'>
         packages := aPackagesDictionary.
         retirements := aRetirementsDictionary.
-        held := aHeldDictionary copy
+        held := aHeldDictionary copy.
+        overlaid := anOverlaidDictionary copy
     ]
 
     versionsOf: aName [
@@ -133,6 +206,8 @@ construction is class-side; no operation mutates a built snapshot.'>
          nothing. The filter lives in this accessor and never in the
          search loop."
         <category: 'accessing'>
+        (overlaid includesKey: aName) ifTrue: [
+            ^Array with: ((overlaid at: aName) at: 1)].
         (held includesKey: aName) ifTrue: [
             ^(self recordOf: aName version: (held at: aName)) isNil
                 ifTrue: [#()]
@@ -196,6 +271,8 @@ construction is class-side; no operation mutates a built snapshot.'>
          unknown."
         <category: 'accessing'>
         | rec |
+        (self overlayRecordOf: aName version: aVersion) isNil ifFalse: [
+            ^(overlaid at: aName) at: 2].
         rec := self recordOf: aName version: aVersion.
         ^rec isNil ifTrue: [#()] ifFalse: [rec at: 3]
     ]
@@ -204,6 +281,7 @@ construction is class-side; no operation mutates a built snapshot.'>
         "The release's content hash; the empty string when absent."
         <category: 'accessing'>
         | rec |
+        (self overlayRecordOf: aName version: aVersion) isNil ifFalse: [^''].
         rec := self recordOf: aName version: aVersion.
         ^rec isNil ifTrue: [''] ifFalse: [rec at: 2]
     ]
@@ -217,6 +295,18 @@ construction is class-side; no operation mutates a built snapshot.'>
         | rec |
         rec := self retirementOf: aName version: aVersion.
         ^rec isNil ifTrue: [nil] ifFalse: [rec at: 2]
+    ]
+
+    overlayRecordOf: aName version: aVersion [
+        "Private — the overlay record for aName when it supplies exactly
+         aVersion, or nil. Keyed on the version too, so an overlaid name
+         asked about a version the sibling does not declare falls
+         through to the index's own record rather than answering for a
+         release nobody has."
+        <category: 'private'>
+        | record |
+        record := overlaid at: aName ifAbsent: [^nil].
+        ^(record at: 1) = aVersion ifTrue: [record] ifFalse: [nil]
     ]
 
     recordOf: aName version: aVersion [

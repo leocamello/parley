@@ -61,7 +61,7 @@
 Namespace current: Parley.
 
 Object subclass: CLI [
-    | workingDir source store target runner |
+    | workingDir source store target runner modes |
 
     <comment: 'The command-line orchestration over five injected
 collaborators: the working directory (Package.st and parley.lock), a
@@ -89,7 +89,18 @@ construction; zero public setters.'>
         source := aPackageSource.
         store := aContentStore.
         target := aTargetDir.
-        runner := aProcessRunner
+        runner := aProcessRunner.
+        modes := Set new
+    ]
+
+    withModes: someModes [
+        "Answer this CLI carrying the modes the invocation asserts
+         (Doc E §4.2, Sprint 21). The settled constructor answers a CLI
+         with none, so every settled caller is unchanged and a verb that
+         cannot violate an invariant satisfies it trivially."
+        <category: 'instance creation'>
+        modes := someModes.
+        ^self
     ]
 
     "---- dispatch ----"
@@ -156,8 +167,8 @@ construction; zero public setters.'>
                     and: [(a at: 1) = 'publish'
                     and: [(a at: 3) = CommandLine publishLayoutFlag]]]
                 verb: #publish:layoutNamed: args: #(2 4) named: 'publish')
-            with: (self row: [:a :s | s and: [a size = 2
-                    and: [(a at: 1) = 'why']]]
+            with: (self row: [:a :s | a size = 2
+                    and: [(a at: 1) = 'why']]
                 verb: #why: args: #(2) named: 'why')),
         (Array
             with: (self row: [:a :s | s and: [a size = 2
@@ -169,8 +180,8 @@ construction; zero public setters.'>
             with: (self row: [:a :s | s and: [a size = 2
                     and: [(a at: 1) = 'remove']]]
                 verb: #remove: args: #(2) named: 'remove')
-            with: (self row: [:a :s | s and: [a size = 1
-                    and: [(a at: 1) = 'resolve']]]
+            with: (self row: [:a :s | a size = 1
+                    and: [(a at: 1) = 'resolve']]
                 verb: #resolve args: #() named: 'resolve')
             with: (self row: [:a :s | s and: [a size = 1
                     and: [(a at: 1) = 'install']]]
@@ -189,11 +200,11 @@ construction; zero public setters.'>
                     and: [(a at: 1) = 'outdated']]]
                 verb: #outdated args: #() named: 'outdated')),
         (Array
-            with: (self row: [:a :s | s and: [a size = 1
-                    and: [(a at: 1) = 'tree']]]
+            with: (self row: [:a :s | a size = 1
+                    and: [(a at: 1) = 'tree']]
                 verb: #tree args: #() named: 'tree')
-            with: (self row: [:a :s | s and: [a size = 1
-                    and: [(a at: 1) = 'check']]]
+            with: (self row: [:a :s | a size = 1
+                    and: [(a at: 1) = 'check']]
                 verb: #check args: #() named: 'check'))
     ]
 
@@ -273,15 +284,108 @@ construction; zero public setters.'>
          other's claim about what just happened.
 
          The verbs: row renders each verb exactly as Doc E §4's argv
-         grammar spells it, optional argument included."
+         grammar spells it, optional argument included.
+
+         SPRINT 21 GROWS IT FROM SIX LINES TO EIGHT: the header names
+         the two MODE flags and the flags: block gains a row for each.
+         They are valueless and build nothing, so they are a second
+         declared table rather than sourceFlags rows (Doc E §4.2) — but
+         a flag the help hides is a flag that does not exist (§8
+         decision 45's standard), so the block is where they become
+         real to an operator. The verbs: row does NOT move: this sprint
+         adds no verb."
         <category: 'usage'>
         ^(Array
-            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
+            with: 'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>] [--offline] [--locked]'
             with: 'verbs: init | resolve | install | update [<pkg>] | add <pkg> <constraint> | remove <pkg> | search <term> | info <pkg> | outdated | exec <script> | publish <dir> | why <pkg> | tree | check'
             with: 'flags: --source <dir>  index entries in a local directory'
             with: '       --git <repo>    index entries in a git repository'
             with: '       --index <base>  index entries fetched per package from a sparse index'),
-            (Array with: '       --layout <name> flat (default) or sparse, the index layout publish writes')
+            (Array
+                with: '       --layout <name> flat (default) or sparse, the index layout publish writes'
+                with: '       --offline       this invocation spawns no git and no curl'
+                with: '       --locked        this invocation does not change parley.lock')
+    ]
+
+    CLI class >> conflictProvenanceLineFor: aName path: aDeclaredPath [
+        "The line a conflict carries above the settled narration when an
+         OVERLAID name participates (Sprint 21, §8 decision 68; pinned in
+         RED), in the held-pins-line placement of §8 decision 46's
+         family: the resolver answered truthfully about the world it was
+         given and cannot know a DIRECTORY supplied one of its packages.
+         The verb had that context and owes the sentence."
+        <category: 'usage'>
+        ^aName printString, ' is supplied by the path dependency ',
+            aDeclaredPath printString,
+            ' at the version that directory declares - the index''s releases of it were not considered'
+    ]
+
+    CLI class >> infoPathProvenanceLineFor: aName path: aDeclaredPath [
+        "info on a name only a PATH supplies (pinned in RED). THE
+         SETTLED UNKNOWN-PACKAGE ANSWER EXTENDED, NEVER CONTRADICTED:
+         the operator asked about the index and the index's answer is
+         still no, but a tool that knows why the project runs anyway
+         owes the second half. Exit 1, exactly as the settled sentence."
+        <category: 'usage'>
+        ^aName printString,
+            ' is not published by the configured index - it is supplied by the path dependency ',
+            aDeclaredPath printString
+    ]
+
+    CLI class >> pathAllowedMarkerFor: aDeclaredPath [
+        "What outdated renders in the allowed column for a PATH pin (§8
+         decision 82's family, second member; pinned in RED).
+
+         IT MUST NOT READ LIKE THE TRANSITIVE MARKER. A transitive pin
+         says the repair is not the operator's to make; a path pin is
+         one they DECLARED, so the marker names the directory that
+         decides the version and leaves the repair in their hands. The
+         published column stays the index's answer, because that fact is
+         true whoever supplies the name."
+        <category: 'usage'>
+        ^'(path ', aDeclaredPath printString, ' - the directory decides)'
+    ]
+
+    CLI class >> driftProblemFor: aName pinned: aPinnedVersion declared: aDeclaredVersion path: aDeclaredPath [
+        "check's drift leg (pinned in RED), in the settled check-problem
+         shape the retirement leg already uses.
+
+         THE BOUND IS IN THE SENTENCE: it is the DECLARED version that
+         moved. This leg compares the sibling's declared version, read
+         through the settled ManifestFile, against the pin's recorded
+         version — and never file contents. An edit that leaves the
+         declared version alone is invisible to it, deliberately:
+         loading fresh content is exec's job, and diagnosing a stale PIN
+         is this one's."
+        <category: 'usage'>
+        ^'lock pins ', aName printString, ' at ', aPinnedVersion,
+            ', which the path dependency ', aDeclaredPath printString,
+            ' now declares as ', aDeclaredVersion,
+            ' - run parley resolve to update it'
+    ]
+
+    CLI class >> needsIndexRefusalFor: someNames [
+        "THE SHARED IN-VERB REFUSAL for a manifest that needs an index
+         when none is wired (§8 decisions 83 and 84), pinned in RED.
+
+         ONE SENTENCE FOR ALL FOUR VERBS, never one per verb: resolve,
+         check, tree and why reach it for the same reason and the repair
+         is the same, and four sentences would be four wordings no law
+         could hold together (§8 decision 81's rule).
+
+         Exit 1 rather than 2 on decision 80's precedent — the argv is
+         well formed and the PROJECT is the limit — and it names what
+         the manifest declares plus the flags or the config file that
+         can answer, NEVER the usage block: the operator's command was
+         legal, so telling them how to type it would answer a question
+         they did not ask."
+        <category: 'usage'>
+        ^'no index is wired, and Package.st declares ',
+            (CommandLine list: someNames conjunction: 'and'),
+            ' - give ',
+            (CommandLine list: CommandLine sourceFlagNames
+                conjunction: 'or'),
+            ', or record one in parley.config.st'
     ]
 
     CLI class >> usageLinesFor: aGroundSymbol subject: aSubject [
@@ -332,10 +436,79 @@ construction; zero public setters.'>
          conflict narration (exit 1) — a conflict is a value, never an
          exception."
         <category: 'verbs'>
-        | outcome |
-        outcome := self resolveAndLock: self loadManifest.
-        outcome isResolution ifFalse: [^self reportConflict: outcome].
+        | manifest refusal outcome |
+        manifest := self loadManifest.
+        refusal := self indexRefusalFor: manifest.
+        refusal notNil ifTrue: [^refusal].
+        "THE RESOLVE GOES THROUGH resolveAndLock: AND MUST KEEP DOING SO.
+         That method is the seam two settled laws hang a resolver trap
+         on (InspectionVerbTest and Sprint 20 S14 both assert that
+         resolve still SPRINGS it, because a double that cannot spring
+         proves nothing). Inlining it here to hold the snapshot for the
+         conflict line silently moved the verb off the path those laws
+         guard — a settled consumer whose meaning changed without a line
+         of its code changing, which is the §8 decision 51 defect shape.
+         The provenance therefore comes from the MANIFEST's own
+         declarations instead."
+        outcome := self resolveAndLock: manifest.
+        outcome isResolution ifFalse: [
+            ^CliResult
+                lines: (self conflictLines: outcome
+                    provenance: (self declaredProvenanceOf: manifest))
+                exitCode: 1].
         ^self reportPins: outcome
+    ]
+
+    declaredProvenanceOf: aManifest [
+        "Private — name -> declared path for the ROOT's own path
+         dependencies, the provenance a conflict line can name without
+         a second I/O moment.
+
+         THE BOUND IS STATED RATHER THAN LEFT TO BE FOUND (§8 decision
+         43): a TRANSITIVE path dependency — one a sibling declares —
+         is not named here. The line explains the operator's OWN
+         declaration, which is the one they can act on, and reaching a
+         sibling's would mean re-composing the overlay on a path that
+         has already failed.
+
+         THIS IS THE OPPOSITE BOUND FROM hopAnnotationFor:dependency:
+         resolution:, AND THE TWO ARE NOT IN CONFLICT. That one reads
+         the LOCK's provenance, so a transitive path pin IS named there.
+         The difference is which question is being answered and when: a
+         conflict speaks BEFORE resolution about what the root DECLARED,
+         where a sibling's declaration is not yet a fact of the project;
+         why and tree speak AFTER it about what the lock RECORDED, where
+         a transitive path pin is exactly as real as a root-declared
+         one. Same word, two sources, both deliberate."
+        <category: 'private'>
+        | out |
+        out := Dictionary new.
+        aManifest pathDependencies do: [:each |
+            out at: each name put: each path].
+        ^out
+    ]
+
+    conflictLines: aReport provenance: aProvenanceDictionary [
+        "Private — the settled ConflictReport narration, preceded by one
+         line for each OVERLAID name the narration mentions (Doc E §4.1).
+
+         Sorted by name so the answer is byte-stable, and driven by
+         whether the narration actually names the package rather than by
+         whether the project happens to declare one: a path dependency
+         that took no part in the failure gets no line, because a
+         sentence naming a cause asserts that cause and this tool only
+         makes claims it has checked (§8 decision 58)."
+        <category: 'private'>
+        | narration lines |
+        narration := self linesOf: aReport printString.
+        lines := OrderedCollection new.
+        (aProvenanceDictionary keys asSortedCollection: [:a :b | a <= b])
+            do: [:name |
+                (narration anySatisfy: [:line | self name: line includes: name])
+                    ifTrue: [lines add: (self class
+                        conflictProvenanceLineFor: name
+                        path: (aProvenanceDictionary at: name))]].
+        ^lines asArray, narration
     ]
 
     install [
@@ -398,8 +571,7 @@ construction; zero public setters.'>
         deleted notNil ifTrue: [
             ^CliResult lines: (Array with: deleted) exitCode: 1].
         manifest := self loadManifest.
-        outcome := (Resolver strategy: BacktrackingStrategy new)
-            resolve: manifest against: narrowed.
+        outcome := self resolve: manifest against: narrowed.
         outcome isResolution ifFalse: [
             ^CliResult
                 lines: (self conflictLinesFor: outcome
@@ -469,7 +641,7 @@ construction; zero public setters.'>
          ConstraintFormatError's declared ground — never signaled out of
          a verb — true."
         <category: 'verbs'>
-        | original editor declared before pinned held unheld narrowed deleted lock after |
+        | original editor declared before pinned held unheld narrowed deleted lock after kindRefusal |
         (PathGuard isReadableFile: self packagePath) ifFalse: [
             "The settled missing-manifest diagnosis, defined once in
              ManifestFile: load: signals it and the boundary answers
@@ -486,6 +658,17 @@ construction; zero public setters.'>
                 lines: (Array with: (self unrecognizedManifestLineFor: aName
                     constraint: aConstraintString))
                 exitCode: 1].
+        "ALREADY DECLARED QUANTIFIES OVER ALL THREE KINDS (issue #23),
+         and it fires BEFORE any edit so a refusal leaves the file
+         byte-identical. A name the manifest supplies by PATH or
+         declares as a DEV dependency is already declared: inserting an
+         index clause beside it would build a manifest the settled
+         duplicate rule refuses (Doc B §3.4 item 5) — written by the
+         tool, into a file the author owns. Changing HOW a dependency is
+         supplied is an edit, exactly as changing a constraint is."
+        kindRefusal := self alreadyDeclaredOtherKindLineFor: aName.
+        kindRefusal isNil ifFalse: [
+            ^CliResult lines: (Array with: kindRefusal) exitCode: 1].
         declared := editor constraintFor: aName.
         (declared notNil and: [declared ~= aConstraintString]) ifTrue: [
             ^CliResult
@@ -618,8 +801,69 @@ construction; zero public setters.'>
         code := (ExecutionScope
             on: (InstalledSet tuples: Dictionary new)
             target: target
-            runner: runner) run: aScriptPath.
+            runner: runner
+            fileIns: self siblingFileIns) run: aScriptPath.
         ^CliResult lines: #() exitCode: code
+    ]
+
+    siblingFileIns [
+        "Private — every #path pin's own fileIns, in dependency order,
+         as paths the child can open (Sprint 21, §8 decision 68).
+
+         READ FRESH AT EXEC TIME, NEVER FROM A CACHE, and that is the
+         whole feature: the sibling's Package.st is loaded through the
+         settled ManifestFile on THIS run, so an edit made since the
+         lock was written is picked up with no publish, no rebuild and
+         no re-registration. A sibling that is missing, unreadable or
+         malformed answers its boundary's own diagnosis naming the
+         sibling's path, at exit 1, having spawned nothing — the load
+         happens before the scope is built.
+
+         A project with no lock, or a lock with no #path pins, answers
+         the empty array and the pinned composition does not move."
+        <category: 'private'>
+        | pinned out |
+        pinned := self pinnedResolution.
+        pinned isNil ifTrue: [^#()].
+        out := OrderedCollection new.
+        self addFileInsOf: pinned pathNames
+            from: pinned
+            seen: Set new
+            into: out.
+        ^out asArray
+    ]
+
+    addFileInsOf: someNames from: aResolution seen: aSeenSet into: aCollection [
+        "Private — depth-first over the path-supplied names, appending
+         each sibling's fileIns AFTER those of the path dependencies it
+         declares.
+
+         DEPENDENCY ORDER IS DEPENDENCIES-FIRST because that is what
+         load order means in Smalltalk: a class the sibling's own code
+         sends messages to must already be in the image. The visited set
+         makes a diamond one visit and a cycle terminate — whether a
+         cyclic graph RESOLVES stays the resolver's ordinary business,
+         but a walk that hung here would hang the verb.
+
+         Only names the LOCK records as path-supplied are followed: a
+         sibling's index dependency is an installed star the child
+         already sees through its curated path, not a source file to
+         file in."
+        <category: 'private'>
+        someNames do: [:name |
+            | declared manifest |
+            (aSeenSet includes: name) ifFalse: [
+                aSeenSet add: name.
+                declared := aResolution provenanceOf: name.
+                manifest := ManifestFile load:
+                    workingDir, '/', declared, '/Package.st'.
+                self addFileInsOf: (manifest pathDependencies
+                        collect: [:each | each name])
+                    from: aResolution
+                    seen: aSeenSet
+                    into: aCollection.
+                manifest fileIns do: [:each |
+                    aCollection add: declared, '/', each]]]
     ]
 
     requireRunnableScript: aScriptPath [
@@ -730,7 +974,7 @@ construction; zero public setters.'>
          lock pins. The root's own edges come from its manifest; every
          other node's from the settled dependenciesOf:version:."
         <category: 'verbs'>
-        | resolution manifest chains |
+        | resolution manifest chains refusal |
         resolution := self pinnedResolution.
         resolution isNil ifTrue: [^self reportMissingLock].
         (resolution packageNames includes: aName) ifFalse: [
@@ -739,9 +983,11 @@ construction; zero public setters.'>
                     ' is not pinned in parley.lock')
                 exitCode: 1].
         manifest := self loadManifest.
+        refusal := self indexRefusalFor: manifest.
+        refusal notNil ifTrue: [^refusal].
         chains := OrderedCollection new.
         self collectChainsTo: aName
-            from: manifest dependencies
+            from: (self declaredEdgesOf: manifest)
             chain: manifest name, ' ', manifest version printString
             visited: (Set with: manifest name)
             resolution: resolution
@@ -760,13 +1006,15 @@ construction; zero public setters.'>
          marked and not re-expanded, so the output cannot mislead
          about depth. Same graph source as why (§8 decision 40)."
         <category: 'verbs'>
-        | resolution manifest lines |
+        | resolution manifest lines refusal |
         resolution := self pinnedResolution.
         resolution isNil ifTrue: [^self reportMissingLock].
         manifest := self loadManifest.
+        refusal := self indexRefusalFor: manifest.
+        refusal notNil ifTrue: [^refusal].
         lines := OrderedCollection new.
         lines add: manifest name, ' ', manifest version printString.
-        self addTreeLinesFor: manifest dependencies
+        self addTreeLinesFor: (self declaredEdgesOf: manifest)
             depth: 1
             seen: (Set with: manifest name)
             resolution: resolution
@@ -788,22 +1036,47 @@ construction; zero public setters.'>
          that ignored retirement would make the verb useless for the
          one job it has."
         <category: 'verbs'>
-        | resolution manifest snapshot problems |
+        | resolution manifest snapshot problems refusal |
         resolution := self pinnedResolution.
         resolution isNil ifTrue: [^self reportMissingLock].
         manifest := self loadManifest.
+        refusal := self indexRefusalFor: manifest.
+        refusal notNil ifTrue: [^refusal].
         problems := OrderedCollection new.
         problems addAll:
             (PinVerification of: manifest lock: resolution) problems.
         snapshot := self seededSource snapshot.
+        "THE DRIFT LEG (Sprint 21, §8 decision 68). A sibling that has
+         moved its DECLARED version since the lock was written makes the
+         lock a stale statement about the code exec actually loads, and
+         the division of labour is the retirement leg's own: exec loads
+         the sibling fresh and never fails on drift; check is where
+         drift becomes a diagnosis, as install proceeds and check
+         reports."
+        resolution pathNames do: [:name |
+            | declared sibling |
+            declared := resolution provenanceOf: name.
+            sibling := ManifestFile load:
+                workingDir, '/', declared, '/Package.st'.
+            sibling version = (resolution versionOf: name) ifFalse: [
+                problems add: (self class driftProblemFor: name
+                    pinned: (resolution versionOf: name) printString
+                    declared: sibling version printString
+                    path: declared)]].
+        "THE RETIREMENT LEG PASSES PATH PINS BY: retirement is an index
+         owner's assertion ABOUT A RELEASE THEY PUBLISHED, and no index
+         published this pin. A leg that keyed on (name, version) alone
+         would report a sibling as retired because the index happens to
+         have retired a release of the same name."
         resolution packageNames do: [:name |
             | version reason |
-            version := resolution versionOf: name.
-            reason := snapshot retirementReasonFor: name version: version.
-            reason notNil ifTrue: [
-                problems add: 'lock pins ', name printString,
-                    ' at ', version printString,
-                    ', which the index has retired: ', reason]].
+            (resolution provenanceOf: name) isNil ifTrue: [
+                version := resolution versionOf: name.
+                reason := snapshot retirementReasonFor: name version: version.
+                reason notNil ifTrue: [
+                    problems add: 'lock pins ', name printString,
+                        ' at ', version printString,
+                        ', which the index has retired: ', reason]]].
         problems isEmpty ifTrue: [
             ^CliResult
                 lines: (Array with: 'parley.lock is healthy - pins satisfy Package.st and nothing pinned is retired')
@@ -881,8 +1154,17 @@ construction; zero public setters.'>
         snapshot := seeded snapshot.
         versions := snapshot allVersionsOf: aName.
         versions isEmpty ifTrue: [
+            "A NAME ONLY A PATH SUPPLIES IS STILL NOT PUBLISHED, and the
+             answer says both (§8 decision 68's matrix): the index's
+             answer is unchanged, and the operator learns why their
+             project runs anyway."
+            | declared |
+            declared := snapshot pathProvenance at: aName ifAbsent: [nil].
             ^CliResult
-                lines: (Array with: (self notPublishedLineFor: aName))
+                lines: (Array with: (declared isNil
+                    ifTrue: [self notPublishedLineFor: aName]
+                    ifFalse: [self class infoPathProvenanceLineFor: aName
+                        path: declared]))
                 exitCode: 1].
         latest := self newestLiveIn: versions of: aName in: snapshot.
         manifest := seeded manifestFor: aName version: latest.
@@ -937,7 +1219,8 @@ construction; zero public setters.'>
             line := self outdatedLineFor: name
                 pinned: (pinned versionOf: name)
                 manifest: manifest
-                snapshot: snapshot.
+                snapshot: snapshot
+                path: (pinned provenanceOf: name).
             line notNil ifTrue: [lines add: line]].
         lines isEmpty ifTrue: [
             ^CliResult
@@ -997,9 +1280,16 @@ construction; zero public setters.'>
             by: VersionConstraint any
     ]
 
-    outdatedLineFor: aName pinned: aVersion manifest: aManifest snapshot: aSnapshot [
+    outdatedLineFor: aName pinned: aVersion manifest: aManifest snapshot: aSnapshot path: aDeclaredPathOrNil [
         "Private — one pin's two columns, or nil when the pin has
-         nowhere to go and contributes no line."
+         nowhere to go and contributes no line.
+
+         A PATH PIN RENDERS THE SECOND DECLARED MARKER OF §8 DECISION
+         82's FAMILY, and it is checked BEFORE the transitive case
+         because a path pin is not the transitive one: the operator
+         DECLARED it, so the marker must not tell them the repair is out
+         of their hands. Its published column is the index's answer
+         unchanged, whoever supplies the name."
         <category: 'private-reporting'>
         | dependency published allowed allowedText |
         published := self newestPublishedOf: aName in: aSnapshot.
@@ -1013,9 +1303,11 @@ construction; zero public setters.'>
                 by: dependency constraint].
         (published > aVersion
             or: [allowed notNil and: [allowed > aVersion]]) ifFalse: [^nil].
-        allowedText := allowed isNil
-            ifTrue: [self class unconstrainedAllowedMarker]
-            ifFalse: [allowed printString].
+        allowedText := aDeclaredPathOrNil notNil
+            ifTrue: [self class pathAllowedMarkerFor: aDeclaredPathOrNil]
+            ifFalse: [allowed isNil
+                ifTrue: [self class unconstrainedAllowedMarker]
+                ifFalse: [allowed printString]].
         ^aName, ' ', aVersion printString, '  allowed ', allowedText,
             '  published ', published printString
     ]
@@ -1069,6 +1361,68 @@ construction; zero public setters.'>
             (aPackageSource manifestFor: aName version: latest) summary
     ]
 
+    declaredEdgesOf: aManifest [
+        "Private — the root's own edges AS DECLARED, for the verbs that
+         READ AND EXPLAIN: index dependencies, path dependencies and dev
+         dependencies together (Doc E §4.1, ruled mid-sprint at GREEN
+         step 5).
+
+         Doc E §4.1 says the root's own edges come from its manifest,
+         and with three declared kinds that must mean all three — a verb
+         explaining two of them explains a graph the project does not
+         have. `why kernel-text` answered ZERO LINES and `tree` rendered
+         the root alone before this existed, and `why kernel-lint` had
+         the identical gap for the dev kind.
+
+         THIS IS NOT resolutionViewOf:, AND THE DIFFERENCE IS THE POINT.
+         That value carries SYNTHETIC unconstrained edges because the
+         Resolver needs candidates; this one is the DECLARED set, whose
+         annotations the operator actually wrote. Two values, two
+         purposes, one object read twice — the composed view keeps its
+         four consumers and none of them is here.
+
+         A path dependency's placeholder constraint is never rendered:
+         the hop names the DIRECTORY, read from the lock's own
+         provenance below."
+        <category: 'private-inspection'>
+        | edges |
+        edges := OrderedCollection new.
+        edges addAll: aManifest dependencies.
+        aManifest pathDependencies do: [:each |
+            edges add: (Dependency name: each name
+                constraint: VersionConstraint any)].
+        edges addAll: aManifest devDependencies.
+        ^edges asArray
+    ]
+
+    hopAnnotationFor: aName dependency: aDependency resolution: aResolution [
+        "Private — what a why hop says about the edge it just walked:
+         the DECLARED DIRECTORY for a path-supplied pin, and the
+         constraint that demanded it for every other. The operator asked
+         why a pin exists, and `a directory you declared` is the answer
+         (§8 decision 68's matrix).
+
+         It reads the LOCK's provenance rather than the manifest, so a
+         TRANSITIVE path pin — one a sibling declared — is named the
+         same way as a root-declared one, which is what the lock records
+         it as.
+
+         THIS IS THE OPPOSITE BOUND FROM declaredProvenanceOf:, AND THE
+         TWO ARE NOT IN CONFLICT. That one names only what the ROOT
+         declared, because a conflict speaks before resolution and a
+         sibling's declaration is not yet a fact of the project. This
+         one reports what the lock recorded, after resolution settled
+         it. Reading a Gate B diff, the distinction is design rather
+         than drift: different question, different moment, different
+         source."
+        <category: 'private-inspection'>
+        | declared |
+        declared := aResolution provenanceOf: aName.
+        ^declared isNil
+            ifTrue: [aDependency constraint printString]
+            ifFalse: ['path ', declared printString]
+    ]
+
     collectChainsTo: aTarget from: someDependencies chain: aChainString visited: aVisitedSet resolution: aResolution snapshot: aSnapshot into: aCollection [
         "Private — the reverse walk rendered forward: extend
          aChainString along every pinned edge, recording each chain
@@ -1085,7 +1439,9 @@ construction; zero public setters.'>
                 version := aResolution versionOf: name.
                 rendered := aChainString, ' -> ', name, ' ',
                     version printString,
-                    ' (', dep constraint printString, ')'.
+                    ' (', (self hopAnnotationFor: name
+                        dependency: dep
+                        resolution: aResolution), ')'.
                 name = aTarget
                     ifTrue: [aCollection add: rendered]
                     ifFalse: [
@@ -1147,11 +1503,19 @@ construction; zero public setters.'>
         "Private — the shared install tail: conflict report,
          hash-vs-cache fail-stop, Installer, register."
         <category: 'private'>
-        | corrupt set |
+        | corrupt set installable |
         anOutcome isResolution ifFalse: [^self reportConflict: anOutcome].
-        corrupt := self corruptHashIn: anOutcome.
+        "THE INSTALLER IS HANDED THE PATH-FREE VIEW (§8 decision 69). A
+         #path pin is no-fetch, no-store, no-register: it is not an
+         index release and never enters the Doc D pipeline, so Installer,
+         InstalledSet and ContentStore never learn that paths exist and
+         decision 25's empty-sha256 diagnosis keeps governing exactly
+         the index pins it was written about. Path-supplied code reaches
+         the child at exec time instead."
+        installable := anOutcome pathFreeView.
+        corrupt := self corruptHashIn: installable.
         corrupt notNil ifTrue: [^self reportCorruption: corrupt].
-        set := [(Installer source: source store: store) install: anOutcome]
+        set := [(Installer source: source store: store) install: installable]
             on: InstallError
             do: [:e | ^CliResult lines: e problems exitCode: 1].
         [(ExecutionScope on: set target: target runner: runner) register]
@@ -1176,15 +1540,38 @@ construction; zero public setters.'>
          reason (§8 decision 58)."
         <category: 'private-add'>
         | outcome result |
-        outcome := (Resolver strategy: BacktrackingStrategy new)
-            resolve: aManifest against: aSnapshot.
+        outcome := self resolve: aManifest against: aSnapshot.
         outcome isResolution ifFalse: [
             self restore: anOriginalText lock: aLockText.
             ^CliResult
                 lines: (self conflictLinesFor: outcome
                     manifest: aManifest unheld: anUnheldSnapshot)
                 exitCode: 1].
-        self writeLock: outcome.
+        "A --locked REFUSAL MUST NOT BREAK ATOMICITY. writeLock: signals
+         when the mode forbids the change, and that signal would
+         otherwise escape past the restore below — leaving an edited
+         Package.st beside an unchanged lock, which is exactly the state
+         PinVerification exists to call broken and which the tool would
+         have manufactured (Doc B §2.1). The project goes back first;
+         the boundary still composes the diagnosis.
+
+         THIS IS catch-restore-pass, THE SHAPE §8 DECISION 75 EXAMINED
+         AND REFUSED — for the authoring capture, and this is outside
+         that ruling's grounds. Said here rather than left for a reader
+         to reconcile. 75 refused catching inside ManifestCapture
+         because doing so wraps THE AUTHOR'S WHOLE PROGRAM in a broad
+         catch (decision 61's containment rule); this block contains
+         nothing but Parley's own write step. No capture window is open
+         on this path, so no restoration ordering is at stake, and
+         nothing here depends on the isLoading scoping 75 protects. What
+         it does is honour decision 49's settled atomicity under a mode
+         flag, and the `pass` is what keeps the §4.2 boundary the one
+         place a diagnosis is ever composed."
+        [self writeLock: outcome]
+            on: LockError
+            do: [:e |
+                self restore: anOriginalText lock: aLockText.
+                e pass].
         result := self installResolution: outcome.
         result exitCode = 0
             ifFalse: [self restore: anOriginalText lock: aLockText].
@@ -1218,9 +1605,8 @@ construction; zero public setters.'>
          resolver runs against the SETTLED snapshot: nothing here
          teaches either of them about holding."
         <category: 'private-add'>
-        ((Resolver strategy: BacktrackingStrategy new)
-            resolve: aManifest against: anUnheldSnapshot) isResolution
-                ifFalse: [^self linesOf: aReport printString].
+        (self resolve: aManifest against: anUnheldSnapshot) isResolution
+            ifFalse: [^self linesOf: aReport printString].
         ^(Array with: self heldPinsLine),
             (self linesOf: aReport printString)
     ]
@@ -1295,8 +1681,15 @@ construction; zero public setters.'>
         held := Dictionary new.
         aResolution isNil ifTrue: [^held].
         aResolution packageNames do: [:each |
-            each = aName ifFalse: [
-                held at: each put: (aResolution versionOf: each)]].
+            "A PATH PIN IS NEVER HELD (§8 decision 68). It is what you
+             are DEVELOPING, so the overlay always answers the sibling's
+             CURRENT declaration — and holding a drifted one at its
+             locked version would narrow to a version the overlay no
+             longer describes, which is §8 decision 47's collapse
+             arriving by composition rather than by anyone's intent. The
+             exclusion is the mechanism, not a preference."
+            (each = aName or: [(aResolution provenanceOf: each) notNil])
+                ifFalse: [held at: each put: (aResolution versionOf: each)]].
         ^held
     ]
 
@@ -1493,7 +1886,7 @@ construction; zero public setters.'>
         (SchemaShape isString: (fields at: #root)) ifFalse: [
             ^'#root must be a string'].
         (self isLockPackageTuples: (fields at: #packages)) ifFalse: [
-            ^'#packages must be an array of #(<name> <version> #sha256 <hex digest>) tuples'].
+            ^'#packages must be an array of #(<name> <version> #sha256 <hex digest>) or #(<name> <version> #path <declared path>) tuples'].
         ^nil
     ]
 
@@ -1514,8 +1907,16 @@ construction; zero public setters.'>
                 ^'#packages version ', (tuple at: 2) printString,
                     ' for ', (tuple at: 1) printString,
                     ' does not parse as a version']].
+        "THE DIGEST GROUND IS ASKED OF #sha256 TUPLES ALONE. A #path
+         pin carries a declared directory in that position, not a
+         digest, and holding it to 64 hex characters would refuse
+         Parley's own output — the failure the settled empty-string
+         exemption already exists to prevent, arriving on the other
+         declared form. Its own shape rule (a non-empty String) is the
+         boundary's, above."
         ((self lockFieldsOf: anEntry) at: #packages) do: [:tuple |
-            (self isLockDigest: (tuple at: 4)) ifFalse: [
+            ((tuple at: 3) == #sha256
+                and: [(self isLockDigest: (tuple at: 4)) not]) ifTrue: [
                 ^'#packages digest ', (tuple at: 4) printString,
                     ' for ', (tuple at: 1) printString,
                     ' must be 64 lowercase hex characters']].
@@ -1554,13 +1955,21 @@ construction; zero public setters.'>
     ]
 
     isLockPackageTuples: aValue [
-        "Private — an array of four-element
-         #(<name> <version> #sha256 <hex digest>) tuples. Every
-         structural defect answers the one wording: they are one
-         question and one repair, as the settled #dependencies and
-         #archive checks already are. The digest itself is not
-         inspected — shape only; digest truth is Doc D §3's
-         verifyHash:."
+        "Private — an array of four-element tuples in one of the TWO
+         declared forms (Doc B §5.3): #(<name> <version> #sha256 <hex
+         digest>), or from Sprint 21 #(<name> <version> #path <declared
+         path>). Every structural defect answers the one wording: they
+         are one question and one repair, as the settled #dependencies
+         and #archive checks already are.
+
+         EXACTLY THE TWO FORMS AND NOTHING BETWEEN THEM. A boundary
+         that accepted any symbol in third position would let a future
+         spelling through silently, and one that accepted an EMPTY
+         declared path would write down a pin describing nothing — the
+         corruption check exists to catch, manufactured by the tool
+         itself (§8 decision 47's argument, one layer down). The digest
+         itself is still not inspected here: shape only, and digest
+         truth is Doc D §3's verifyHash:."
         <category: 'private-lock'>
         (aValue isKindOf: Array) ifFalse: [^false].
         aValue do: [:tuple |
@@ -1568,8 +1977,11 @@ construction; zero public setters.'>
                 ifFalse: [^false].
             (SchemaShape isString: (tuple at: 1)) ifFalse: [^false].
             (SchemaShape isString: (tuple at: 2)) ifFalse: [^false].
-            (tuple at: 3) == #sha256 ifFalse: [^false].
-            (SchemaShape isString: (tuple at: 4)) ifFalse: [^false]].
+            (SchemaShape isString: (tuple at: 4)) ifFalse: [^false].
+            (tuple at: 3) == #sha256
+                ifFalse: [
+                    (tuple at: 3) == #path ifFalse: [^false].
+                    (tuple at: 4) isEmpty ifTrue: [^false]]].
         ^true
     ]
 
@@ -1617,8 +2029,8 @@ construction; zero public setters.'>
         <category: 'private'>
         | outcome |
         self requireReadableLock.
-        outcome := (Resolver strategy: BacktrackingStrategy new)
-            resolve: aManifest against: self seededSource snapshot.
+        outcome := self resolve: aManifest
+            against: self seededSource snapshot.
         outcome isResolution ifTrue: [self writeLock: outcome].
         ^outcome
     ]
@@ -1645,9 +2057,152 @@ construction; zero public setters.'>
          site, and each source answers per its own nature — the
          scanning sources answer self, the sparse source a new seeded
          instance. The CLI supplies the seeds because the source must
-         never read Package.st or parley.lock."
+         never read Package.st or parley.lock.
+
+         FROM SPRINT 21 THE WIRED SOURCE IS WRAPPED IN THE OVERLAY
+         (Doc C §1.3, §8 decision 68), here and at every snapshot site
+         at once, because a verb that took a bare source would resolve
+         a different world from the one every other verb sees. The
+         overlay is a DECORATOR: with no path dependencies declared it
+         delegates everything and composes over an empty record set, so
+         every settled path-free project is byte-identical."
         <category: 'private'>
-        ^source seededWith: self seedNames
+        ^(self overlaidSource) seededWith: self seedNames
+    ]
+
+    overlaidSource [
+        "Private — the wired source with the root manifest's declared
+         path dependencies overlaid. Construction is pathname-passive:
+         the siblings are read at the overlay's own one I/O moment,
+         never here."
+        <category: 'private'>
+        ^PathOverlay over: source
+            paths: self declaredPaths
+            in: workingDir
+    ]
+
+    declaredPaths [
+        "Private — the root manifest's path dependencies, gathered
+         BEST-EFFORT in the settled shape of seedNames (§8 decision 52):
+         the manifest has a boundary that owns its diagnosis, and
+         gathering must never pre-empt it. A manifest that cannot be
+         read contributes no paths and the verb itself diagnoses the
+         file, exactly as a corrupt lock leaves resolve at exit 0.
+
+         The catch names the boundary it defers to AND NOTHING ELSE:
+         anything unanticipated reaches the settled taxonomy as the
+         software defect it is, rather than becoming a silently empty
+         overlay — which over a path-only project would answer a
+         #noVersions conflict BLAMING THE PACKAGE, the exact wrong-blame
+         diagnosis this overlay exists to make impossible."
+        <category: 'private'>
+        ^[(ManifestFile load: self packagePath) pathDependencies]
+            on: ManifestError
+            do: [:e | e return: #()]
+    ]
+
+    indexRefusalFor: aManifest [
+        "Private — the §8 decision 83/84 refusal, or nil when this
+         invocation can proceed. NEEDS AN INDEX IS A PROPERTY OF THE
+         MANIFEST, never of the grammar: once a manifest may declare
+         only path dependencies, HAS DEPENDENCIES and NEEDS AN INDEX
+         come apart, and no argv-pure predicate can see the difference.
+
+         It refuses AFTER state creation, joining route 6's residual,
+         search's decision-80 refusal and info-on-an-unknown-name in the
+         refuses-after-state class — declared here rather than left to
+         be noticed."
+        <category: 'private'>
+        | needed |
+        source notNil ifTrue: [^nil].
+        needed := self indexNeedingNamesOf: aManifest.
+        needed isEmpty ifTrue: [^nil].
+        ^CliResult
+            lines: (Array with: (self class needsIndexRefusalFor: needed))
+            exitCode: 1
+    ]
+
+    indexNeedingNamesOf: aManifest [
+        "Private — the declared names an index would have to supply,
+         sorted so the refusal is byte-stable.
+
+         PATH DEPENDENCIES ARE EXCLUDED because a directory supplies
+         them: telling an operator to wire an index for code they
+         already have on disk would be a remedy that cannot work. Dev
+         dependencies are INCLUDED, because they are ordinary
+         constraint-bearing declarations and only an index can satisfy
+         one."
+        <category: 'private'>
+        | names |
+        names := OrderedCollection new.
+        aManifest dependencies do: [:each | names add: each name].
+        aManifest devDependencies do: [:each | names add: each name].
+        ^(names asSortedCollection: [:a :b | a <= b]) asArray
+    ]
+
+    resolutionViewOf: aManifest [
+        "Private — the manifest as the RESOLVER must see it: the
+         declared index edges, one UNCONSTRAINED edge per path
+         dependency, and the root's own dev dependencies (§8 decision
+         69: dev dependencies are resolved and installed for the root
+         manifest alone).
+
+         THE UNCONSTRAINED PATH EDGE IS EXACT RATHER THAN LAX. The
+         overlay offers exactly one version for an overlaid name — the
+         whole name, because a path dependency always wins over an index
+         release — so the only candidate is the sibling's own
+         declaration and any constraint admitting it admits nothing
+         else. Spelling a version-shaped constraint here would put a pin
+         in the graph that the author never wrote.
+
+         IT IS AN INTERNAL WIRING VALUE WITH EXACTLY ONE CONSUMER, THE
+         RESOLVER, and the boundary is stated so it cannot grow a
+         second: the lock is written from the RESOLUTION, never from
+         this; PinVerification verifies the DECLARED manifest over the
+         three kinds, never this; publish serializes from the DECLARED
+         manifest, so its path refusal and its dev exclusion both key
+         off declarations; and this never reaches IndexEntryWriter's
+         entry path. A fifth consumer is a halt-and-ask, not a
+         judgement call."
+        <category: 'private'>
+        | edges |
+        edges := OrderedCollection new.
+        edges addAll: aManifest dependencies.
+        aManifest pathDependencies do: [:each |
+            edges add: (Dependency name: each name
+                constraint: VersionConstraint any)].
+        edges addAll: aManifest devDependencies.
+        ^LibraryManifest
+            name: aManifest name
+            version: aManifest version
+            summary: aManifest summary
+            author: aManifest author
+            license: aManifest license
+            fileIns: aManifest fileIns
+            dependencies: edges asArray
+            paths: #()
+            dev: #()
+    ]
+
+    resolve: aManifest against: aSnapshot [
+        "Private — the ONE place this CLI enters the resolver, so the
+         composed view and the provenance attachment cannot drift apart
+         between the verbs that resolve.
+
+         Provenance comes from the SNAPSHOT rather than the manifest,
+         because a TRANSITIVE path pin — a sibling's own path dependency
+         — is known to the overlay's walk and to nothing the manifest
+         holds. withPaths: keeps only names the resolution carries, so a
+         path-free project answers a value whose lock bytes are
+         identical to Sprint 20's."
+        <category: 'private'>
+        | outcome |
+        outcome := (Resolver strategy: BacktrackingStrategy new)
+            resolve: (self resolutionViewOf: aManifest)
+            against: aSnapshot.
+        ^outcome isResolution
+            ifTrue: [outcome withPaths: aSnapshot pathProvenance]
+            ifFalse: [outcome]
     ]
 
     seededSourceAdding: aName [
@@ -1671,7 +2226,13 @@ construction; zero public setters.'>
         | names |
         names := self seedNames.
         names add: aName.
-        ^source seededWith: names
+        "THE OVERLAY WRAPS HERE TOO. Sending seededWith: to the bare
+         source would give info and add a DIFFERENT world from every
+         other verb — no path dependency in it at all — which is how
+         info came to answer the settled not-published line about a name
+         a directory really supplies. Every snapshot site wraps, or the
+         verbs disagree about what the project is."
+        ^self overlaidSource seededWith: names
     ]
 
     seedNames [
@@ -1747,10 +2308,61 @@ construction; zero public setters.'>
          identical either way, so every settled lock oracle is
          unchanged."
         <category: 'private'>
-        | out |
+        | out refusal |
         out := WriteStream on: String new.
         IndexEntryWriter writeLock: aResolution on: out.
+        "THE --locked ENFORCEMENT SITE, AND THERE IS EXACTLY ONE (Doc E
+         §4.2). The verb computes what it WOULD write, compares, and on
+         any difference refuses naming the first differing pin — which
+         is why the flag composes with every verb that writes the lock,
+         add and remove included, without any of them knowing it exists.
+         A current lock is ordinary success and nothing is written,
+         because writing identical bytes is still a write."
+        (modes includes: #locked) ifTrue: [
+            refusal := self lockedRefusalAgainst: aResolution.
+            refusal isNil ifFalse: [
+                ^LockError signalProblems: (Array with: refusal)].
+            ^self].
         self write: out contents to: self lockPath
+    ]
+
+    lockedRefusalAgainst: aResolution [
+        "Private — the declared --locked refusal naming the FIRST
+         differing pin in sorted order, or nil when this resolution
+         would leave parley.lock exactly as it stands.
+
+         Both directions of difference are a change: a pin that moves,
+         a pin that is new (the current side renders as absent), and a
+         pin the resolution drops (the would-be side renders as absent).
+         A lock that does not exist at all is the new-pin case for every
+         name, which is right — writing a first lock IS changing it.
+
+         It READS the lock through the settled boundary, so a corrupt
+         lock under --locked answers that boundary's own diagnosis. That
+         is a deliberate consequence of the flag rather than a change to
+         resolve: --locked is an assertion ABOUT the lock, so an
+         invocation making it must be able to read the file it is
+         asserting about."
+        <category: 'private'>
+        | pinned current |
+        pinned := self pinnedResolution.
+        current := Dictionary new.
+        pinned isNil ifFalse: [
+            pinned packageNames do: [:name |
+                current at: name put: (pinned versionOf: name) printString]].
+        aResolution packageNames do: [:name |
+            | was now |
+            now := (aResolution versionOf: name) printString.
+            was := current at: name ifAbsent: [CommandLine absentPinText].
+            was = now ifFalse: [
+                ^CommandLine lockedRefusalFor: name
+                    pinned: was would: now]].
+        (current keys asSortedCollection: [:a :b | a <= b]) do: [:name |
+            (aResolution packageNames includes: name) ifFalse: [
+                ^CommandLine lockedRefusalFor: name
+                    pinned: (current at: name)
+                    would: CommandLine absentPinText]].
+        ^nil
     ]
 
     lockBytes [
@@ -1909,6 +2521,39 @@ construction; zero public setters.'>
          written."
         <category: 'private'>
         ^aName printString, ' is not declared in Package.st'
+    ]
+
+    alreadyDeclaredOtherKindLineFor: aName [
+        "Private — the already-declared refusal for a name the manifest
+         declares in one of the two ROOT-ONLY kinds, or nil when it
+         declares neither (pinned in RED, issue #23).
+
+         It reads the manifest rather than the editor's text, because
+         the question is what the project DECLARES and the settled
+         recognizer only knows dependency:constraint: clauses — which is
+         precisely why a path or dev clause reaches this check instead
+         of that one.
+
+         The sentence stays in the already-declared family so the
+         operator meets one idea rather than three, and it names the
+         KIND and what is declared, because that is what tells them
+         which clause to edit."
+        <category: 'private-add'>
+        | manifest |
+        manifest := self loadManifest.
+        manifest pathDependencies do: [:each |
+            each name = aName ifTrue: [
+                ^aName printString,
+                    ' is already declared as a path dependency on ',
+                    each path printString,
+                    ' - changing how a dependency is supplied is an edit, not an add: change it in Package.st by hand']].
+        manifest devDependencies do: [:each |
+            each name = aName ifTrue: [
+                ^aName printString,
+                    ' is already declared as a dev dependency with constraint ',
+                    each constraint printString printString,
+                    ' - changing how a dependency is supplied is an edit, not an add: change it in Package.st by hand']].
+        ^nil
     ]
 
     alreadyDeclaredLineFor: aName constraint: aConstraintString [

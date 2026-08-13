@@ -79,13 +79,30 @@ always yields the identical byte sequence.'>
         aStream nextPutAll: ' #packages #('.
         aResolution packageNames
             do: [:name |
+                | declared |
                 aStream nextPutAll: '#('.
                 self string: name on: aStream.
                 aStream nextPut: Character space.
                 self string: (aResolution versionOf: name) printString
                     on: aStream.
-                aStream nextPutAll: ' #sha256 '.
-                self string: (aResolution sha256Of: name) on: aStream.
+                "ONE DECLARED ALTERNATIVE FORM BESIDE THE SETTLED ONE
+                 (Doc B §5.3, Sprint 21): a pin no index supplied
+                 records its PROVENANCE instead of a digest, as
+                 #(<name> <version> #path '<declared path>'). The path
+                 is the author's declared string byte for byte — a lock
+                 travels with its checkout, so it must never carry one
+                 machine's expansion — and a resolution with no path
+                 pins renders bytes IDENTICAL to what Sprint 20 wrote,
+                 because this branch is never taken for one."
+                declared := aResolution provenanceOf: name.
+                declared isNil
+                    ifTrue: [
+                        aStream nextPutAll: ' #sha256 '.
+                        self string: (aResolution sha256Of: name)
+                            on: aStream]
+                    ifFalse: [
+                        aStream nextPutAll: ' #path '.
+                        self string: declared on: aStream].
                 aStream nextPut: $)]
             separatedBy: [aStream nextPut: Character space].
         aStream nextPutAll: '))'.

@@ -142,6 +142,89 @@ equality (the decision-23 precedent).'>
                 with: #indexSourceOn:)
     ]
 
+    CommandLine class >> modeFlags [
+        "THE MODE FLAGS AS A SECOND DECLARED TABLE (Doc E §4.2, Sprint
+         21; §8 decisions 68, 69, 83 for the flags, decision 81's idiom
+         for the declaration). Each row is the spelling the operator
+         types and the MODE the invocation then carries.
+
+         THEY ARE NOT sourceFlags ROWS, AND THAT IS A RULING RATHER THAN
+         A CONVENIENCE. --offline and --locked are VALUELESS: they build
+         nothing and take no value, while every sourceFlags row is
+         (flag, Class, builder) and SourceFlagTest holds each row to
+         exactly three columns. Forcing a flag that constructs no source
+         into that shape would move a law this sprint declares a
+         non-mover.
+
+         EACH IS A GUARD INVARIANT WITH ONE ENFORCEMENT SITE, so no
+         per-verb applicability table exists and a verb that cannot
+         violate an invariant satisfies it trivially: --offline means
+         THIS INVOCATION SPAWNS NO git AND NO curl, enforced at source
+         wiring; --locked means THIS INVOCATION DOES NOT CHANGE
+         parley.lock, enforced at the one lock-write site.
+
+         A DECLARATION CONSUMED TWICE: the extraction reads these rows,
+         and so does the drift law."
+        <category: 'mode flags'>
+        ^Array
+            with: (Array with: '--offline' with: #offline)
+            with: (Array with: '--locked' with: #locked)
+    ]
+
+    CommandLine class >> modeFlagNames [
+        "Every mode flag the table declares — the grammar's vocabulary
+         for valueless flags, derived from the table so the parser
+         cannot know one the table does not."
+        <category: 'mode flags'>
+        ^self modeFlags collect: [:row | row at: 1]
+    ]
+
+    CommandLine class >> networkSourceFlagNames [
+        "The declared SOURCE flags --offline forbids, keyed off the
+         table the wiring already holds exactly as §8 decision 80's
+         capability predicate is.
+
+         --source IS DELIBERATELY ABSENT: a local directory is what
+         offline MEANS, and refusing it would make the flag useless for
+         the case it exists to serve. The two named here are the ones
+         whose snapshot spawns git or reaches a base URL."
+        <category: 'mode flags'>
+        ^self sourceFlagNames reject: [:each | each = '--source']
+    ]
+
+    CommandLine class >> offlineRefusalFor: aFlag [
+        "The --offline guard's declared line (pinned in RED, issue #23),
+         naming the transport the invocation WANTED — the operator gave
+         a flag or wrote a config, and is owed the reason the two
+         disagree. One declared wording, read by the site that refuses
+         and by the law that holds it."
+        <category: 'mode flags'>
+        ^'--offline forbids the ', aFlag,
+            ' source this invocation would use - it reaches the network, and nothing was run'
+    ]
+
+    CommandLine class >> lockedRefusalFor: aName pinned: aPinnedText would: aWouldText [
+        "The --locked guard's declared line (pinned in RED, issue #23),
+         naming the FIRST differing pin in sorted order — one name,
+         because the operator is deciding whether to re-run without the
+         flag, not auditing a diff. Sorted rather than discovery order
+         so the answer is the same on every machine, which is the
+         byte-stability rule applied to a diagnosis."
+        <category: 'mode flags'>
+        ^'--locked forbids changing parley.lock - ', aName printString,
+            ' is pinned at ', aPinnedText, ' and would become ',
+            aWouldText, ', and nothing was written'
+    ]
+
+    CommandLine class >> absentPinText [
+        "What the --locked refusal renders for a side of the comparison
+         that has no pin at all — a lock that does not exist yet, or a
+         pin the new resolution drops. `nothing` is the honest rendering
+         of absence; a version-shaped placeholder would read as a pin."
+        <category: 'mode flags'>
+        ^'nothing'
+    ]
+
     CommandLine class >> unsearchableFlag [
         "The one declared source flag whose transport cannot answer
          parley search (§8 decision 80).
@@ -613,7 +696,7 @@ equality (the decision-23 precedent).'>
          grammar, and hand the remaining arguments to the settled CLI
          unchanged."
         <category: 'private'>
-        | args choice |
+        | args choice modes |
         args := self withoutLeadingMarker: anArgvArray.
         "The two question flags are answered ahead of verb dispatch and
          BEFORE any state directory is created (§8 decision 57): asking
@@ -666,8 +749,39 @@ equality (the decision-23 precedent).'>
                     withSource: choice notNil)
                     subject: (CLI usageSubjectFor: verbArgv)].
         self createStateDirectories.
-        ^(self cliWithSource: (self sourceFromChoice: choice))
+        modes := self modesIn: args.
+        "THE --offline ENFORCEMENT SITE, AND THERE IS EXACTLY ONE: the
+         wiring (Doc E §4.2). The predicate is keyed off the settled
+         sourceFlags and knows nothing about ROUTES, so a source
+         declared in parley.config.st is refused exactly as one given on
+         the argv — a guard that read only the argv would let the
+         commonest real setup walk past it.
+         It refuses BEFORE sourceFromChoice: builds anything, which is
+         what makes `spawning nothing` true rather than merely likely: a
+         --git or --index source creates its cache root at construction
+         and spawns at snapshot, and neither happens now."
+        (modes includes: #offline) ifTrue: [
+            | refusal |
+            refusal := self offlineRefusalFor: choice.
+            refusal notNil ifTrue: [^refusal]].
+        ^(self cliWithSource: (self sourceFromChoice: choice) modes: modes)
             run: (self verbArgvIn: args)
+    ]
+
+    offlineRefusalFor: aChoice [
+        "Private — the --offline refusal for the source this invocation
+         would wire, or nil when it would wire none or would wire a
+         local directory. Answers a CliResult because the argv is well
+         formed and the PROJECT is the limit — exit 1 on §8 decision
+         80's precedent, never the usage block."
+        <category: 'private-wiring'>
+        | flag |
+        aChoice isNil ifTrue: [^nil].
+        flag := (aChoice at: 1) at: 1.
+        (self class networkSourceFlagNames includes: flag) ifFalse: [^nil].
+        ^CliResult
+            lines: (Array with: (self class offlineRefusalFor: flag))
+            exitCode: 1
     ]
 
     sourceChoiceIn: anArgvArray [
@@ -866,19 +980,55 @@ equality (the decision-23 precedent).'>
          flags it consumes are the table's, so a flag can never be
          parsed here that the table does not declare."
         <category: 'private-grammar'>
-        | argv i flags |
+        | argv i flags modes |
         flags := self class sourceFlagNames.
+        modes := self class modeFlagNames.
         argv := OrderedCollection new.
         i := 1.
         [i <= anArgvArray size] whileTrue: [
             ((flags includes: (anArgvArray at: i))
                 and: [i < anArgvArray size])
                     ifTrue: [i := i + 2]
-                    ifFalse: [argv add: (anArgvArray at: i). i := i + 1]].
+                    ifFalse: [
+                        "A MODE FLAG IS VALUELESS, so it consumes ONE
+                         token rather than two (Doc E §4.2). It never
+                         reaches the verb argv — a mode that travelled on
+                         would arrive at the settled CLI as an unknown
+                         shape and answer usage, which is how a new flag
+                         comes to look exactly like a typo."
+                        (modes includes: (anArgvArray at: i))
+                            ifTrue: [i := i + 1]
+                            ifFalse: [
+                                argv add: (anArgvArray at: i).
+                                i := i + 1]]].
         ^argv asArray
     ]
 
+    modesIn: anArgvArray [
+        "Private — the modes this invocation asserts, as a Set of the
+         table's declared symbols. Recognized wherever they appear ahead
+         of the verb argv, exactly as the source flags are, and read from
+         the declared table so the parser cannot know a mode the table
+         does not."
+        <category: 'private-grammar'>
+        | modes |
+        modes := Set new.
+        self class modeFlags do: [:row |
+            (anArgvArray includes: (row at: 1))
+                ifTrue: [modes add: (row at: 2)]].
+        ^modes
+    ]
+
     "---- the wiring ----"
+
+    cliWithSource: aPackageSource modes: someModes [
+        "Private — the settled wiring, plus the modes this invocation
+         asserts. The CLI enforces --locked at its one lock-write site;
+         --offline never reaches it, because a mode enforced at the
+         wiring is already decided by the time a verb exists."
+        <category: 'private-wiring'>
+        ^(self cliWithSource: aPackageSource) withModes: someModes
+    ]
 
     cliWithSource: aPackageSource [
         "Private — the settled CLI over the real collaborators. The

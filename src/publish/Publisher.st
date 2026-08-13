@@ -128,11 +128,53 @@ setters; no value equality.'>
 
     "---- the pipeline (§1) ----"
 
+    pathDependencyProblem [
+        "Private — the step 0 refusal for the FIRST path dependency the
+         manifest declares, in declaration order, or nil when it
+         declares none.
+
+         ONE PROBLEM RATHER THAN A BATCH, because this is a
+         refusal-first ground: the author must remove the clause and
+         re-run, and the second path dependency is the same conversation
+         as the first. The batched grounds below report on a project;
+         this reports on a decision."
+        <category: 'private-publishing'>
+        manifest pathDependencies isEmpty ifTrue: [^nil].
+        ^self class pathDependencyProblemFor: manifest pathDependencies first
+    ]
+
+    Publisher class >> pathDependencyProblemFor: aPathDependency [
+        "The Doc F §1 step 0 refusal (pinned in RED, issue #23), naming
+         the dependency AND its declared path so the author knows which
+         clause to remove. One declared wording, read by the site that
+         refuses and by the law that holds it (§8 decision 81's rule)."
+        <category: 'problems'>
+        ^aPathDependency name printString, ' is a path dependency on ',
+            aPathDependency path printString,
+            ' - a published release cannot depend on a directory'
+    ]
+
     publish [
         "Run the §1 pipeline and answer the landed archive's sha256 hex
          digest; signal one PublishError on any problem."
         <category: 'publishing'>
-        | missing listing code |
+        | missing listing code pathRefusal |
+        "STEP 0: A RELEASE CANNOT DEPEND ON SOMEBODY'S LAPTOP (Doc F §1
+         step 0, Sprint 21, §8 decision 69). A manifest declaring a PATH
+         dependency is refused before anything else is even checked —
+         ahead of the destination check, the pre-flight and the build —
+         so nothing is written and NO PROCESS IS SPAWNED. It is a
+         refusal-first ground like republishing, not a batch member:
+         publishing a manifest that names a directory on one machine
+         would put an unresolvable edge into somebody else's index.
+
+         DEV DEPENDENCIES DO NOT REFUSE. They are simply never
+         serialized (Doc B §5.2), so a library that declares them
+         publishes exactly as one that does not — a refusal covering
+         both would make the commonest real library unpublishable."
+        pathRefusal := self pathDependencyProblem.
+        pathRefusal isNil ifFalse: [
+            ^PublishError signalProblems: (Array with: pathRefusal)].
         (PathGuard isDirectory: destDir) ifFalse: [
             ^PublishError signalProblems:
                 (Array with: self missingDestinationProblem)].

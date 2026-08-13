@@ -41,7 +41,42 @@ Three flags select the index for the verbs that need one, and they are mutually 
 --index <base>    index entries fetched per package from a sparse index
 ```
 
+Two further flags take no value and assert something about the whole invocation rather than selecting anything:
+
+```
+--offline         this invocation spawns no git and no curl
+--locked          this invocation does not change parley.lock
+```
+
+`--offline` is enforced where the source is wired: a `--git` or `--index` source — given on the command line *or* recorded in `parley.config.st` — is refused at exit `1` with one line naming the transport, and **nothing is spawned**. A `--source <dir>` is unaffected, because a local directory is what offline means. `--locked` is enforced at the one place a lock is written: the verb computes what it would write, compares, and on any difference refuses at exit `1` naming the first differing pin in sorted order, writing nothing. A lock that is already current is ordinary success. It composes with every verb that writes the lock, `add` and `remove` included — and because those two move the manifest and the lock together or not at all, a refused `add` leaves both byte-identical.
+
 Parley's state for a project lives beside that project, under `<working-dir>/.parley/` — never beside the process's current directory. There is nothing to activate and nothing global.
+
+### Depending on a package you are developing
+
+Two directories side by side is the ordinary way to work on a library and its consumer at once, and it should not cost a publish per edit. Declare the sibling by **path** instead of by constraint:
+
+```smalltalk
+Parley define: [:pkg |
+    pkg
+        name: 'my-app';
+        version: '1.0.0';
+        fileIns: #('App.st');
+        dependency: 'kernel-text' path: '../kernel-text';
+        devDependency: 'kernel-lint' constraint: '^1.0.0' ]
+```
+
+`dependency:path:` supplies that package from the directory rather than from an index: whatever version the sibling's own `Package.st` declares is what you get, and a path dependency always wins over an index release of the same name. `parley exec` reads the sibling **fresh on every run**, so editing its source and re-running picks the change up with no publish, no rebuild and no re-registration. `parley resolve` on a project whose dependencies are all paths needs no index at all — and neither do `check`, `tree` and `why`.
+
+`devDependency:constraint:` declares a dependency you need to develop *this* package and nobody who depends on it needs. Both words are **root-manifest-only and never serialized**: `parley publish` refuses a manifest that declares a path dependency — a release cannot depend on a directory on somebody's laptop — and dev dependencies are simply absent from the published entry, so a consumer never receives them.
+
+In `parley.lock`, a pin no index supplied records where it came from instead of a digest, carrying the path exactly as you wrote it so the lock travels with your checkout:
+
+```smalltalk
+#('kernel-text' '1.2.0' #path '../kernel-text')
+```
+
+`parley install` never fetches, stores or registers such a pin; `parley check` reports it as a problem when the sibling's **declared version** has moved since the lock was written; `parley why` names the directory; and `parley info` will still tell you the index does not publish it, because that remains true.
 
 ### Exit codes
 
