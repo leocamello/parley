@@ -45,7 +45,10 @@
  lock must byte-preserve the author's own path, and a fixture declaring
  an absolute one could not fail when an implementation expanded it.
  Real processes appear only where the law under test IS execution
- (S9, S10, S13, S17) AND IN S4, where the law under test is a sparse
+ (S9, S10, S13, S17), IN S29, whose fixture must PUBLISH real archives
+ so decision 25 cannot refuse before the mode flag is consulted
+ (amended at Gate B, from the probe that found the flag being ignored),
+ AND IN S4, where the law under test is a sparse
  CLOSURE and the sparse transport reaches its base through curl —
  amended at GREEN step 11, from the probe rather than from the plan.
  A recording double there does not make the scenario cheaper, it makes
@@ -1188,15 +1191,41 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
          all (Doc B §2.1), so a refused add under the mode flag leaves
          BOTH byte-identical. A build that enforced --locked only at the
          write itself would leave the edited Package.st behind, which is
-         precisely the state PinVerification exists to call broken."
+         precisely the state PinVerification exists to call broken.
+
+         STRENGTHENED AT GATE B, AND IT WAS GREEN BY CONSTRUCTION UNTIL
+         NOW — the sprint's FOURTH instance of that class. Two defects
+         compounded. The entries were written with plainEntryFor:, whose
+         #archive is empty, so add answered decision 25's
+         no-published-archive diagnosis at exit 1 and never reached the
+         mode flag at all; and this law asserted only the EXIT CODE and
+         the byte-identity, both of which that wrong refusal satisfies.
+         Driven with --locked REMOVED the law passed identically, which
+         is the definition of proving nothing about the flag.
+
+         So: REAL ARCHIVES, so the verb runs far enough to reach the one
+         enforcement site; and the answer is asserted against the
+         DECLARED lockedRefusalFor: wording, not merely against exit 1.
+         The portable half — wherever two refusal paths share an exit
+         code, assert the diagnosis's own line and never just the code.
+
+         What it caught: add and remove under --locked answered exit 0
+         with the ordinary success pin-lines while writing nothing,
+         because gst 3.2.5's Exception>>pass RESUMES after the inner
+         on:do: instead of unwinding (see CLI>>addResolving:). The
+         atomicity half of this law was always true; the exit code and
+         the lines were not."
         | work index manifestBefore lockBefore result |
         index := self freshDir: 's21-29-index'.
-        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-a'
-            version: '1.0.0' dependencies: '')
-            toFile: 'kernel-a-1.0.0.st' in: index.
-        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-b'
-            version: '1.0.0' dependencies: '')
-            toFile: 'kernel-b-1.0.0.st' in: index.
+        "REAL ARCHIVES (S13's precedent, S34's amendment). An entry with
+         an empty #archive cannot install, and decision 25's diagnosis
+         would refuse BEFORE --locked is ever consulted — which is
+         exactly how this law came to pass against a build that ignored
+         the flag."
+        self publishInto: index name: 'kernel-a' version: '1.0.0'
+            label: 's21-29-a'.
+        self publishInto: index name: 'kernel-b' version: '1.0.0'
+            label: 's21-29-b'.
         work := self workDir: 's21-29-work' contents: 'Parley define: [:pkg |
     pkg
         name: ''my-app'';
@@ -1218,6 +1247,15 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
         self assert: result exitCode = 1
             description: 'add under --locked answered exit ',
                 result exitCode printString, ': ', result lines printString.
+        "THE DIAGNOSIS'S OWN LINE, not merely the exit code. kernel-b is
+         a pin the lock does not carry, so the declared refusal names it
+         with the absent side rendered as such — and no OTHER refusal
+         that happens to exit 1 can satisfy this."
+        self assert: result lines = (Array with: (PathDepFixtures
+            lockedRefusalFor: 'kernel-b'
+            pinned: PathDepFixtures absentPinText would: '1.0.0'))
+            description: 'add under --locked answered ',
+                result lines printString.
         self assert: (ManifestEditFixtures packageContentsIn: work) = manifestBefore
             description: 'add under --locked changed Package.st'.
         self assert: (self lockTextIn: work) = lockBefore
