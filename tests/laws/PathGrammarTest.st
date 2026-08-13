@@ -75,26 +75,59 @@ README marker obligation for the two flags and the workflow.'>
     "---- the grammar itself ----"
 
     testResolveMatchesWithAndWithoutASource [
-        "ONE GUARD, AND NO OTHER ROW. The determination is a pure
+        "FOUR GUARDS MOVED, AND NO OTHER ROW. The determination is a pure
          function of argv and of whether a source was wired, so it can
          be asked directly — which is how this law proves the change
          landed in the table rather than in a branch somewhere below
-         it."
+         it.
+
+         AMENDED AT THE FIFTH MID-SPRINT HALT (§8 decision 84). As
+         frozen this comment read ONE GUARD, AND NO OTHER ROW, and the
+         mirror group below asserted that `tree`, `check` and `why`
+         still require a source. Decision 84 moved exactly those three
+         out of the grammar, so three of those assertions became false
+         BY THE RULING rather than by a defect — the law was asserting
+         precisely the bound the ruling moves, which is what a bound
+         law is for. It was invisible to the halt sweep because it is a
+         pure grammar law and drives no verb.
+
+         The three are not merely removed: they are re-asserted in the
+         OTHER direction below, so this law still fails an
+         over-narrowing table in both senses — a build that keeps them
+         source-requiring fails here, and a build that lets a WRITE
+         verb slip out of the grammar fails here too. Removing them
+         without re-asserting them would have left the ruling's own
+         change unguarded at the table level, which is the hole the
+         owed law closes end to end and this one closes at the
+         declaration."
         self deny: (CLI verbRowFor: (Array with: 'resolve')
             withSource: false) isNil
             description: 'a source-less resolve still selects no verb'.
         self deny: (CLI verbRowFor: (Array with: 'resolve')
             withSource: true) isNil
             description: 'resolve stopped matching WITH a source'.
-        "THE DEFERRED MIRROR'S BOUND, asserted beside the guard that
-         moved rather than in a law of its own: every other
-         source-requiring verb still fails to match without a source, so
-         an over-narrowing change to the table fails HERE."
+        "THE READ-ONLY VERBS DECISION 84 MOVED, asserted in BOTH
+         directions: they match with a source and without one, because
+         a project that needs no index must be inspectable and a
+         project that has one must not stop working."
+        (Array
+            with: (Array with: 'tree')
+            with: (Array with: 'check')
+            with: (Array with: 'why' with: 'kernel-a')) do: [:argv |
+                self deny: (CLI verbRowFor: argv withSource: false) isNil
+                    description: argv printString,
+                        ' still requires a source'.
+                self deny: (CLI verbRowFor: argv withSource: true) isNil
+                    description: argv printString,
+                        ' stopped matching with a source'].
+        "THE DEFERRED MIRROR'S REMAINING BOUND, asserted beside the
+         guards that moved rather than in a law of its own: every WRITE
+         verb still fails to match without a source, so an
+         over-narrowing change to the table fails HERE. install is the
+         mirror's named member and S33 holds its end-to-end half."
         (Array
             with: (Array with: 'install')
-            with: (Array with: 'update')
-            with: (Array with: 'tree')
-            with: (Array with: 'check')) do: [:argv |
+            with: (Array with: 'update')) do: [:argv |
                 self assert: (CLI verbRowFor: argv withSource: false) isNil
                     description: argv printString,
                         ' stopped requiring a source'.
@@ -102,7 +135,6 @@ README marker obligation for the two flags and the workflow.'>
                     description: argv printString,
                         ' stopped matching with a source'].
         (Array
-            with: (Array with: 'why' with: 'kernel-a')
             with: (Array with: 'remove' with: 'kernel-a')
             with: (Array with: 'add' with: 'kernel-a' with: '^1.0.0'))
                 do: [:argv |
@@ -191,6 +223,59 @@ README marker obligation for the two flags and the workflow.'>
                 PathDepFixtures indexNeedingName)))
             description: 'the declared wording moved: ',
                 result lines printString
+    ]
+
+    testAnIndexNeedingProjectRefusesInsideEveryReadOnlyVerb [
+        "THE LAW §8 DECISION 84 OWES ITSELF, named in the decision
+         rather than left to be noticed: an INDEX-PINNED project running
+         a flagless read-only verb answers the DECLARED REFUSAL at exit
+         1 — never the usage block.
+
+         Nothing else drives that case. The six laws that forced the
+         widening all drive PATH-ONLY projects, where there is nothing
+         an index could supply and the refusal must never fire; this is
+         the other direction, and without it the widening is unguarded
+         in exactly the way it can go wrong — a verb that simply
+         stopped asking would answer a snapshot-less question and blame
+         the package, which is the wrong-blame class this project has
+         spent six sprints closing.
+
+         The project is resolved WITH a source first, so the lock exists
+         and the verbs get past the settled missing-lock line: what is
+         being tested is the index requirement, not the lock's absence.
+         All three verbs are driven, because a guard wired into one is a
+         guard two verbs do not have."
+        | work index |
+        index := self freshDir: 'pg-owed-index'.
+        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-a'
+            version: '1.0.0' dependencies: '')
+            toFile: 'kernel-a-1.0.0.st' in: index.
+        work := self workDir: 'pg-owed-work'
+            contents: PathDepFixtures indexNeedingRootContents.
+        self assert: (self resultOf: (PathDepFixtures resolveArgvOn: index)
+            in: work) exitCode = 0
+            description: 'the fixture never resolved, so the verbs below would answer the missing-lock line instead'.
+        (Array
+            with: (Array with: 'check')
+            with: (Array with: 'tree')
+            with: (Array with: 'why' with: PathDepFixtures indexNeedingName))
+                do: [:argv |
+                    | result |
+                    result := self resultOf: argv in: work.
+                    self assert: result exitCode = 1
+                        description: argv printString, ' answered exit ',
+                            result exitCode printString, ': ',
+                            result lines printString.
+                    self assert: result lines = (Array with: (CLI
+                        needsIndexRefusalFor: (Array with:
+                            PathDepFixtures indexNeedingName)))
+                        description: argv printString, ' answered ',
+                            result lines printString.
+                    result lines do: [:line |
+                        self deny: (CommandLineFixtures does: line
+                            include: 'usage: parley')
+                            description: argv printString,
+                                ' answered the usage block']]
     ]
 
     testTheRefusalNamesEveryIndexNeedingDependencyAndNoPathOne [
