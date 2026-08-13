@@ -1291,7 +1291,7 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
          68): holding a drifted path pin at its locked version would
          narrow to a version the overlay no longer describes, which is
          §8 decision 47's collapse arriving by composition."
-        | work text index before after result |
+        | work text index before after result zStart zTuple |
         text := self sibling: 's21-34-text'.
         index := self freshDir: 's21-34-index'.
         "REAL ARCHIVES, because this scenario's verb INSTALLS (amended
@@ -1339,9 +1339,21 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
                 path: (PathDepFixtures declaredPathFor: 's21-34-text')))
             description: 'the path pin was held at its stale locked version: ',
                 after printString.
-        self assert: (CommandLineFixtures does: after include:
-            '#(''kernel-z'' ''1.0.0'' #sha256 '''')')
-            description: 'an unrelated index pin moved: ', after printString
+        "THE UNRELATED PIN IS COMPARED BEFORE-TO-AFTER, which is what
+         this scenario's own words ask for and what a real archive makes
+         necessary: the digest is produced by the publish above and
+         cannot be written into a law. Extracting kernel-z's tuple from
+         the lock BEFORE the update and requiring those exact bytes
+         after it is a stronger claim than the hardcoded empty digest
+         ever was — it fails on any change to the tuple, not just on the
+         one spelling the law happened to name."
+        zStart := before indexOfSubCollection: '#(''kernel-z'''.
+        self deny: zStart = 0
+            description: 'the first resolve pinned no kernel-z: ', before printString.
+        zTuple := before copyFrom: zStart to: (before indexOf: $) startingAt: zStart).
+        self assert: (CommandLineFixtures does: after include: zTuple)
+            description: 'an unrelated index pin moved: ', zTuple printString,
+                ' is not in ', after printString
     ]
 ]
 

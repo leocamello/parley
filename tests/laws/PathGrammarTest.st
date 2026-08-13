@@ -72,6 +72,28 @@ README marker obligation for the two flags and the workflow.'>
             in: aWorkDir runner: RecordingRunner new
     ]
 
+    publishInto: aDestDir name: aName version: aVersionString label: aLabel [
+        "Publish a REAL archive into aDestDir — S13's precedent. An
+         entry with an empty #archive answers decision 25's
+         no-published-archive line at install, which is correct and is
+         proved in S14; here it would mask the refusal this law pins."
+        | author |
+        author := self freshDir: aLabel.
+        ExecFixtures writePackage: 'Parley define: [:pkg |
+    pkg
+        name: ''', aName, ''';
+        version: ''', aVersionString, ''';
+        summary: ''a fixture library'';
+        author: ''fixture'';
+        license: ''MIT'';
+        fileIns: #(''Lib.st'') ]', SourceFixtures newline in: author.
+        SourceFixtures write: 'Object subclass: Lib [ ]', SourceFixtures newline
+            toFile: 'Lib.st' in: author.
+        self assert: (PathDepFixtures resultOf: (Array with: 'publish'
+            with: aDestDir) in: author runner: ProcessRunner new) exitCode = 0
+            description: 'the fixture library ', aName, ' did not publish'
+    ]
+
     "---- the grammar itself ----"
 
     testResolveMatchesWithAndWithoutASource [
@@ -391,9 +413,10 @@ README marker obligation for the two flags and the workflow.'>
          path fixture creates its sibling; this one did not."
         self sibling: 'pg-edit-text'.
         index := self freshDir: 'pg-edit-index'.
-        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-b'
-            version: '1.0.0' dependencies: '')
-            toFile: 'kernel-b-1.0.0.st' in: index.
+        "A REAL ARCHIVE: add installs, and an archive-less entry answers
+         decision 25 before the refusal this law exists to pin."
+        self publishInto: index name: 'kernel-b' version: '1.0.0'
+            label: 'pg-edit-author'.
         (Array
             with: (Array with: 'pg-edit-path'
                 with: (PathDepFixtures rootDeclaring:

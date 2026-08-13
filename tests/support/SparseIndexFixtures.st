@@ -254,8 +254,20 @@ builders and curl-counting helpers. Stateless.'>
           Sprint 11/12/13 precedent) ----"
 
     SparseIndexFixtures class >> usageHeaderLine [
+        "SPRINT 21 RE-PINS THE HEADER, and the reason this method needed
+         finding at all is the lesson worth keeping. This is a SECOND
+         INDEPENDENT LITERAL COPY of the block's first row, so
+         `grep ExecFixtures usageLines` cannot see it — the exact defect
+         class Sprint 20 paid for and wrote into that oracle's own
+         comment, arriving one sprint later in a fixture nobody swept.
+
+         THE GENERALIZATION, stated here because the next re-pin will
+         need it: FOR A RE-PINNED ORACLE THE SWEEP RUNS OVER THE TEXT OF
+         THE MOVED ROWS, NEVER OVER SENDERS OF THE ORACLE. A sender
+         sweep is structurally blind to a fixture holding its own copy
+         of one row, which is precisely what this was."
         <category: 'usage pins'>
-        ^'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>]'
+        ^'usage: parley <verb> [--source <dir> | --git <repo> | --index <base>] [--offline] [--locked]'
     ]
 
     SparseIndexFixtures class >> indexFlagUsageLine [
