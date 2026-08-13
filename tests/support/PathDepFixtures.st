@@ -85,15 +85,22 @@ Stateless; uniqueness comes from per-test labels.'>
     ]
 
     PathDepFixtures class >> textSourceAnswering: aString [
-        "The sibling's one source file. It defines a class in the
-         Parley namespace so a curated child can send it a message,
-         which is what S9 and S10 observe."
+        "The sibling's one source file, written the way A PACKAGE AUTHOR
+         writes one: the class is defined at TOP LEVEL, in no namespace
+         of Parley's.
+
+         AMENDED MID-SPRINT (GREEN step 4). It carried
+         `Namespace current: Parley.` — the HARNESS's idiom, not an
+         author's — and the curated child is a bare image in which
+         Parley is not a namespace at all, so the probe script died on
+         `DeferredVariableBinding>>resolvePathFrom:` before reaching the
+         behaviour S9 and S10 exist to observe. A sibling author would
+         never define into the package manager's own namespace, and the
+         fixture now models what they actually write."
         <category: 'siblings'>
-        ^'Namespace current: Parley.
-Object subclass: KernelText [
+        ^'Object subclass: KernelText [
     KernelText class >> shout [ ^''', aString, ''' ]
-]
-Namespace current: Smalltalk.', SourceFixtures newline
+]', SourceFixtures newline
     ]
 
     PathDepFixtures class >> textSiblingNamed: aLabel version: aVersionString answering: aString [
@@ -175,12 +182,15 @@ Namespace current: Smalltalk.', SourceFixtures newline
     ]
 
     PathDepFixtures class >> bSiblingSource [
+        "Top level, for the reason textSourceAnswering: records: this is
+         a package author's source, and no author defines into Parley's
+         namespace. Nothing sends KernelB a message today, so the
+         amendment is consistency rather than a repair — but a child
+         that ever files this in would die exactly as S9's did."
         <category: 'siblings'>
-        ^'Namespace current: Parley.
-Object subclass: KernelB [
+        ^'Object subclass: KernelB [
     KernelB class >> mark [ ^''b-loaded'' ]
-]
-Namespace current: Smalltalk.', SourceFixtures newline
+]', SourceFixtures newline
     ]
 
     PathDepFixtures class >> bSiblingNamed: aLabel [
