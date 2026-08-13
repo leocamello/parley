@@ -24,7 +24,7 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-- **Sprint 21 — dependencies you are developing.** §2 **item 6**, issue [#23](https://github.com/leocamello/parley/issues/23), **staged at Gate C 2026-08-12** against **983 laws**, `deferred 0×`, **undisplaced — the eleventh consecutive sprint the ranking won on its own merits.** `path:` and `devDependency:` as root-manifest-only vocabulary (the entry schema does not move), the overlay computed by the source layer, `--offline` and `--locked` as guard invariants, and the dependency-free-resolve rider (the plan's named orphan c, staged as S30–S33). §8 decisions **68, 69, 83** landed pre-RED at `c86a754` with the docs citing them. Carried gaps disposed at staging: **CF-1 re-deferred** with its reason (and this sprint's deliberate additions to its class declared), **CF-6 staged as a Gate A reviewer amendment**; F23's companion resolved by Ban 105 (`1f4cfce`).
+- **Sprint 21 — dependencies you are developing.** ✅ **DELIVERED 2026-08-13**, issue [#23](https://github.com/leocamello/parley/issues/23) closed, commit `3b299da`, **983 → 1091 laws**. §2 **item 6**, staged at Gate C 2026-08-12 against **983 laws**, `deferred 0×`, **undisplaced — the eleventh consecutive sprint the ranking won on its own merits.** `path:` and `devDependency:` as root-manifest-only vocabulary (the entry schema does not move), the overlay computed by the source layer, `--offline` and `--locked` as guard invariants, and the dependency-free-resolve rider (the plan's named orphan c, staged as S30–S33). §8 decisions **68, 69, 83** landed pre-RED at `c86a754` with the docs citing them. Carried gaps disposed at staging: **CF-1 re-deferred** with its reason (and this sprint's deliberate additions to its class declared), **CF-6 staged as a Gate A reviewer amendment**; F23's companion resolved by Ban 105 (`1f4cfce`). **Decision 84 minted mid-sprint** (`check`, `tree`, `why` leave the grammar; `search`/`info`/`outdated` excluded deliberately) and **68 amended in place** at Gate A. **Delivered and walked through the shipped binary at Gate B** — the edit-and-rerun workflow with the lock byte-identical and stderr empty at every step. **Gate B found and fixed a fail-wrong at exit 0**: `add`/`remove --locked` exited 0 while writing nothing, because `Exception>>pass` does not unwind on 3.2.5; falsifier `7f93a4f` red first, fix `9979ccd`. Close-out findings **F24–F32**, tally **25 defect-findings, 13 mechanism / 12 luck** — the ratio moved the wrong way. **Carried gap, ranked and probed, unscheduled:** `exec`'s script precondition resolves against the process cwd where Doc E §4.2 rules working-directory derivation (fail-stop, invisible under `bin/parley`).
 
 ### Recently delivered
 
@@ -109,11 +109,18 @@ roadmap item that wins on its own merits rather than a displacement.
    grounds, one declared table read twice) and **82** (a transitive pin renders a marker, never
    a version). The usage-error first lines and the **F19** carried gap rode along and both
    landed.
-6. **Dependencies you are developing** — *deferred 0×.* **Staged as Sprint 21 at Gate C,
-   2026-08-12, issue #23, undisplaced — see In flight above.** Path dependencies and dev-only
-   dependencies. In an ecosystem with no published packages, two directories side by side is
-   *the* workflow, and today it costs a `parley publish` per edit. Both are **root-manifest-only
-   vocabulary**, so the index entry schema does not move. §8 decisions 68, 69, 83.
+6. ~~**Dependencies you are developing**~~ — ✅ **DELIVERED in Sprint 21** (issue #23, commit
+   `3b299da`), *deferred 0×, undisplaced — the eleventh consecutive sprint the ranking won on
+   its own merits.* Path dependencies and dev-only dependencies, both **root-manifest-only
+   vocabulary**, so `#'parley-index' 1` is byte-identical and every entry published to date
+   stays valid. The promise is delivered end to end and was walked through the shipped binary
+   at Gate B: two directories side by side, `exec` reading the sibling fresh, the lock
+   byte-identical across an edit — the `parley publish` per edit is gone. §8 decisions 68
+   (amended mid-sprint: the visited-set key is textual, not a filesystem question), 69, 83 and
+   **84** (minted mid-sprint — `check`, `tree` and `why` leave the grammar too). 983 laws →
+   **1091**. **Not fully closed:** `exec`'s script precondition resolves against the process
+   cwd where Doc E §4.2 rules working-directory derivation — fail-stop, invisible under
+   `bin/parley`, see Carried gaps.
 7. **The release** — *deferred 0×.* CHANGELOG, the declared release manifest with a law over
    it, shell completions, the CI drift law, and the tag. §8 decisions 70, 71.
 
@@ -270,7 +277,7 @@ So v1.0 builds the protocol and proves it offline. The day someone hosts a Parle
 | 18 | Writing your first `Package.st` | ⏱ The authoring boundary — the only foreign text in the tool. ✅ Delivered, issue #20, commit `c9c72e9`. |
 | 19 | Running your first command; getting Parley, configuring it | ⏱ **Items 3 AND 4, paired at Gate C 2026-08-10**: the Gate C probes shrank both — `exec` carved out of item 3 (carve-out re-ruled to `-g` pre-RED, decision 77), item 4's installation half found already delivered in Sprint 17 — so the pair held one sprint. §8 decisions 63, 64, 65, 76, 77, 78. ✅ Delivered, issue #21, commit `89ab038`. |
 | 20 | The verbs that close the grammar | Parity: all four exist in all seven benchmarked managers. §8 decisions 67, 79, 80, 81, 82. ✅ Delivered, issue #22, commit `91586dc`. |
-| 21 | Dependencies you are developing | Root-only vocabulary; cheapest **before** entries exist. |
+| 21 | Dependencies you are developing | Root-only vocabulary; cheapest **before** entries exist. §8 decisions 68, 69, 83, 84. ✅ Delivered, issue #23, commit `3b299da`. |
 | 22 | The release | CHANGELOG, release manifest, completions, **the tag**. |
 
 *(Rows 20–22 renumbered 2026-08-11, at the Sprint 19 document review: pairing items 3 and 4

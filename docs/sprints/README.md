@@ -28,6 +28,12 @@ number is the total axiomatic laws green at that sprint's close.
 | [13](sprint-13-notes.md) | `parley add` — `ManifestEditor`, one clause inserted and never a re-render | [#15](https://github.com/leocamello/parley/issues/15) | `d9b6fad` | 662 |
 | [14](sprint-14-notes.md) | The sparse-index client — `SparseIndexSource`, the pre-fetch closure, `seededWith:` | [#16](https://github.com/leocamello/parley/issues/16) | `d54b490` | 709 |
 | [15](sprint-15-notes.md) | Publishing into a sparse index — `--layout`, the listing write, `--version`, the v1.0 line | [#17](https://github.com/leocamello/parley/issues/17) | `87a9e34` | 756 |
+| [16](sprint-16-notes.md) | v1.0 readiness — name the file, match the exit code, check the claim | [#18](https://github.com/leocamello/parley/issues/18) | `96ad6b2` | 795 |
+| [17](sprint-17-notes.md) | The boundary table — `PathGuard`, every diagnosis earns its predicate, the eight-class I/O census | [#19](https://github.com/leocamello/parley/issues/19) | `bba2c79` | 847 |
+| [18](sprint-18-notes.md) | The authoring boundary speaks Parley's voice — `ManifestCapture`, the file-and-line diagnosis | [#20](https://github.com/leocamello/parley/issues/20) | `c9c72e9` | 876 |
+| [19](sprint-19-notes.md) | The commands stop shouting, and the project remembers its index — `Configuration`, the plumbing redirects | [#21](https://github.com/leocamello/parley/issues/21) | `89ab038` | 910 |
+| [20](sprint-20-notes.md) | The verbs that close the grammar — `remove`, `search`, `info`, `outdated`, the six usage grounds | [#22](https://github.com/leocamello/parley/issues/22) | `91586dc` | 983 |
+| [21](sprint-21-notes.md) | Dependencies you are developing — `PathOverlay`, `PathDependency`, `--offline`, `--locked` | [#23](https://github.com/leocamello/parley/issues/23) | `3b299da` | 1091 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a
