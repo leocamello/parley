@@ -29,6 +29,9 @@
 #   ./scripts/verify-sprint.sh --phase red     # explicit phase override
 #   ./scripts/verify-sprint.sh --seed N        # explicit seed
 #   ./scripts/verify-sprint.sh --reset         # HUMAN ONLY: reset breaker
+#   ./scripts/verify-sprint.sh --observe       # HUMAN/OPERATOR ONLY: full run,
+#                                              # breaker state neither read nor
+#                                              # written (reviewer reproductions)
 set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
@@ -43,6 +46,7 @@ SEED="${PARLEY_SEED:-20260718}"
 BANNED_NAME="g""pm"
 
 PHASE=""
+OBSERVE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --reset)
@@ -51,6 +55,17 @@ while [[ $# -gt 0 ]]; do
       exit 0 ;;
     --seed)  SEED="${2:?--seed requires a value}"; shift 2 ;;
     --phase) PHASE="${2:?--phase requires red|green}"; shift 2 ;;
+    --observe)
+      # HUMAN/OPERATOR ONLY, like --reset. An observer run executes both
+      # phases in full but never touches the breaker state — neither
+      # reading it to block nor writing it. It exists because the review
+      # topology has a SECOND legitimate runner: an operator reproducing
+      # the agent's gate byte-identically is the review discipline
+      # working, and to the one-actor breaker it is indistinguishable
+      # from the agent spinning — the identical-hash fast-trip fired on
+      # exactly that at Sprint 21 mid-GREEN. Agents never pass this flag;
+      # the kickoff's one-run-per-increment rule is unchanged.
+      OBSERVE=1; shift ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -92,6 +107,7 @@ read_state() {
 }
 
 write_state() { # $1 = count, $2 = failure hash, $3 = passed count (may be empty)
+  [[ -n "$OBSERVE" ]] && return 0   # observer runs never touch breaker state
   printf '%s\n%s\n%s\n' "$1" "$2" "${3:-}" > "$STATE_FILE"
 }
 
@@ -107,6 +123,11 @@ fail_hard_ban() { # $1 = exit code, $2.. = message lines
 }
 
 read_state
+
+if [[ -n "$OBSERVE" ]]; then
+  echo "👁  Observer run (breaker state untouched; spin streak stays at ${SPIN_COUNT})."
+  SPIN_COUNT=0
+fi
 
 if (( SPIN_COUNT >= MAX_SPINS )); then
   {
