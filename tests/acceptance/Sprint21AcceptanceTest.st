@@ -107,6 +107,30 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
         ^PathDepFixtures lockTextIn: aWorkDir
     ]
 
+    publishInto: aDestDir name: aName version: aVersionString label: aLabel [
+        "Publish a REAL archive for aName at aVersionString into
+         aDestDir — S13's precedent. An entry written with an empty
+         #archive cannot install, and a scenario whose verb INSTALLS
+         needs one that can; decision 25's no-published-archive answer
+         is proved where it belongs, in S14."
+        | author |
+        author := self freshDir: aLabel.
+        ExecFixtures writePackage: 'Parley define: [:pkg |
+    pkg
+        name: ''', aName, ''';
+        version: ''', aVersionString, ''';
+        summary: ''a fixture library'';
+        author: ''fixture'';
+        license: ''MIT'';
+        fileIns: #(''Lib.st'') ]', SourceFixtures newline in: author.
+        SourceFixtures write: 'Object subclass: Lib [ ]', SourceFixtures newline
+            toFile: 'Lib.st' in: author.
+        self assert: (self resultOf: (Array with: 'publish' with: aDestDir)
+            in: author runner: ProcessRunner new) exitCode = 0
+            description: 'the fixture library ', aName, ' ', aVersionString,
+                ' did not publish'
+    ]
+
     linesCarry: someLines needed: aNeedle [
         "Whether any line of someLines contains aNeedle as a substring
          — the settled containment idiom, used where a scenario asserts
@@ -220,8 +244,13 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
             description: 'the fixture names the sibling''s dependency in the root manifest, which makes this law vacuous'.
         self deny: (self exists: work, '/parley.lock')
             description: 'the fixture has a lock, which makes this law vacuous'.
+        "--index TAKES A URL, NOT A DIRECTORY (amended mid-sprint, GREEN
+         step 6). Every settled sparse law passes
+         SparseIndexFixtures baseUrlFor:, which is a file:// URL over an
+         ABSOLUTE path; this fixture was the odd one out and handed the
+         bare directory, so the source never fetched anything."
         result := self resultOf: (Array with: 'resolve' with: '--index'
-            with: base) in: work.
+            with: (SparseIndexFixtures baseUrlFor: base)) in: work.
         self assert: result exitCode = 0
             description: result lines printString.
         self assert: (CommandLineFixtures does: (self lockTextIn: work)
@@ -1265,15 +1294,20 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
         | work text index before after result |
         text := self sibling: 's21-34-text'.
         index := self freshDir: 's21-34-index'.
-        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-a'
-            version: '1.0.0' dependencies: '')
-            toFile: 'kernel-a-1.0.0.st' in: index.
-        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-a'
-            version: '1.1.0' dependencies: '')
-            toFile: 'kernel-a-1.1.0.st' in: index.
-        SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-z'
-            version: '1.0.0' dependencies: '')
-            toFile: 'kernel-z-1.0.0.st' in: index.
+        "REAL ARCHIVES, because this scenario's verb INSTALLS (amended
+         mid-sprint, GREEN step 6). Written with plainEntryFor:, every
+         entry carried an empty #archive, so update answered decision
+         25's no-published-archive diagnosis at exit 1 for kernel-a and
+         kernel-z — correctly, and that answer is proved in S14 where it
+         belongs. Here it masked the exit code this law asserts. With
+         real archives the verb runs end to end and the assertion below
+         strengthens from 'not the collapse' to exit 0."
+        self publishInto: index name: 'kernel-a' version: '1.0.0'
+            label: 's21-34-a0'.
+        self publishInto: index name: 'kernel-a' version: '1.1.0'
+            label: 's21-34-a1'.
+        self publishInto: index name: 'kernel-z' version: '1.0.0'
+            label: 's21-34-z'.
         work := self workDir: 's21-34-work' contents: 'Parley define: [:pkg |
     pkg
         name: ''my-app'';
@@ -1295,7 +1329,7 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
             PathDepFixtures driftedVersionString) in: text.
         result := self resultOf: (Array with: 'update' with: 'kernel-a'
             with: '--source' with: index) in: work.
-        self deny: result exitCode = 1
+        self assert: result exitCode = 0
             description: 'the drifted path pin collapsed the selective update: ',
                 result lines printString.
         after := self lockTextIn: work.

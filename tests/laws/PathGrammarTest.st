@@ -292,8 +292,14 @@ README marker obligation for the two flags and the workflow.'>
         result := self resultOf: PathDepFixtures flaglessResolveArgv in: work.
         self assert: result exitCode = 1
             description: result lines printString.
+        "THE NEEDLE IS UNQUOTED (amended mid-sprint, GREEN step 6). The
+         declared refusal composes its names through
+         CommandLine list:conjunction:, which writes them PLAINLY — so
+         the sentence carries kernel-a, never 'kernel-a'. The behaviour
+         was right and the oracle green; only this needle asserted
+         quotes nothing ever emitted."
         self assert: (CommandLineFixtures does: result lines first
-            include: '''kernel-a''')
+            include: 'kernel-a')
             description: result lines first printString.
         self deny: (CommandLineFixtures does: result lines first
             include: 'kernel-text')
@@ -377,13 +383,21 @@ README marker obligation for the two flags and the workflow.'>
          DAMAGES — and the damage is a Package.st that no longer loads,
          written by the tool, in a file the author owns."
         | index |
+        "THE SIBLING IS REAL (amended mid-sprint, GREEN step 6). The
+         declared path was a bare '../kernel-text' pointing at nothing,
+         so the overlay answered the missing-sibling boundary diagnosis
+         and the flow died before ManifestEditor was ever reached — the
+         refusal this law exists to pin was never exercised. Every other
+         path fixture creates its sibling; this one did not."
+        self sibling: 'pg-edit-text'.
         index := self freshDir: 'pg-edit-index'.
         SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-b'
             version: '1.0.0' dependencies: '')
             toFile: 'kernel-b-1.0.0.st' in: index.
         (Array
             with: (Array with: 'pg-edit-path'
-                with: (PathDepFixtures rootDeclaring: '../kernel-text'))
+                with: (PathDepFixtures rootDeclaring:
+                    (PathDepFixtures declaredPathFor: 'pg-edit-text')))
             with: (Array with: 'pg-edit-dev'
                 with: (PathDepFixtures rootWithDevDependencyOn: 'kernel-lint'
                     constraint: '^1.0.0'))) do: [:row |
@@ -420,6 +434,8 @@ README marker obligation for the two flags and the workflow.'>
          tool."
         | index |
         index := self freshDir: 'pg-declared-index'.
+        "The sibling is real here too, for the reason recorded above."
+        self sibling: 'pg-declared-text'.
         SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-text'
             version: '1.0.0' dependencies: '')
             toFile: 'kernel-text-1.0.0.st' in: index.
@@ -428,7 +444,8 @@ README marker obligation for the two flags and the workflow.'>
             toFile: 'kernel-lint-1.0.0.st' in: index.
         (Array
             with: (Array with: 'pg-declared-path' with: 'kernel-text'
-                with: (PathDepFixtures rootDeclaring: '../kernel-text'))
+                with: (PathDepFixtures rootDeclaring:
+                    (PathDepFixtures declaredPathFor: 'pg-declared-text')))
             with: (Array with: 'pg-declared-dev' with: 'kernel-lint'
                 with: (PathDepFixtures rootWithDevDependencyOn: 'kernel-lint'
                     constraint: '^1.0.0'))) do: [:row |

@@ -398,6 +398,20 @@ them.'>
         self assert: result exitCode = 1
             description: 'an unknown config key was accepted: ',
                 result lines printString.
+        "THE SECOND HALF DRIVES A VALID CONFIG, AND IT HAS TO (amended
+         mid-sprint, GREEN step 6). Asked against the MALFORMED file
+         above, valueFor: does not answer nil — it raises the settled
+         ExecutionError carrying the malformed-configuration diagnosis
+         (probed at this gate). That is the boundary family working, and
+         the half above already proves it: a config naming a mode flag
+         is REFUSED, so the flag is not in the schema.
+         This half proves the complementary fact — that the lookup has
+         no key for a mode flag even on a well-formed file — and it can
+         only be asked where the file parses."
+        SourceFixtures write:
+            '#(#''parley-config'' 1 #source '''' #git '''' #index '''')',
+            SourceFixtures newline
+            toFile: 'parley.config.st' in: work.
         CommandLine modeFlagNames do: [:flag |
             self assert: ((Configuration in: work) valueFor: flag) isNil
                 description: flag, ' became a configuration key']
