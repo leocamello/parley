@@ -154,20 +154,47 @@ exec propagation — all over doubles, spawning nothing.'>
     ]
 
     testSourceRequiringVerbsWithoutASourceAnswerUsage [
-        | cli |
+        "RE-PINNED IN GREEN (§8 decisions 83 and 84). resolve LEFT this
+         list: its verbRows guard stopped requiring a source, so the
+         #needsIndex ground stops firing for it by decision 81's own
+         derivation. The WRITE verbs KEPT the grammar — install and
+         update here, the bound on which the mirror's deferral rests —
+         and they are what the iteration now drives.
+
+         THE MOVED VERB IS ASSERTED, NOT MERELY DROPPED. A law that only
+         deleted resolve from the list would leave this suite unable to
+         tell `the guard moved' from `the guard was lost', so the second
+         half drives resolve over decision 83's FIRST manifest state and
+         pins that it RUNS: dependency-free, source-less, exit 0 and the
+         settled confirmation line."
+        | cli work moved |
         cli := self cliIn: 'tmp/parley-cli-usage-work'
             source: nil
             storeRoot: 'tmp/parley-cli-usage-store'
             target: 'tmp/parley-cli-usage-target'
             runner: RecordingRunner new.
-        #('resolve' 'install' 'update') do: [:verb |
+        #('install' 'update') do: [:verb |
             | result |
             result := cli run: (Array with: verb).
             self assert: result exitCode = 2.
             self assert: result lines = (GrammarFixtures
                 usageAnswerFor: #needsIndex subject: verb)
                 description: verb, ' without a source answered ',
-                    result lines printString]
+                    result lines printString].
+        work := self workDir: 'cli-usage-moved'
+            package: PathDepFixtures emptyRootContents.
+        moved := (self cliIn: work
+            source: nil
+            storeRoot: 'tmp/parley-cli-usage-store'
+            target: 'tmp/parley-cli-usage-target'
+            runner: RecordingRunner new) run: #('resolve').
+        self assert: moved exitCode = 0
+            description: 'a source-less resolve answered exit ',
+                moved exitCode printString, ': ', moved lines printString.
+        self assert: moved lines
+            = (Array with: ExecFixtures noDependenciesLine)
+            description: 'a source-less resolve answered ',
+                moved lines printString
     ]
 
     "---- S10: init ----"

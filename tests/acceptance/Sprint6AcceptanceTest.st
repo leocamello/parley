@@ -508,7 +508,13 @@ tearDown.'>
     "---- S19: unknown input answers usage ----"
 
     testS19_unknownInputAnswersUsage [
-        | cli noSource |
+        "RE-PINNED IN GREEN (§8 decisions 83 and 84). The two argv-shape
+         rows are untouched — an unknown verb and a wrong arity are
+         grammar grounds and no ruling moved them. The source-less
+         iteration lost resolve and kept the WRITE verbs, and the moved
+         verb is asserted rather than dropped: over decision 83's first
+         manifest state it RUNS, source-less, at exit 0."
+        | cli noSource work moved |
         cli := self cliIn: 'tmp/parley-s19-work'
             source: SnapshotAndFetchTrapSource new
             storeRoot: 'tmp/parley-s19-store'
@@ -530,14 +536,28 @@ tearDown.'>
             storeRoot: 'tmp/parley-s19-store'
             target: 'tmp/parley-s19-target'
             runner: RecordingRunner new.
-        #('resolve' 'install' 'update') do: [:verb |
+        #('install' 'update') do: [:verb |
             | result |
             result := noSource run: (Array with: verb).
             self assert: result exitCode = 2.
             self assert: result lines = (GrammarFixtures
                 usageAnswerFor: #needsIndex subject: verb)
                 description: verb, ' without a source answered ',
-                    result lines printString]
+                    result lines printString].
+        work := self workDir: 's19-moved-work'
+            package: PathDepFixtures emptyRootContents.
+        moved := (self cliIn: work
+            source: nil
+            storeRoot: 'tmp/parley-s19-store'
+            target: 'tmp/parley-s19-target'
+            runner: RecordingRunner new) run: #('resolve').
+        self assert: moved exitCode = 0
+            description: 'a source-less resolve answered exit ',
+                moved exitCode printString, ': ', moved lines printString.
+        self assert: moved lines
+            = (Array with: ExecFixtures noDependenciesLine)
+            description: 'a source-less resolve answered ',
+                moved lines printString
     ]
 ]
 

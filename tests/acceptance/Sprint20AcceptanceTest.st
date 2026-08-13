@@ -302,7 +302,17 @@ streams, cold and warm, without silencing failure.'>
         "Four genuinely different mistakes, four different first lines,
          one shared block. The fourth ground - a verb the tool HAS,
          given arguments it does not take - is the one §8 decision 79
-         first omitted and 81 restored."
+         first omitted and 81 restored.
+
+         THE #needsIndex ROW IS DRIVEN THROUGH install FROM SPRINT 21
+         (§8 decisions 83, 84). THE GROUND SURVIVES UNTOUCHED and so
+         does its wording law: nothing about the sentence, the table or
+         the shared block moved. What moved is which verbs derive the
+         ground - resolve, check, tree and why left the grammar, and
+         install, update, add, remove, search, info and outdated kept
+         it - so this row needs a verb that still derives it. install is
+         the mirror's remaining member, and Sprint 21's own S33 guards
+         exactly this argv, so the two cannot drift apart unnoticed."
         | rows seen |
         rows := (Array
             with: (Array with: 's20-8-noverb' with: #() with: #noVerb with: '')
@@ -311,8 +321,8 @@ streams, cold and warm, without silencing failure.'>
             (Array
                 with: (Array with: 's20-8-arity' with: #('exec')
                     with: #wrongArguments with: 'exec')
-                with: (Array with: 's20-8-index' with: #('resolve')
-                    with: #needsIndex with: 'resolve')).
+                with: (Array with: 's20-8-index' with: #('install')
+                    with: #needsIndex with: 'install')).
         seen := OrderedCollection new.
         rows do: [:row |
             | result |

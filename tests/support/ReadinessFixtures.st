@@ -283,18 +283,31 @@ Stateless; uniqueness comes from per-test labels.'>
     ]
 
     ReadinessFixtures class >> stateCreatingUsageArgvs [
-        "The three argvs the readiness audit caught creating
+        "The argvs the readiness audit caught creating
          <cwd>/.parley/packages BEFORE answering the usage they were
          always going to answer (§8 decision 57, second half). It was
          found when a bare parley run from the repository root left a
          directory in Parley's own checkout and broke two settled
          laws — the tool contaminating itself, caught by the suite
-         rather than by anyone noticing."
+         rather than by anyone noticing.
+
+         THREE UNTIL SPRINT 21, NOW TWO (§8 decision 83). resolve left
+         this list because it stopped being a usage error at all: a
+         flagless resolve now RUNS, and all three of decision 83's
+         manifest states create the state directory — the
+         dependency-free one because it writes a lock, and the
+         index-needing one because it gets far enough into the verb to
+         read the manifest before refusing. That creation is DELIBERATE
+         and the refuses-after-state member is declared, so keeping
+         resolve here would assert the opposite of the ruling. The two
+         that remain are still genuine usage errors, still answer
+         before any verb runs, and still must leave the directory
+         exactly as they found it. ReadinessTest pins resolve's side of
+         the split beside them."
         <category: 'question flags'>
         ^Array
             with: #()
             with: (Array with: 'nonsense')
-            with: (Array with: 'resolve')
     ]
 
     "---- the checked held-pins line (Doc E §4.1, §8 decision 58) ----"

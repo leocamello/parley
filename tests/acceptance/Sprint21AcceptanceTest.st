@@ -45,7 +45,14 @@
  lock must byte-preserve the author's own path, and a fixture declaring
  an absolute one could not fail when an implementation expanded it.
  Real processes appear only where the law under test IS execution
- (S9, S10, S13, S17); no network is contacted."
+ (S9, S10, S13, S17) AND IN S4, where the law under test is a sparse
+ CLOSURE and the sparse transport reaches its base through curl —
+ amended at GREEN step 11, from the probe rather than from the plan.
+ A recording double there does not make the scenario cheaper, it makes
+ it impossible: it records the fetch instead of performing it, and the
+ verb then answers a missing-listing diagnosis over a listing that is
+ demonstrably present in the base. No network is contacted anywhere,
+ S4 included — its base is a file:// URL over a tmp/ directory."
 
 Namespace current: Parley.
 
@@ -231,7 +238,7 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
          kernel-streams appeared in either file, a base seeded the
          settled way would already have fetched it and this scenario
          would pass over an overlay that re-seeded nothing."
-        | work base result |
+        | work base result runner baseUrl |
         self track: (PathDepFixtures seedingSiblingNamed: 's21-4-text').
         base := self freshDir: 's21-4-base'.
         SparseIndexFixtures publish: PathDepFixtures seedOnlyName
@@ -248,15 +255,48 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
          step 6). Every settled sparse law passes
          SparseIndexFixtures baseUrlFor:, which is a file:// URL over an
          ABSOLUTE path; this fixture was the odd one out and handed the
-         bare directory, so the source never fetched anything."
+         bare directory, so the source never fetched anything.
+
+         AND IT SPAWNS, which was the SECOND cause and the one that
+         outlived the first (probed at GREEN step 11). The sparse
+         transport reaches its base through curl; the default driver
+         here wires a RecordingRunner, which records the command instead
+         of running it, so nothing ever landed in the cache and the
+         resolve answered `kernel-streams/versions.st: missing or
+         unreadable listing'.
+
+         THAT DIAGNOSIS NAMES THE CACHE PATH, NOT THE BASE PATH, and
+         reading it the other way is the trap this comment exists to
+         close: it looks exactly like an unpublished listing, and the
+         repair it invites — publish kernel-streams' listing into the
+         base tree — is a NO-OP, because SparseIndexFixtures publish:
+         writes the listing and the entry together. Probed directly: the
+         base already holds kernel-streams/versions.st carrying
+         #(#'parley-listing' 1 #versions #('1.4.0')) before the verb
+         runs. The transport was never given a way to fetch it.
+
+         SO THE RUNNER IS THE COUNTING ONE, which delegates to the
+         settled ProcessRunner and records what it delegated. That buys
+         the law its MECHANISM assertion rather than only its outcome:
+         the closure is made to show the curl it issued for the listing
+         of a name that appears in neither the root manifest nor the
+         lock. A base that had been seeded the settled way could not
+         have issued it."
+        baseUrl := SparseIndexFixtures baseUrlFor: base.
+        runner := CountingProcessRunner new.
         result := self resultOf: (Array with: 'resolve' with: '--index'
-            with: (SparseIndexFixtures baseUrlFor: base)) in: work.
+            with: baseUrl) in: work runner: runner.
         self assert: result exitCode = 0
             description: result lines printString.
         self assert: (CommandLineFixtures does: (self lockTextIn: work)
             include: PathDepFixtures seedOnlyName)
             description: 'the closure never fetched the sibling''s dependency: ',
-                (self lockTextIn: work) printString
+                (self lockTextIn: work) printString.
+        self deny: (SparseIndexFixtures commands: runner commands
+            naming: (SparseIndexFixtures listingUrlFor: baseUrl
+                name: PathDepFixtures seedOnlyName)) isEmpty
+            description: 'no curl fetched the re-seeded name''s listing: ',
+                runner commands printString
     ]
 
     testS5_AConflictOverAnOverlaidNameNamesThePathProvenance [

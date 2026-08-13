@@ -34,6 +34,12 @@
      simply unknown, and unknown argv already answers usage; the law
      earns its keep in green, where it pins that the three verbs are
      SOURCE-REQUIRING rather than merely known.
+     RE-PINNED AT SPRINT 21 (§8 decision 84), and the sentence above is
+     kept as written because an audit record states what was true when
+     written: why, tree and check are NOT source-requiring from that
+     sprint on. The law now drives search, info and outdated — the
+     three the decision deliberately excluded — and asserts the moved
+     three answering their in-verb diagnosis. See the method.
    testAWrongArityInspectionVerbAnswersUsage — the same ground: wrong
      arity is unknown argv today and must STAY usage once the verbs
      exist, which is exactly what the law pins.
@@ -340,22 +346,53 @@ and the argv grammar rows.'>
     ]
 
     testAnInspectionVerbWithoutASourceAnswersUsage [
-        "DECLARED PASS IN RED (issue #13) — see the class comment. All
-         three verbs take the source's snapshot, so all three are
-         source-requiring: without a flag they answer the usage lines
-         at exit 2, exactly as resolve does."
+        "DECLARED PASS IN RED (issue #13) — see the class comment.
+
+         RE-PINNED IN GREEN (§8 decision 84). why, tree and check LEFT
+         the grammar: a path-only project resolves flagless and must be
+         inspectable without inventing an empty index, so their verbRows
+         guards dropped the source predicate and the index requirement
+         became a declared refusal INSIDE the verb.
+
+         THE LIST DOES NOT EMPTY — it becomes the three verbs decision
+         84 DELIBERATELY EXCLUDED. search, info and outdated are index
+         questions by Doc C's matrix: a project with no index has
+         nothing for them to answer, and outdated's published column IS
+         the index's answer. They are driven WITH their arguments,
+         because a bare `search' or `info' is a wrong ARITY and would
+         prove a different ground entirely.
+
+         THE MOVED THREE ARE ASSERTED IN THE SECOND HALF rather than
+         merely deleted: over this same lockless directory they answer
+         the settled missing-lock line at exit 1 — a diagnosis composed
+         inside the verb, never the usage block. The grammar stopped
+         intercepting them, which is exactly what the ruling says, and a
+         law that only shortened its list could not tell that from the
+         guard having been lost."
         | work |
         work := self freshDir: 'ivt-nosource-work'.
         (Array
-            with: (Array with: #('why' 'kernel-c') with: 'why')
-            with: (Array with: #('tree') with: 'tree')
-            with: (Array with: #('check') with: 'check')) do: [:row |
+            with: (Array with: #('search' 'kernel') with: 'search')
+            with: (Array with: #('info' 'kernel-c') with: 'info')
+            with: (Array with: #('outdated') with: 'outdated')) do: [:row |
                 | result |
                 result := self resultOf: (row at: 1) in: work.
                 self assert: result exitCode = 2.
                 self assert: result lines = (GrammarFixtures
                     usageAnswerFor: #needsIndex subject: (row at: 2))
                     description: (row at: 1) printString, ' answered ',
+                        result lines printString].
+        (Array with: #('why' 'kernel-c') with: #('tree') with: #('check'))
+            do: [:argv |
+                | result |
+                result := self resultOf: argv in: work.
+                self assert: result exitCode = 1
+                    description: argv printString, ' answered exit ',
+                        result exitCode printString, ': ',
+                        result lines printString.
+                self assert: result lines
+                    = (Array with: InspectionFixtures missingLockLine)
+                    description: argv printString, ' answered ',
                         result lines printString]
     ]
 

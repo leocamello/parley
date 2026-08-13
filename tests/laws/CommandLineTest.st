@@ -175,16 +175,42 @@ diagnosis boundary.'>
          '--source' absent wires nil, and the composition root must
          hand that nil ON to the settled CLI rather than invent a
          source or crash — the CLI already answers usage, exit 2. Added
-         by the operator at the Sprint 8 RED review."
-        | work result |
+         by the operator at the Sprint 8 RED review.
+
+         DRIVEN THROUGH install FROM SPRINT 21 (§8 decisions 83, 84).
+         The ground is unchanged and so is the wiring claim, but resolve
+         is no longer a source-requiring verb, so a law about a
+         SOURCE-REQUIRING verb has to drive one that still is: install
+         is the mirror's remaining member and the bound decision 83
+         named.
+
+         RESOLVE'S NEW ANSWER IS PINNED HERE TOO, over the SAME
+         directory, because that is the stronger evidence for this law's
+         own ground: the nil is still handed on, and the verb — not the
+         grammar — composes the declared refusal naming the flags. A
+         composition root that invented a source could not produce that
+         sentence, and one that crashed could not produce a result at
+         all."
+        | work result moved |
         work := self track:
             (CommandLineFixtures diamondRootWorkDirNamed: 'cl-nosource-work').
         result := (self commandLineIn: work runner: RecordingRunner new)
-            run: #('resolve').
+            run: #('install').
         self assert: result exitCode = 2.
         self assert: result lines = (GrammarFixtures
-            usageAnswerFor: #needsIndex subject: 'resolve')
-            description: 'a source-less resolve answered ', result lines printString.
+            usageAnswerFor: #needsIndex subject: 'install')
+            description: 'a source-less install answered ', result lines printString.
+        self deny: (File name: work, '/parley.lock') exists.
+        moved := (self commandLineIn: work runner: RecordingRunner new)
+            run: #('resolve').
+        self assert: moved exitCode = 1
+            description: 'a source-less resolve answered exit ',
+                moved exitCode printString, ': ', moved lines printString.
+        "the two names ExecFixtures diamondRootContents DECLARES; c is
+         transitive and the refusal names what the manifest declares"
+        self assert: moved lines = (Array with: (PathDepFixtures
+            needsIndexRefusalFor: (Array with: 'a' with: 'b')))
+            description: 'a source-less resolve answered ', moved lines printString.
         self deny: (File name: work, '/parley.lock') exists
     ]
 

@@ -433,23 +433,59 @@ half-succeeding manifest closed, and the README.'>
          usage determination — it has to be, or a malformed file would
          be reported as an operator who forgot a flag — and this is the
          law that says the insertion did not turn the ordinary mistake
-         into a file defect. Byte-identical to the settled usage answer,
-         which is obtained from the settled CLI rather than restated."
-        | work result settled |
+         into a file defect.
+
+         RE-PINNED IN GREEN (§8 decision 83), AND THE GROUND IS WHAT
+         SURVIVES. The answer moved because resolve left the grammar:
+         this work directory is the settled DIAMOND ROOT, so it declares
+         index-needing dependencies and no path ones, and a flagless
+         resolve over it now reaches the verb and composes the declared
+         in-verb refusal at exit 1 rather than the usage block at exit 2.
+
+         THE CLAIM IS UNCHANGED AND IS STILL THE POINT: an operator who
+         forgot a flag is told they forgot a flag. The refusal names
+         what the manifest declares AND names parley.config.st as one of
+         the two places that can answer — which is this scenario's own
+         subject reaching the operator — and it is not, in any spelling,
+         a report that their configuration file is broken. That last is
+         asserted rather than assumed: this directory has NO config
+         file, and neither malformed-file line may appear.
+
+         WHAT WAS DROPPED AND WHY. The old third assertion compared this
+         answer's tail against the bare-argv usage answer's tail, to
+         catch the two silently ceasing to share the block. That
+         comparison cannot survive the ruling — the refusal is ONE line
+         and carries no block at all — so its intent is kept in the
+         stronger direction available here: the block must be ABSENT.
+         The shared-block relationship itself is not left unguarded; it
+         is UsageGroundTest's subject, over argvs that still answer
+         usage."
+        | work result |
         work := ConfigFixtures plainWorkDirTracking: self tracker
             named: 's19-8-work'.
         result := self resultOf: ConfigFixtures resolveArgv in: work.
-        settled := self resultOf: #() in: work.
-        self assert: result exitCode = 2
+        self assert: result exitCode = 1
             description: 'a source-less resolve answered exit ',
                 result exitCode printString, ': ',
                 result lines printString.
-        self assert: result lines = (GrammarFixtures
-            usageAnswerFor: #needsIndex subject: 'resolve')
-            description: 'the usage lines moved: ', result lines printString.
-        self assert: (result lines copyFrom: 2 to: result lines size)
-            = (settled lines copyFrom: 2 to: settled lines size)
-            description: 'the two usage answers stopped sharing the block'
+        "the two names ExecFixtures diamondRootContents DECLARES"
+        self assert: result lines = (Array with: (PathDepFixtures
+            needsIndexRefusalFor: (Array with: 'a' with: 'b')))
+            description: 'the declared refusal moved: ', result lines printString.
+        self assert: (CommandLineFixtures does: result lines first
+            include: 'parley.config.st')
+            description: 'the refusal stopped naming this sprint''s file: ',
+                result lines first printString.
+        result lines do: [:line |
+            self deny: (CommandLineFixtures does: line
+                include: 'usage: parley')
+                description: 'the refusal carried the usage block'.
+            self deny: line = (ConfigFixtures malformedKeysLineFor:
+                (ConfigFixtures pathIn: work))
+                description: 'a project with no config file was told its keys are malformed'.
+            self deny: line = (ConfigFixtures malformedValueLineFor:
+                (ConfigFixtures pathIn: work))
+                description: 'a project with no config file was told its values are malformed']
     ]
 
     "---- S9: all three declared flags, honoured identically ----"

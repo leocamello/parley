@@ -140,7 +140,15 @@ block alone at exit 0.'>
 
     testEachVerbGrammarGroundAnswersItsOwnFirstLine [
         "One reason line, then the block, at exit 2 - driven through the
-         real composition root rather than composed here."
+         real composition root rather than composed here.
+
+         THE #needsIndex ROW MOVED TO install AT SPRINT 21 (§8 decisions
+         83, 84), AND THE GROUND DID NOT. The declared table, the six
+         reasons and the shared block are all exactly as decision 81
+         left them; what changed is the set of verbs from which the
+         ground DERIVES, and this row simply has to name one that still
+         derives it. PathGrammarTest asks the derivation directly, for a
+         verb that moved and one that did not."
         | rows |
         rows := (Array
             with: (Array with: 'ug-noverb' with: #() with: #noVerb with: '')
@@ -149,8 +157,8 @@ block alone at exit 0.'>
             (Array
                 with: (Array with: 'ug-arity' with: #('exec')
                     with: #wrongArguments with: 'exec')
-                with: (Array with: 'ug-index' with: #('resolve')
-                    with: #needsIndex with: 'resolve')).
+                with: (Array with: 'ug-index' with: #('install')
+                    with: #needsIndex with: 'install')).
         rows do: [:row |
             | result |
             result := self answerFor: (row at: 2) labelled: (row at: 1).
@@ -166,10 +174,24 @@ block alone at exit 0.'>
     testTheFourFirstLinesDifferFromEachOther [
         "Distinguished rather than merged: `you typed a verb that does
          not exist` and `that verb needs an index and you gave none`
-         have different repairs, so they must not be the same sentence."
+         have different repairs, so they must not be the same sentence.
+
+         THE FOURTH ARGV MOVED TO install AT SPRINT 21 (§8 decisions 83,
+         84) EVEN THOUGH THIS LAW WAS STILL PASSING — and that is the
+         reason it had to move. This law reads FIRST LINES ONLY and
+         asserts nothing about the exit code, so once resolve left the
+         grammar the fourth row went on answering a distinct first line
+         while no longer being a usage ground at all. Worse, the line it
+         answered names the FIXTURE'S OWN PATH, so it was distinct from
+         its three neighbours by construction: the law would have passed
+         with the needs-an-index and unknown-verb sentences merged,
+         which is the single thing it exists to forbid. It was falsified
+         quietly rather than loudly, which is the harder half to catch,
+         and it is recorded here so the next reader knows the row was
+         moved on purpose."
         | argvs seen |
         argvs := (Array with: #() with: #('conjure')),
-            (Array with: #('exec') with: #('resolve')).
+            (Array with: #('exec') with: #('install')).
         seen := OrderedCollection new.
         argvs doWithIndex: [:argv :i |
             | first |
@@ -182,15 +204,25 @@ block alone at exit 0.'>
     ]
 
     testAVerbThatNeedsAnIndexIsToldSoRatherThanToldItsArgumentsAreWrong [
-        "The derivation tests availability BEFORE arity. `parley resolve`
-         has exactly the arguments resolve takes; what it lacks is an
+        "The derivation tests availability BEFORE arity. `parley install`
+         has exactly the arguments install takes; what it lacks is an
          index, and telling the operator their arguments are wrong would
-         be a sentence the tool never checked."
+         be a sentence the tool never checked.
+
+         DRIVEN THROUGH install FROM SPRINT 21 (§8 decisions 83, 84):
+         the ORDERING claim is what this law is about and it is
+         untouched, but resolve stopped deriving the ground, so the law
+         has to drive a verb that still does. Its twin below - the other
+         direction, arity winning even with a source wired - still
+         drives resolve, and deliberately: `resolve --help` proves the
+         fourth ground independent of the index for a verb that no
+         longer has an index requirement at all, which is a stronger
+         statement of that independence than it made before."
         | result |
-        result := self answerFor: #('resolve') labelled: 'ug-order-index'.
+        result := self answerFor: #('install') labelled: 'ug-order-index'.
         self assert: result lines first
-            = (GrammarFixtures needsIndexReasonFor: 'resolve')
-            description: 'a source-less resolve was told ',
+            = (GrammarFixtures needsIndexReasonFor: 'install')
+            description: 'a source-less install was told ',
                 result lines first printString
     ]
 
@@ -255,11 +287,18 @@ block alone at exit 0.'>
          of this sentence, so the sentence is composed from the table
          rather than typed. Asserted on the SHIPPED first line: a law
          that read the fixture instead would be checking its own
-         wording."
+         wording.
+
+         DRIVEN THROUGH install FROM SPRINT 21 (§8 decisions 83, 84).
+         The sentence, the table it is composed from and the drift this
+         law exists to catch are all unchanged; only the verb that
+         reaches the sentence had to become one that still derives the
+         ground. sourceFlags itself was untouched by that sprint - the
+         one declaration this law reads is the one it always read."
         | first |
-        first := (self answerFor: #('resolve') labelled: 'ug-flags') lines
+        first := (self answerFor: #('install') labelled: 'ug-flags') lines
             first.
-        self assert: first = (GrammarFixtures needsIndexReasonFor: 'resolve')
+        self assert: first = (GrammarFixtures needsIndexReasonFor: 'install')
             description: 'the needs-an-index line is ', first printString.
         CommandLine sourceFlags do: [:row |
             self assert: (CommandLineFixtures does: first

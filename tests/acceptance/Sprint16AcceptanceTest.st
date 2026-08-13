@@ -666,7 +666,16 @@ end to end so it cannot regress.'>
          A command that refuses to run must leave the filesystem as it
          found it: the rule publish already follows when it declines to
          create a destination it refuses, and the rule every other
-         refusal in Doc E follows."
+         refusal in Doc E follows.
+
+         THE DRIVEN SET LOST resolve AT SPRINT 21 (§8 decision 83), for
+         the same stated reason the readiness law records: a flagless
+         resolve is no longer a usage error, so it is no longer a case
+         this scenario can be about, and the state it creates it creates
+         DELIBERATELY. The scenario's claim is untouched — it still says
+         of every argv that still refuses on grammar that the directory
+         is left as it was found. ReadinessTest holds resolve's side of
+         the split."
         ReadinessFixtures stateCreatingUsageArgvs doWithIndex: [:argv :i |
             | work result |
             work := self freshDir: 's16-s17-work-', i printString.

@@ -403,7 +403,24 @@ README marker obligation for the two flags and the workflow.'>
          The file is compared byte for byte because an editor that
          recognized too little REFUSES while one that recognized wrongly
          DAMAGES — and the damage is a Package.st that no longer loads,
-         written by the tool, in a file the author owns."
+         written by the tool, in a file the author owns.
+
+         EACH ROW REMOVES THE NAME ITS OWN CLAUSE KIND DECLARES (amended
+         mid-sprint, GREEN step 11, from a probe). Both rows drove
+         `remove kernel-text', which the DEV row's manifest does not
+         declare in any kind whatsoever — so that row asked the editor
+         about an absent name, got `not declared' for the ordinary
+         reason, and proved exactly nothing about the recognizer's blind
+         spot. It could not have failed if devDependency:constraint:
+         clauses HAD been recognized. Driven at the declared name the
+         claim becomes real: kernel-lint IS in that file, the recognizer
+         does not see the clause that declares it, so the tool reports
+         it undeclared and — this is the whole bound — REFUSES rather
+         than splicing something it half-understood.
+
+         The vacuity is worth naming rather than quietly fixing: the row
+         was reading as green-by-construction in exactly the way the
+         path row was not."
         | index |
         "THE SIBLING IS REAL (amended mid-sprint, GREEN step 6). The
          declared path was a bare '../kernel-text' pointing at nothing,
@@ -413,27 +430,43 @@ README marker obligation for the two flags and the workflow.'>
          path fixture creates its sibling; this one did not."
         self sibling: 'pg-edit-text'.
         index := self freshDir: 'pg-edit-index'.
-        "A REAL ARCHIVE: add installs, and an archive-less entry answers
-         decision 25 before the refusal this law exists to pin."
+        "TWO REAL ARCHIVES: add installs, and an archive-less entry
+         answers decision 25 before the refusal this law exists to pin.
+         kernel-lint joined them at GREEN step 11 for the same reason one
+         layer along — add RESOLVES the whole manifest, dev clauses
+         included (§8 decision 69), so the dev row's own declaration was
+         answering `no version of kernel-lint satisfies >=1.0.0 <2.0.0'
+         before the refusal could be reached. An unsatisfiable
+         declaration masks this law exactly as an absent archive does."
         self publishInto: index name: 'kernel-b' version: '1.0.0'
             label: 'pg-edit-author'.
+        self publishInto: index name: 'kernel-lint' version: '1.0.0'
+            label: 'pg-edit-lint-author'.
         (Array
-            with: (Array with: 'pg-edit-path'
+            with: (Array with: 'pg-edit-path' with: 'kernel-text'
                 with: (PathDepFixtures rootDeclaring:
                     (PathDepFixtures declaredPathFor: 'pg-edit-text')))
-            with: (Array with: 'pg-edit-dev'
+            with: (Array with: 'pg-edit-dev' with: 'kernel-lint'
                 with: (PathDepFixtures rootWithDevDependencyOn: 'kernel-lint'
                     constraint: '^1.0.0'))) do: [:row |
-                | work before removed added |
-                work := self workDir: (row at: 1) contents: (row at: 2).
+                | work before removed added declared |
+                declared := row at: 2.
+                work := self workDir: (row at: 1) contents: (row at: 3).
                 before := ManifestEditFixtures packageContentsIn: work.
+                "the guard that keeps the amendment honest: the name this
+                 row removes is REALLY IN THE FILE, so `not declared' is
+                 the recognizer's blind spot and never an absent name"
+                self assert: (CommandLineFixtures does: before
+                    include: declared)
+                    description: (row at: 1), ': the manifest does not declare ',
+                        declared, ', so the removal below proves nothing'.
                 removed := self resultOf: (Array with: 'remove'
-                    with: 'kernel-text' with: '--source' with: index) in: work.
+                    with: declared with: '--source' with: index) in: work.
                 self assert: (ManifestEditFixtures packageContentsIn: work)
                     = before
                     description: (row at: 1), ': remove changed the file'.
                 self assert: (removed lines anySatisfy: [:line |
-                    CommandLineFixtures does: line include: 'kernel-text'])
+                    CommandLineFixtures does: line include: declared])
                     description: (row at: 1), ': remove answered ',
                         removed lines printString.
                 self deny: (removed lines anySatisfy: [:line |

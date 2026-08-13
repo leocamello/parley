@@ -500,9 +500,26 @@ update <pkg> with its over-narrowing guard on each.'>
          to create a destination it refuses, and the rule every other
          refusal in Doc E follows. Each argv gets its own EMPTY
          directory, because the claim is about what the run created and
-         not about what was there."
+         not about what was there.
+
+         THE PRE-DECLARED DOUBLE FLIP (§8 decision 83). resolve left the
+         driven list: a bare resolve is no longer a usage error, so it
+         is no longer a case this law can be about. The CLAIM is
+         unchanged and survives over the argvs that still ARE usage
+         errors — it says nothing weaker about them than it did.
+
+         THE SECOND HALF IS WHY THIS IS A FLIP AND NOT A DELETION, and
+         it is the guard that stops resolve being quietly re-acquired
+         by a later reader who sees a two-element list and assumes an
+         omission. A flagless resolve over an INDEX-NEEDING manifest
+         refuses at exit 1 — and it creates the state directory on the
+         way, DELIBERATELY, because it is a verb that ran and read the
+         manifest rather than a grammar that intercepted the argv.
+         resolve is the declared refuses-after-state member; asserting
+         its state as absent would assert the opposite of the ruling."
+        | work moved |
         ReadinessFixtures stateCreatingUsageArgvs doWithIndex: [:argv :i |
-            | work result |
+            | result |
             work := self freshDir: 'ready-nostate-', i printString.
             result := self resultOf: argv in: work runner: TrapRunner new.
             self assert: result exitCode = 2
@@ -511,7 +528,21 @@ update <pkg> with its over-narrowing guard on each.'>
             self deny: (self exists:
                 (CommandLineFixtures parleyDirIn: work))
                 description: argv printString,
-                    ' created the .parley state directory']
+                    ' created the .parley state directory'].
+        work := self freshDir: 'ready-nostate-moved'.
+        ExecFixtures writePackage: PathDepFixtures indexNeedingRootContents
+            in: work.
+        moved := self resultOf: PathDepFixtures flaglessResolveArgv
+            in: work runner: TrapRunner new.
+        self assert: moved exitCode = 1
+            description: 'a flagless resolve answered exit ',
+                moved exitCode printString, ': ', moved lines printString.
+        self assert: moved lines = (Array with: (PathDepFixtures
+            needsIndexRefusalFor: (Array with:
+                PathDepFixtures indexNeedingName)))
+            description: 'a flagless resolve answered ', moved lines printString.
+        self assert: (self exists: (CommandLineFixtures parleyDirIn: work))
+            description: 'the refuses-after-state member created no state'
     ]
 
     "---- the checked held-pins line (§8 decision 58) ----"
