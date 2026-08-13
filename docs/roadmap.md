@@ -24,6 +24,12 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
+*Nothing in flight. Sprint 22 — the release, item 7, the last of the seven — is staged at
+Gate C against the list below, after the deferred-work review and repository-professionalism
+brainstorm that gate names as its input.*
+
+### Recently delivered
+
 - **Sprint 21 — dependencies you are developing.** ✅ **DELIVERED 2026-08-13**, issue [#23](https://github.com/leocamello/parley/issues/23) closed, commit `3b299da`, **983 → 1091 laws**. §2 **item 6**, staged at Gate C 2026-08-12 against **983 laws**, `deferred 0×`, **undisplaced — the eleventh consecutive sprint the ranking won on its own merits.** `path:` and `devDependency:` as root-manifest-only vocabulary (the entry schema does not move), the overlay computed by the source layer, `--offline` and `--locked` as guard invariants, and the dependency-free-resolve rider (the plan's named orphan c, staged as S30–S33). §8 decisions **68, 69, 83** landed pre-RED at `c86a754` with the docs citing them. Carried gaps disposed at staging: **CF-1 re-deferred** with its reason (and this sprint's deliberate additions to its class declared), **CF-6 staged as a Gate A reviewer amendment**; F23's companion resolved by Ban 105 (`1f4cfce`). **Decision 84 minted mid-sprint** (`check`, `tree`, `why` leave the grammar; `search`/`info`/`outdated` excluded deliberately) and **68 amended in place** at Gate A. **Delivered and walked through the shipped binary at Gate B** — the edit-and-rerun workflow with the lock byte-identical and stderr empty at every step. **Gate B found and fixed a fail-wrong at exit 0**: `add`/`remove --locked` exited 0 while writing nothing, because `Exception>>pass` does not unwind on 3.2.5; falsifier `7f93a4f` red first, fix `9979ccd`. Close-out findings **F24–F32**, tally **25 defect-findings, 13 mechanism / 12 luck** — the ratio moved the wrong way. **Carried gap, ranked and probed, unscheduled:** `exec`'s script precondition resolves against the process cwd where Doc E §4.2 rules working-directory derivation (fail-stop, invisible under `bin/parley`).
 
 ### Recently delivered
