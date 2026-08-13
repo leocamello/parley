@@ -1555,23 +1555,52 @@ construction; zero public setters.'>
          have manufactured (Doc B §2.1). The project goes back first;
          the boundary still composes the diagnosis.
 
-         THIS IS catch-restore-pass, THE SHAPE §8 DECISION 75 EXAMINED
-         AND REFUSED — for the authoring capture, and this is outside
-         that ruling's grounds. Said here rather than left for a reader
-         to reconcile. 75 refused catching inside ManifestCapture
-         because doing so wraps THE AUTHOR'S WHOLE PROGRAM in a broad
-         catch (decision 61's containment rule); this block contains
-         nothing but Parley's own write step. No capture window is open
-         on this path, so no restoration ordering is at stake, and
-         nothing here depends on the isLoading scoping 75 protects. What
-         it does is honour decision 49's settled atomicity under a mode
-         flag, and the `pass` is what keeps the §4.2 boundary the one
-         place a diagnosis is ever composed."
+         IT SIGNALS FRESH RATHER THAN SENDING pass, AND THAT IS A
+         PROBED FACT ABOUT 3.2.5 RATHER THAN A PREFERENCE. On this
+         toolchain `pass` DOES NOT UNWIND: it runs the outer handler,
+         DISCARDS that handler's value, and RESUMES after the inner
+         on:do:. Probed as a method-shaped reduction — an inner handler
+         sending `e pass` prints the outer handler running and then the
+         statement AFTER the on:do:, answering the method's own final
+         value; the same shape signalling fresh answers the boundary's
+         value and never reaches that statement.
+
+         Shipped with `e pass` this method therefore restored the
+         project, let CommandLine compose the exit-1 refusal, THREW
+         THAT ANSWER AWAY, ran installResolution: and answered EXIT 0 —
+         `add --locked` and `remove --locked` telling an operator, and
+         any CI script, that the add succeeded while nothing had been
+         written. A fail-wrong at exit 0 in the one contract §4.2 states
+         without qualification: no failing command ever exits 0. Found
+         at Gate B; the atomicity half had always been correct, which is
+         what made the exit code the whole of the defect.
+
+         THE SAFE CONTRAST SHAPE IS Parley.Parley class >> define:'s
+         `^anError pass`, where pass is the handler's RETURNED final
+         action, so its answer becomes the handler's answer. The
+         difference is not the selector but whether the value is used;
+         those are the only two live `pass` sends in src/.
+
+         WHAT THE OLD COMMENT HERE GOT WRONG IS WORTH KEEPING. It
+         reconciled this site against §8 decision 75 BY ARGUMENT —
+         correctly observing that 75 refused catch-restore-pass for the
+         authoring capture on containment grounds that do not apply to a
+         block holding nothing but Parley's own write step. All of that
+         is true and none of it was the question. The question was what
+         `pass` DOES here, which only a probe could answer, and the
+         comment's confident agreement with the code is what let one
+         misunderstanding read as two independent confirmations. A
+         reconciliation comment cites a probe, never an argument
+         (decision 43's standard, applied to comments).
+
+         The rest stands unchanged: the restore honours decision 49's
+         atomicity under a mode flag, and the §4.2 boundary remains the
+         one place a diagnosis is composed — it just has to be REACHED."
         [self writeLock: outcome]
             on: LockError
             do: [:e |
                 self restore: anOriginalText lock: aLockText.
-                e pass].
+                LockError signalProblems: e problems].
         result := self installResolution: outcome.
         result exitCode = 0
             ifFalse: [self restore: anOriginalText lock: aLockText].

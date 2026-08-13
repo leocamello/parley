@@ -352,6 +352,115 @@ member of the class it guards:
 
 ---
 
+## 6.1 Gate B addendum — a fail-wrong at exit 0, caught after the wrap
+
+Gate B found a shipped defect in this sprint's own feature, and it is recorded here rather
+than smoothed away.
+
+```
+$ parley add kernel-lint '^1.0.0' --source <idx> --locked
+exit=0
+kernel-dep 1.9.0
+kernel-idx 1.1.0          # ...and neither file was written
+```
+
+`remove <pkg> --locked` behaved identically. `resolve --locked` and `update --locked` were
+correct throughout. The atomicity half was never wrong — the restore ran and both files stayed
+byte-identical — so **the exit code and the lines were the whole of the defect**: an operator,
+or a CI script, was told the add had succeeded. That is a violation of the one contract Doc E
+§4.2 states without qualification: *no failing command ever exits 0*.
+
+**Root cause, probed.** In GNU Smalltalk 3.2.5 `Exception>>pass` **does not unwind**. It runs
+the outer handler, **discards that handler's value**, and **resumes after the inner `on:do:`**.
+Reduced to a method-shaped probe and re-run before repairing:
+
+```
+A. e pass  (the shipped shape):
+  inner handler ran (restore would happen here)
+  OUTER boundary handler ran
+  >>> STATEMENT AFTER THE on:do: RAN <<<
+  result = #reachedTheEnd
+B. signal fresh (the repair):
+  inner handler ran (restore would happen here)
+  OUTER boundary handler ran
+  result = #boundaryAnswer
+```
+
+So `CommandLine>>run:` *did* compose the exit-1 refusal and it was thrown away; control
+returned to `addResolving:`, `installResolution:` succeeded, and the verb answered 0.
+
+**The repair** is one statement — restore, then **signal fresh** so the error actually unwinds:
+
+```smalltalk
+[self writeLock: outcome]
+    on: LockError
+    do: [:e |
+        self restore: anOriginalText lock: aLockText.
+        LockError signalProblems: e problems].
+```
+
+**Blast radius: exactly one site.** The sweep over `src/` finds two live `pass` sends.
+`Parley.st:92`'s `^anError pass` is **safe** — `pass` is the handler's *returned final action*,
+so its answer becomes the handler's answer, and Sprint 1's green laws confirm it. The
+difference is not the selector but **whether the value is used**. `addResolving:` is reached
+from `add:constraint:` (both branches) and `remove:`, which is exactly the two affected verbs.
+
+**The comment at that site was the defect's disguise, and that is the transferable part.** The
+decision-75 reconciliation paragraph there was requested, written, and wrong — not in its
+facts, which were true, but in its *kind*: it reconciled the site **by argument** where only a
+probe could settle what `pass` does. The comment and the code then shared one misunderstanding,
+so a reader checking either against the other found agreement. The replacement cites the probe.
+**A reconciliation comment cites a probe, never an argument** — decision 43's standard, applied
+to comments rather than to laws.
+
+**Verified through the shipped binary**, both verbs, streams captured separately:
+
+```
+$ parley add kernel-lint '^1.0.0' --source <idx> --locked
+exit=1
+--- stdout ---
+--locked forbids changing parley.lock - 'kernel-lint' is pinned at nothing and would become 1.0.0, and nothing was written
+--- stderr ---
+Package.st byte-identical: yes      parley.lock byte-identical: yes
+
+$ parley remove kernel-json --source <idx> --locked
+exit=1
+--- stdout ---
+--locked forbids changing parley.lock - 'kernel-json' is pinned at 0.3.1 and would become nothing, and nothing was written
+--- stderr ---
+Package.st byte-identical: yes      parley.lock byte-identical: yes
+```
+
+### The fourth green-by-construction law of the sprint
+
+`testS29_AddUnderLockedLeavesTheManifestAndLockByteIdentical` **could not have failed** before
+Gate B strengthened it. Its entries came from `plainEntryFor:`, whose `#archive` is empty, so
+`add` answered **decision 25's** no-published-archive diagnosis at exit 1 and never reached the
+mode flag at all — and the law asserted only the exit code and byte-identity, both of which
+that *wrong* refusal satisfies. Driven with `--locked` removed it passed identically. It now
+publishes real archives and asserts against the declared `lockedRefusalFor:` wording; S29 joins
+the spawning set in the class comment's cost declaration.
+
+**Four in one sprint is the finding, and it is stated as a class rather than four incidents:**
+
+| law | why it could not fail |
+|---|---|
+| `testTheReadmeMarkerListIsNotEmpty` (RED) | asserted a fixture list, never the README — folded into the law that reads the file |
+| the editing law's **dev row** | removed `kernel-text`, a name that row's manifest never declares |
+| `testTheFourFirstLinesDifferFromEachOther` | reads first lines only; the moved row's line names the fixture's own path, distinct by construction |
+| **`testS29_…`** | a *wrong* refusal satisfied every assertion it made |
+
+The shape is constant: **an assertion weak enough that the wrong mechanism satisfies it**.
+Exit codes and byte-identity are the two weakest oracles in this suite, because many different
+answers produce them — three of the four leaned on exactly those. The counter-discipline is the
+one this sprint used everywhere else and missed here: assert the **declared wording**, not the
+code, and drive the fixture so the *intended* mechanism is the only one that can answer.
+
+**The verifier ran once after the repair**: `PASS seed=20260718 run=1091 passed=1091 failed=0
+errors=0`, S29 included.
+
+---
+
 ## 7. What this sprint did not do
 
 **The tag is not cut.** It is held on item 7, the release.
