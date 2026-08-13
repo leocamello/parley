@@ -59,8 +59,10 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 23 | `operator/master-plan.md` §9's narrative sprint history ↔ `docs/roadmap.md` §2, the tracked ranking it narrates | runbook §3 step 6 | **Unforced** <sup>[o]</sup> |
 | 24 | A gate whose validity depends on the **order** its steps ran in ↔ any evidence that they ran in that order | — | **Unforced** <sup>[p]</sup> |
 | 25 | A gate artifact's **self-asserted date** ↔ any durable record that the artifact existed on that date | — | **Unforced** — F21 <sup>[q]</sup> |
+| 26 | A law's asserted **exit code** ↔ the set of distinct refusal paths that can reach that law's argv | — | **Unforced** — F26 <sup>[r]</sup> |
+| 27 | A control-flow construct that must **unwind** ↔ the toolchain's actual unwinding semantics for it | — | **Unforced** — F24 <sup>[s]</sup> |
 
-**Eight mechanical, nine procedural, eight unforced.**
+**Eight mechanical, nine procedural, ten unforced.**
 
 - **[a]** Known-partial: textually spelled senders only, because 3.2.5 offers no reflective alternative (§8 decisions 38 corrected, 43).
 - **[b]** Written *because* `GitIndexSource` shipped lawful and unreachable for a whole sprint — nothing constructed it.
@@ -74,6 +76,8 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 - **[o]** The operator-local narrative half of what the tracked roadmap keeps canonically. It is **untracked**, so no drift law can ever see it — which is why it drifted three sprints (15, 16 and 17 all delivered without reaching it) before anyone compared them. Raised at Sprint 18's Gate C, which deliberately did **not** write this row itself because `docs/method/` is operator-authored and a gate that authors its own findings is how the tally becomes a highlight reel. The forcing step that exists — runbook §3 step 6 — is **the weak kind**: a checklist item a reviewer works, not a law that halts. The tracked/untracked split leaves nothing stronger available, and saying so is the point of the row. **Checked again at Sprint 19's Gate B: the delivery drift is zero** — §9 records Sprints 15-18 and Sprint 19 is added by this close-out, in order. But the header's v6.1 staging entry (2026-08-11) still names *"four declared settled-class exceptions (`Publisher`, `Installer`, `CommandLine`, `ManifestFile`)"*, which the pre-RED rulings superseded the same day — `Installer` withdrawn, `ExecutionScope` and `IndexEntryReader` granted, five in total. **The row drifts within a sprint as well as across sprints, and step 6 only looks across.** Corrected in this close-out.
 - **[p]** Raised while reviewing Sprint 18's Gate C output, and **not an accusation about that session** — its cold read reached the demonstrably correct conclusion and caught a §2 divergence a retroactive write-up would not have produced. The pair is structural. Runbook §3.0 step 1 exists *because* the roadmap must be read **before** the carried gap; the only artifact is `operator/staging/sprint-18-cold-read.md`, whose **mtime is the latest of every Gate C artifact** — after the issue, the comment, the plan and the kickoff. mtime records last modification, so it neither proves nor disproves the ordering; **nothing records it either way.** The same hole sits under Gate A's *read the tests before running the gate* and Gate B's *probe before ranking*. **Unlike [o] this one has a cheap real mechanism**: require the ordered step to be a **message in the session transcript** rather than a file, because a transcript is inherently ordered and an mtime is not. Sprint 18's own Gate B is the demonstration — its probe-before-ranking order is legible precisely because it happened as conversation rather than as a file. Adopting it is a runbook §3.0 change and belongs to **Gate C**, not to this close-out.
 - **[q]** The durability twin of [p]. [p] asks *did the steps run in that order*; this asks *did this artifact exist when it says it did* — and the two share a cause, which is that a gate's real working surface is a scratch directory nothing preserves. Raised at Sprint 19's close-out from evidence in **Sprint 17's** thread (F21). **Cheap real mechanism available and unwritten:** gate artifacts are already written to `operator/staging/`, which is a directory on the operator's disk that survives a session; the convention line that still sends them to a session scratchpad is the gap, and correcting it costs one line of runbook §0.
+- **[r]** Both sides are enumerable and the comparison is cheap, which is what makes this row uncomfortable: for any argv, the refusals reachable from it are a finite list a person can write, and a law asserting only the code is checkable against that list by reading. Nothing does it. **The failure is silent by construction** — the law passes, and passes for a reason indistinguishable from the one it intends. Sprint 21's `testS29` survived a RED review, a Gate A review, eleven GREEN rounds and a wrap while proving nothing about the flag in its own name. A drift law is not obviously available (the reachable-refusal set is a property of control flow, not of a declared table), so the honest status is unforced with a **cheap procedural remedy**: when a law asserts an exit code, assert the sentence too, and where two refusals genuinely share a sentence, say so in the law.
+- **[s]** Raised by F24 and the most uncomfortable row in this table, because the pair is invisible in **both** artifacts: the code reads correctly against the language standard, and the toolchain's departure from that standard is not written anywhere in the repository until a probe puts it there. There is no text walk that finds it — `pass` is a legitimate send whose safe and unsafe shapes differ only in whether the handler's value is returned. **What is available is narrow and worth stating:** the repository now records the probed behaviour beside the one construct that depends on it, and the count of `pass` sends in `src/` is two, small enough that a reviewer can read both. That is not forcing. It is a small enough domain to enumerate, which is the weakest useful thing to say about a pair and is said here rather than dressed up.
 - **[h]** Both sides plain text and enumerable: the cheapest available drift law, unwritten. Open; scheduling is a Gate C question.
 - **[i]** Four instances (§8 decisions 43, 45, 49, 52), every one caught by a human reading. Not a drift-law candidate — comparing prose to behaviour is not a text walk.
 - **[j]** No finding raised it, and it has drifted before: the tracked log and the operator's copy diverged by four decisions, leaving tracked docs citing decisions a cloner could not resolve. The repair was a convention ("same commit as the doc change"), not a check. **Verified in sync at the time of writing** — 31 distinct decisions cited across tracked docs, all 31 resolve in §8. **Re-verified at the Sprint 15 close-out:** 55 decisions defined, every citation across `docs/`, `.github/` and `AGENTS.md` resolves, no dangling reference. Two consecutive clean checks is not forcing — it is two clean checks.
@@ -139,10 +143,23 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **19** |
-| — caught by a mechanism | **11** (F3, F4, F6, F10, F12, F14, F15, F16, F18, F21, F23) |
-| — caught by luck | **8** (F1, F2, F5, F11, F13, F17, F19, F22) |
-| Confirmation-findings (excluded from the ratio) | 4 (F7, F8, F9, F20) |
+| Defect-findings | **25** |
+| — caught by a mechanism | **13** (F3, F4, F6, F10, F12, F14, F15, F16, F18, F21, F23, F24, F27) |
+| — caught by luck | **12** (F1, F2, F5, F11, F13, F17, F19, F22, F25, F28, F29, F30) |
+| Confirmation-findings (excluded from the ratio) | 6 (F7, F8, F9, F20, F31, F32) |
+
+**Sprint 21 moved the ratio the wrong way and that is the honest result.** Six defect-findings
+were added, **four of them luck** — and the two mechanism entries are qualified rather than
+clean. F24's catch was a Gate B walk succeeding where `testS29`, the law built for exactly that
+claim, passed against the broken build; F27's was a guardrail halting on its own false
+positive. **F26 is counted under F24** rather than separately: it is the rule extracted from
+that catch, not a second catch.
+
+The unflattering summary, stated plainly because a tally that flatters is not worth keeping:
+**Sprint 21's suite went full green at 1091 laws while shipping a fail-wrong at exit 0, and
+four of its own laws proved nothing.** Every gate reported success throughout. What found the
+defects was a second party re-probing fixtures during GREEN and driving the shipped binary at
+Gate B — a person, eleven times over, not a mechanism.
 
 **The pipeline caught 10 of 17, and two of the ten are soft.** **F18**: three of its four instances were caught and the fourth — a red-phase impact list naming 13 of 24 settled movers — was caught by nothing, and it is the instance the rule is about. **F21** is the opposite shape and worth reading as the strongest catch in the file: an agent refused to reconstruct lost work and said so, which is a halt and therefore a mechanism, and it is the only entry here where the mechanism that fired was **an agent's own judgement rather than a script or a checklist**. It is also the finding that went unwritten for two sprints because its number was taken, which is its own small lesson about record-keeping.
 
@@ -823,3 +840,157 @@ The remedy applied was a comment on `verbRows` (`src/exec/CLI.st:136`), which is
 **Status.** First instance. Kin to **F15** (a toolchain behaviour assumed rather than probed) and to **F18** (duplicated text is invisible to the tool that would find it); F23 sits between them — the fact *was* probed, years of it were written down, and the writing had no way to reach the reader. **Companion action, flagged and deliberately not applied here:** the honest options are a lint over `src/` and `tests/` for a sixth consecutive `with:` in one send — cheap, mechanical, fires at commit time — or accepting this as a recurring one-run cost and saying so. Choosing the second is legitimate; choosing neither, and adding a seventh comment next time, is how this finding gets a second instance.
 
 **Companion APPLIED, 2026-08-12, on the human operator's direction (the first option):** `scripts/verify-sprint.sh` **Ban 105** — a Phase-1 lint over `src/` and `tests/` for a sixth consecutive `with:` sent to **one receiver**, textual with its bound stated in the ban's own comment (comments and strings stripped; parenthesized sends collapse to a placeholder so nested chains count per receiver; `.`, `;`, `[` and `]` break a chain, so a chain whose argument is a multi-statement block escapes — none has ever been written). Verified in both directions before landing: the 983-law tree passes with the ban in place, and a planted six-chain fails fast at exit `105` naming its file, before a byte of the suite runs — converting a five-times-recorded memory into the mechanism column this file exists to prefer. **Amended 2026-08-12, one sprint later: the first build had a blind spot the defect itself found.** The scan checked only the fully-collapsed text, so a six-chain written **inside an argument's parentheses** — the commonest shape in a test — vanished into the placeholder before it was ever counted. Sprint 21's RED hit exactly that at runtime (a DNU on `#with:with:with:with:with:with:` while Phase 1 passed), and the agent reproduced the ban's own algorithm to prove the miss rather than assert it. The scan now tests **every parenthesis depth** (verified: the argument-position shape fails at exit `105`; the nested declared-table idiom stays clean; the full tree passes). A lint written from one instance inherits that instance's shape — whether that is F24 or a second F23 instance is Gate B's to classify, with the honest note that the lint caught nothing here: a runtime DNU and the agent's diligence did.
+
+**Classified at Sprint 21's Gate B: a SECOND F23 INSTANCE, not a new finding.** The rule F23 states is *a note attached to the site that already handles the constraint is invisible from the site that is about to violate it*, and the mechanism built to replace those notes reproduced the same shape one level up: **Ban 105 was written from the one instance that motivated it**, so it saw the top-level chain that had bitten and not the argument-position chain that had not yet. The lint is the sixth copy's replacement and it inherited the sixth copy's field of view. Recording it as a second instance rather than as F24 keeps the count honest — the rule did not need amending, its own remedy needed the amendment — and it sharpens the portable half: **a lint built from one defect encodes that defect's shape; the acceptance test for a new lint is a planted instance in every shape the constraint can take, not in the shape that prompted it.** What caught it: **luck**, and the entry above already says so — a runtime `doesNotUnderstand` during RED while Phase 1 passed clean.
+
+---
+
+## F24 — `pass` does not unwind on this toolchain, and the comment justifying it was the defect's disguise
+
+**Rule (portable).** A comment that *reconciles* a suspicious construct with a rule that forbids it is load-bearing in a way ordinary commentary is not: it is the artifact a later reader consults **instead of** re-deriving the behaviour. So it must cite a **probe**, never an argument. A reconciliation written from reasoning does not merely fail to catch the defect — it **conceals** it, because code and comment then share one misunderstanding and a reader checking either against the other finds agreement. *Decision 43's standard — state the bound you actually measured — applies to comments, and most urgently to the comments that exist to explain why a rule does not apply here.*
+
+The second half is about **who asks**. A reviewer who anticipates a hazard and asks for a *justification* has requested the wrong artifact: justification is producible by thought, and the hazard in question was only decidable by execution. **Ask for the probe, or the prophylaxis becomes the disguise.**
+
+**Evidence (Parley, Sprint 21, found at Gate B).** `parley add <pkg> <c> --locked` and `parley remove <pkg> --locked` answered **exit 0 with the ordinary success pin-lines while writing neither `Package.st` nor `parley.lock`** — a fail-wrong at exit 0, against `CommandLine>>run:`'s own contract that *no failing command ever exits 0*, in the sprint's own new feature, one sprint before the v1.0 tag. `resolve --locked` and `update --locked` were correct throughout.
+
+The cause is a toolchain behaviour, probed at the gate rather than assumed:
+
+> **In GNU Smalltalk 3.2.5, `Exception>>pass` does not unwind.** It runs the outer handler, **discards that handler's value**, and **resumes execution after the inner `on:do:`**.
+
+So `CLI>>addResolving:against:unheld:restoring:lock:` — `[self writeLock: outcome] on: LockError do: [:e | self restore: …. e pass]` — let `CommandLine>>run:`'s boundary compose the exit-1 refusal, threw it away, and fell through into `installResolution:`, which succeeded. The **atomicity** half was always true; the restore ran and both files stayed byte-identical. Only the exit code and the lines lied.
+
+**The comment at that site is what makes this F24 rather than a bug report.** It is a nine-line paragraph reconciling the construct with §8 decision 75, which had examined and refused catch-restore-pass elsewhere. It argues — correctly, and irrelevantly — that decision 75's grounds were about wrapping an author's whole program in a broad catch, and that this block contains nothing but Parley's own write step. Every sentence is true. None of them is about whether `pass` unwinds, which is the only question that mattered, and which one probe would have answered. **The paragraph was requested by the operator's verifier-hands as a prophylactic against exactly this class of construct, and it asked for a reconciliation rather than for a probe. That miss is the reviewer's, and it belongs in this file more than the defect does.**
+
+**Blast radius: exactly one site**, established by sweeping every `pass` send in `src/`:
+
+| site | shape | verdict |
+| --- | --- | --- |
+| `src/manifest/Parley.st:92` | `^anError pass` | **safe** — `pass` is the handler's returned final action, so its answer *becomes* the handler's answer and resumption cannot arise. Sprint 1's green laws confirm it. |
+| `src/exec/CLI.st:1574` | `e pass]` as the last statement of a `do:` block whose value is then discarded | **broken** — the one dangerous site, reached by `add` and by `remove`. |
+
+**What caught it: a mechanism — Gate B's mandated walk — and the mechanism built for it failed.** The close-out brief named `--locked` add-atomicity as a thing to drive through the shipped binary, and driving it took one command. That is the checklist column working. But the honest weight of this entry sits on the other side: **`Sprint21AcceptanceTest>>testS29` exists for precisely this claim and passed against the broken build**, for the reason F26 records. A gate that halts is worth more than a walk that happens to look, and here the gate did not halt.
+
+**Status.** First instance. Kin to **F15** (a toolchain behaviour assumed rather than probed) and **F23** (a fact recorded but unreachable); F24 is the sharper case — the fact was neither probed nor recorded, and the artifact that should have prompted the probe was spent arguing instead. **Companion action, in flight at the time of writing:** the falsifier is landed and **red** — `testS29` strengthened at `7f93a4f`, failing at `1090/1091` against the broken build, which is the order this project runs on: the falsifier before the fix. The repair itself is the implementer's and is relayed rather than written here — restore, then **signal fresh** so the error unwinds — with the reconciliation comment rewritten **in the same edit** to cite the probed behaviour and to name `src/manifest/Parley.st:92` as the safe contrast shape. This entry is not closed until both have landed and the shipped binary has been hand-probed for `add` and `remove`.
+
+---
+
+## F25 — Four laws green by construction in one sprint, and the fixture idiom that produced them
+
+**Rule (portable).** A fixture chosen to be *minimal* is chosen for the author's convenience, and minimality removes exactly the parts of the world a law needs in order to fail. When a cheap fixture makes an **earlier** refusal fire than the one under test, the law passes on the wrong refusal and nothing distinguishes that from success. So: **the default fixture is the realistic one, and the degenerate one is used only where the degeneracy is the law's own subject.** The test that a law is not green by construction is cheap and should be routine — *remove the thing the law is about and re-run it; if it still passes, it was never testing that thing.*
+
+**Evidence (Parley, Sprint 21, issue #23).** Four instances, in one sprint, all found by a second party rather than by any gate. The laws are in `tests/acceptance/Sprint21AcceptanceTest.st`, `tests/laws/PathGrammarTest.st` and `tests/laws/UsageGroundTest.st`; the fixture at fault is `tests/support/PathDepFixtures.st`'s `plainEntryFor:`, whose empty `#archive` makes **§8 decision 25**'s diagnosis fire first:
+
+| law | what made it vacuous | found |
+| --- | --- | --- |
+| `Sprint21AcceptanceTest>>testS34` | every entry written by `plainEntryFor:` carries an empty `#archive`, so `update` answered **decision 25**'s no-published-archive diagnosis before reaching the claim | GREEN round nine |
+| `PathGrammarTest>>testTheEditingVerbsRefuse…` (dev row) | both rows removed `kernel-text`, which the **dev** row's manifest does not declare in any kind — the row asked about an absent name and could not have failed had `devDependency:` clauses *been* recognized | GREEN round eleven |
+| `UsageGroundTest>>testTheFourFirstLinesDifferFromEachOther` | after decision 83 the fourth argv was no longer a usage ground, and the line it answered contained **the fixture's own path**, so it differed from its neighbours by construction | GREEN round eleven |
+| `Sprint21AcceptanceTest>>testS29` | empty `#archive` again — decision 25 refused before `--locked` was consulted — **and** the law asserted only the exit code and byte-identity, which that wrong refusal satisfies | **Gate B**, and it was hiding F24 |
+
+The decisive probe is the same one in three of the four: **drive the law with the thing it names removed.** S29 passed identically with `--locked` deleted from its argv. The editing law's dev row passed identically whether or not the recognizer saw dev clauses. A law that cannot tell those apart is decorative.
+
+**What caught them: luck, and the classification is not close.** No gate halts on a vacuous law — that is the definition of the failure. Three were found only because a reviewer was already inside those fixtures repairing *other* defects and probed before repairing; the fourth was found at Gate B by driving the shipped binary. Had Sprint 21 gone green without a reviewer editing fixtures at all, **all four would have shipped green and vacuous**, every gate reporting success. The sprint's headline number — 1091 laws, full green — is exactly the number that would have been reported.
+
+**Status.** First instance as a named class, though **F10** and **F18** are its relatives (a comparison that enumerates nothing; duplicated text no grep can see). **Ruling applied at this close-out:** in Parley's fixtures, **real published archives are the default** and `plainEntryFor:`'s empty `#archive` is reserved for laws whose subject *is* decision 25. Two scenarios were converted at Gate B and their cost declarations amended to admit the spawn.
+
+---
+
+## F26 — Two refusal paths sharing an exit code make the exit code worthless as an assertion
+
+**Rule (portable).** An exit code is a **classification**, not an identity: a well-built tool deliberately maps many distinct failures onto one code, because that is what lets a caller branch on *kind* rather than on *cause*. A law that asserts only the code therefore asserts only the kind — and wherever two refusal paths can reach the same argv, the law will accept the wrong one silently. **Assert the diagnosis's own sentence.** The wording is the only artifact that distinguishes the paths, which is why the wording is declared once and consumed twice.
+
+The corollary is a design constraint, not just a testing one: *a refusal worth distinguishing is worth wording distinctly*, and if two refusals genuinely share a sentence then the law cannot tell them apart and neither can the operator.
+
+**Evidence (Parley, Sprint 21, issue #23, found at Gate B).** `tests/acceptance/Sprint21AcceptanceTest.st`'s `testS29` asserted `result exitCode = 1` plus byte-identity of `Package.st` and `parley.lock`. All three held — against a build that **ignored `--locked` entirely** — because the fixture's empty `#archive` made decision 25's no-published-archive diagnosis fire first, and that refusal also exits 1 and also writes nothing. Two paths, one code, one law that could not see the difference. The sprint's other `--locked` laws did assert the wording (`ModeFlagTest>>testUpdateUnderLockedRefusesAndWritesNothing` compares against `CommandLine lockedRefusalFor:pinned:would:`), which is why `update` was correct and `add` was not: **the laws differed, and the code followed the laws.**
+
+The strengthened S29 now asserts `result lines = (Array with: (PathDepFixtures lockedRefusalFor: 'kernel-b' pinned: … would: '1.0.0'))` and fails against the broken build — verified red before the fix existed, at `1090/1091` with S29 the only failure.
+
+**What caught it: the same walk that caught F24**, and this entry is the rule extracted from that catch rather than a second catch. Counted once in the tally, under F24's classification.
+
+**Status.** First instance. Directly kin to **F25** — a vacuous fixture and an under-specified assertion are two ways to reach one outcome, and S29 had both at once, which is why it survived a RED review, a Gate A review, eleven GREEN rounds and a wrap.
+
+---
+
+## F27 — A one-actor circuit breaker met a three-session topology it predates
+
+**Rule (portable).** A guardrail that counts *consecutive identical failures* encodes an assumption about **how many actors touch the tree**. Add a second actor — a reviewer, a second agent, a human running the same command to see for themselves — and the counter stops measuring "the worker is spinning" and starts measuring "the tree failed twice", which is the normal state of a phased build. **When the topology a mechanism was built for changes, the mechanism does not fail loudly; it starts producing confident wrong verdicts.** The repair is a read-only mode for observers, not a higher threshold.
+
+**Evidence (Parley, Sprint 21).** The breaker tripped on a **false positive**. It arms on three consecutive failures and has an identical-hash branch that treats a byte-identical failing run as a spin. Sprint 21 runs three sessions against one checkout — coding agent, human operator, and the operator's verifier-hands — and an operator verification run over an unchanged tree produced byte-identical output to the agent's last run. A one-actor breaker read a second actor's legitimate verification as the first actor spinning. **The agent halted immediately, attempted no reset, and disclosed that its own "zero failures" parse was an artifact of an empty log** — which is the halt-and-ask column working exactly as intended.
+
+**Companion applied:** `./scripts/verify-sprint.sh --observe` (`799dc51`) — a full run that neither reads nor writes breaker state, for exactly the observer case. Used for every verification in the eleven GREEN rounds and at Gate B.
+
+**What caught it: a mechanism** — the breaker halted and the agent halted with it rather than working around it. The finding is not that it fired; it is that the topology had changed three sessions earlier and nothing had re-derived the guardrail's assumption against it.
+
+**Status.** First instance. Kin to **F13** (a rule applied to the members that motivated it) one level up: here the *mechanism's own preconditions* were the unenumerated domain.
+
+---
+
+## F28 — The sprint's only-push rule was violated by the session that verifies the rules, and detection was luck
+
+**Rule (portable).** A rule that says *this happens exactly once, at the end* is enforced by whoever happens to remember it, unless the command that could violate it checks first. **The check must live at the command, not in the reviewer's head** — and the reviewer is not the safe party, because the reviewer's own work is the work least likely to be reviewed by anyone else.
+
+**Evidence (Parley, Sprint 21, mid-GREEN).** F17 fixed the sprint's push discipline: **one push, at Gate B, carrying the whole held stack.** During GREEN the operator's verifier-hands landed a harness fix (`--observe`, F27's companion) and pushed it — and that push carried the **held flip commit, the reviewed RED suite and the mid-sprint ruling commits** to `origin/main` with them. F17's first violation, committed by the session whose job is to verify that rules are followed. It left one red CI run on `799dc51` in the history; the human force-pushed `origin` back.
+
+**Detection was luck**: a CI notification, noticed. Nothing in the toolchain objected, because `git push` has no opinion about what a sprint considers held.
+
+**Companion applied, as a standing rule:** before any push, run `git log origin/main..HEAD --oneline` and confirm **every** commit in the range is meant to publish. Harness fixes landed mid-sprint stay **local** while a stack is held. The check costs one command and names precisely the thing that goes wrong.
+
+**What caught it: luck.** Recorded in this file rather than smoothed over, because the alternative reading — *the reviewer knows the rules, so the reviewer is safe* — is the belief that produced it.
+
+---
+
+## F29 — SUnit's run count double-books a test whose `tearDown` raises, and the reconciliation recipe read it as a different defect
+
+**Rule (portable).** A count derived as `passed + failures + errors` is only a count of *tests* if those sets are disjoint, and a framework that files one test under two of them breaks that silently — inflating both the total and the failure count by the same number, which is **the exact signature of a genuinely different problem**. When a reconciliation recipe infers a cause from an arithmetic shortfall, it must first assert the disjointness the arithmetic assumes. **Any recipe that reasons from a total needs a guard proving the total counts what it says.**
+
+**Evidence (Parley, Sprint 21, issue #23, Gate A; the scenarios are `tests/acceptance/Sprint21AcceptanceTest.st`'s S9 and S10, repaired at `a5545fe`).** gst 3.2.5 computes `runCount` as `passed size + failures size + errors size`, and `runCase:` files a test under **both** `failures` and `errors` when `tearDown` raises after the body has already failed. S9 and S10 tracked one capture directory twice, so teardown raised on the second removal. The enumeration `all.txt` came up **short by 2** against `run − 983` — which is precisely the signature runbook §1 step 4 attributes to *new laws living in settled files* (carry-forward CF-5). The prescribed `git diff` grep found nothing, correctly, because CF-5 was clean; the real cause was two double-booked tests. **Cost: the first hour of Gate A.**
+
+**Companion applied, to runbook §1 step 4:**
+
+```bash
+comm -12 <(grep '^PARLEY-FAILURE:' run.txt | sed 's/.*>>##//; s/.$//' | sort -u) \
+         <(grep '^PARLEY-ERROR:'   run.txt | sed 's/.*>>##//; s/.$//' | sort -u)
+```
+
+**must print nothing**, and it is run *before* the arithmetic is trusted. A non-empty intersection is a broken `tearDown`, not a new law. Verified empty at this close-out.
+
+**What caught it: luck** — an operator reconciling counts by hand and refusing to accept the recipe's answer when the grep it prescribed came back empty. A recipe that had been believed would have sent the gate hunting for laws that did not exist.
+
+**Status.** First instance. Kin to **F10** (the class-qualified `comm` caution) and its neighbour in the same step: Sprint 21 also found that `sed 's/.*>>##//'` collapses two classes sharing a selector name (`Sprint12`/`Sprint13AcceptanceTest>>testS12_TheArgvGrammar`), reading 142 where 143 failed. Both settled movers, nothing masked — **but a new selector sharing a name with a settled one would be reported as failing while actually absent.** F10's rule needs its second half: qualify by class before counting.
+
+---
+
+## F30 — The same double proved the same thing twice in one sprint, and the second time was a Gate B walk
+
+**Rule (portable).** A recording double answers "what would have been run"; it cannot answer "what running it produces". When a law's subject is a **transport** — anything whose whole content is the effect of executing something — a recording double does not make the law cheaper, it makes it **impossible**, and the failure presents as a diagnosis about the *world* rather than about the double. **The tell is a diagnosis naming a resource that demonstrably exists**; that is the moment to check the runner rather than the fixture.
+
+**Evidence (Parley, Sprint 21, issue #23).** Twice, on the same misreading, in `tests/acceptance/Sprint21AcceptanceTest.st` and `tests/support/SparseIndexFixtures.st`:
+
+1. **S4** (the sparse re-seed). Driven with the default `RecordingRunner`, the resolve answered `kernel-streams/versions.st: missing or unreadable listing`. That names the **cache** path, not the base — and the base demonstrably held that listing, carrying `#(#'parley-listing' 1 #versions #('1.4.0'))`, before the verb ran. The invited repair was *publish the listing into the base tree*, which is a no-op: `SparseIndexFixtures publish:` writes listing and entry together. The real cause was that `curl` was being **recorded instead of run**. Repaired at GREEN round eleven by driving `CountingProcessRunner`, which delegates and records — buying the law its mechanism assertion (the curl it issued for a name in neither the root manifest nor the lock) rather than only its outcome.
+2. **S29** (`add` under `--locked`), where the empty-`#archive` fixture is the same instinct applied to artifacts instead of processes — a cheap stand-in for a real published release, producing an earlier refusal that satisfied the law. See **F25**.
+
+**What caught it: luck both times** — a reviewer re-probing a fixture rather than applying a proposed repair. The first would have shipped as a green law over a transport that never ran; the second did ship, through a wrap, and was caught at Gate B.
+
+**Status.** First instance as a named class. The portable half is the tell, not the rule: *a diagnosis about a missing resource, over a resource you can see, is a diagnosis about your double.*
+
+---
+
+## F31 — The trap double sprang (confirmation)
+
+**Evidence (Parley, Sprint 21, issue #23 — `tests/laws/InspectionVerbTest.st`).** **§8 decision 40**'s discipline — prove a read-only verb never reaches the resolver by giving it a resolver that *signals* if entered, and prove the trap itself is on the path by driving a verb that must spring it — worked as designed and is the sprint's cleanest mechanism entry. `ResolverTrapCLI` overrides the single funnel `resolveAndLock:`; `testResolveStillTripsTheResolverTrap` is the guard that keeps the purity laws from passing against a double that sits on no path at all.
+
+Recorded because the pattern is transferable and cheap: **a negative law needs a positive twin proving its instrument works.** Without the twin, "this verb never enters the resolver" and "this trap was never wired" are indistinguishable — and the second is the state a refactor produces silently. This is the same shape as the `deny: … isEmpty` guards the drift laws grew after Sprint 8, generalised from *collections* to *doubles*.
+
+**No defect behind it.** Counted as a confirmation and excluded from the ratio.
+
+---
+
+## F32 — CF-5 closed at a measured zero rather than an asserted one (confirmation)
+
+**Evidence (Parley, Sprint 21, issue #23 — `docs/sprints/sprint-21-notes.md` §1.1).** CF-5 requires *a new law in a settled file* to be declared as its **own category**, separate from new files and from re-pins, because the `all.txt` enumeration walks the sprint's new test files and a law added to a settled one falls outside it entirely — its red-phase pass never checked. The usual failure is to write "none" from memory.
+
+Sprint 21 closed it **arithmetically**: `1091 − 983 = 108` new selectors, and the six new test files sum to exactly 108 (34 + 17 + 13 + 15 + 16 + 13). The two numbers meeting is the evidence; **zero is what is left over**, not what was claimed.
+
+What makes it a confirmation worth writing rather than a routine count: the zero **held through eleven GREEN rounds of reviewer edits**, and it held for a reason that was chosen rather than lucky — every one of the eleven behaviour re-pins added assertions **inside** an existing method, so `run` never moved off 1091 from RED to green. Had any re-pin been written as a new law beside the old one — the natural shape, and the tidier-looking diff — the category would have been non-zero, and the only thing that would have noticed is this declaration.
+
+**No defect behind it.** Counted as a confirmation and excluded from the ratio.
