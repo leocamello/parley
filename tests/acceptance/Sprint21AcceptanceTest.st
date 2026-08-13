@@ -265,15 +265,42 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
         "S6. Two path dependencies declaring the same name from
          different directories: ONE diagnosis naming BOTH paths, exit 1,
          nothing written. Naming one would leave the operator to find
-         the other."
-        | work result first second |
+         the other.
+
+         THE COLLISION IS CROSS-MANIFEST, and it has to be (amended
+         mid-sprint, GREEN step 5). Declared TWICE IN ONE FILE this is
+         an AUTHORING error, and build's duplicate rule (Doc B §3.4 item
+         5, which quantifies over all three kinds) fires first with a
+         better diagnosis — one file, one problem, naming the duplicate.
+         That behaviour is correct and stays. The overlay's refusal
+         governs the case a single manifest cannot express: the ROOT
+         declares kernel-text at one directory and a SIBLING declares
+         the same name at another, so no one file is wrong and only the
+         composition can see it. This is the end-to-end driver for
+         PathOverlayTest>>testOneNameFromTwoDirectoriesIsRefusedNaming
+         Both, which proves the same refusal at the overlay's own level."
+        | work result first second mid |
         self sibling: 's21-6-one'.
         self sibling: 's21-6-two'.
+        mid := self track: (PathDepFixtures bSiblingNamed: 's21-6-mid').
         first := PathDepFixtures declaredPathFor: 's21-6-one'.
         second := PathDepFixtures declaredPathFor: 's21-6-two'.
-        work := self workDir: 's21-6-work'
-            contents: (PathDepFixtures rootDeclaringTwoPaths: first
-                and: second).
+        ExecFixtures writePackage: 'Parley define: [:pkg |
+    pkg
+        name: ''kernel-b'';
+        version: ''2.5.0'';
+        fileIns: #(''KernelB.st'');
+        dependency: ''kernel-text'' path: ''', second, ''' ]',
+            SourceFixtures newline in: mid.
+        work := self workDir: 's21-6-work' contents: 'Parley define: [:pkg |
+    pkg
+        name: ''my-app'';
+        version: ''1.0.0'';
+        fileIns: #(''App.st'');
+        dependency: ''kernel-text'' path: ''', first, ''';
+        dependency: ''kernel-b'' path: ''',
+            (PathDepFixtures declaredPathFor: 's21-6-mid'), ''' ]',
+            SourceFixtures newline.
         result := self resultOf: PathDepFixtures flaglessResolveArgv in: work.
         self assert: result exitCode = 1
             description: 'two paths for one name answered exit ',
@@ -799,8 +826,16 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
         index := self freshDir: 's21-21-index'.
         SourceFixtures write: (PathDepFixtures textEntryAt: '2.0.0')
             toFile: 'kernel-text-2.0.0.st' in: index.
+        "kernel-a PINS kernel-dep EXACTLY (amended mid-sprint, GREEN
+         step 5). Under the caret the resolver picked kernel-dep 1.9.0,
+         the newest published, so the transitive pin was never behind
+         anything and the contrast half of this law could not be
+         satisfied on any build. An exact edge lands the transitive pin
+         at 1.0.0 while 1.9.0 exists — which is what makes it OUTDATED
+         and its allowed column a marker rather than a version. Nothing
+         moves after the resolve; the fixture is arranged before it."
         SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-a'
-            version: '1.0.0' dependencies: '#(''kernel-dep'' ''^1.0.0'')')
+            version: '1.0.0' dependencies: '#(''kernel-dep'' ''=1.0.0'')')
             toFile: 'kernel-a-1.0.0.st' in: index.
         SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-dep'
             version: '1.0.0' dependencies: '')
@@ -918,14 +953,23 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
         SourceFixtures write: (PathDepFixtures plainEntryFor: 'kernel-old'
             version: '1.0.0' dependencies: '')
             toFile: 'kernel-old-1.0.0.st' in: index.
-        SourceFixtures write: (PathDepFixtures retirementRecordForTextAt:
-            PathDepFixtures siblingVersionString)
-            toFile: 'retired.st' in: index.
         work := self workDir: 's21-24-work'
             contents: (PathDepFixtures rootDeclaring:
                 (PathDepFixtures declaredPathFor: 's21-24-text')
                 andIndexDependency: 'kernel-old' constraint: '^1.0.0').
         self resultOf: (PathDepFixtures resolveArgvOn: index) in: work.
+        "THE RETIREMENT LANDS AFTER THE LOCK, which is the only order in
+         which a PINNED retired release exists at all (amended
+         mid-sprint, GREEN step 5). Written before the resolve, the
+         record retired kernel-old 1.0.0 — the sole published version of
+         the root's only index dependency — so fresh resolution could
+         pick nothing, no lock was written, and check answered the
+         missing-lock line instead of its retirement leg. Retiring after
+         the lock is the ordinary real sequence and the one the settled
+         retirement laws build."
+        SourceFixtures write: (PathDepFixtures retirementRecordForTextAt:
+            PathDepFixtures siblingVersionString)
+            toFile: 'retired.st' in: index.
         result := self resultOf: (Array with: 'check' with: '--source'
             with: index) in: work.
         self assert: result exitCode = 1
