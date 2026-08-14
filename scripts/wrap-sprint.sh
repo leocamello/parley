@@ -106,8 +106,10 @@ echo "📦 Staging Sprint $SPRINT workspace..."
 # exempt from laws and became a deliverable like any other. It was missing
 # here, so bin/parley-main.st came back unstaged at the Sprint 8 wrap and had
 # to be staged by hand. Anything inside the active scope-<N> regex that a
-# sprint can legitimately change belongs in this list.
-git add src/ bin/ tests/ scripts/ 2>/dev/null || true
+# sprint can legitimately change belongs in this list. The root furniture,
+# completions/ and Package.st joined at Sprint 22 beside scope-22's admissions;
+# paths that do not exist yet are no-ops, same as ever (hence the || true).
+git add src/ bin/ tests/ scripts/ completions/ .github/ Package.st CHANGELOG.md README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md LICENSE 2>/dev/null || true
 [[ -f "$NOTES_FILE" ]] && git add "$NOTES_FILE"
 
 git status --short

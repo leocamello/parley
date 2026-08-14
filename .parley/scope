@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 21
-phase: green
+sprint: 22
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -362,3 +362,80 @@ scope-20: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # docs/method/ remains operator-authored and is NOT agent-writable, as
 # scope-15 through scope-20 record.
 scope-21: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
+# scope-22 GROWS for the first time since Sprint 8: the release sprint
+# creates root-level artifacts no prior regex admitted — CHANGELOG.md,
+# SECURITY.md, CODE_OF_CONDUCT.md, the root Package.st (§8 decision 86,
+# the package-of-Parley), and the completions/ directory (generated from
+# the declared tables). NO new src/ directory and NO new class:
+# scripts/run-tests.st is unchanged and must not be edited.
+#
+# Issue #24. Specs of record: §8 decisions 70, 71, 85, 86, 87 (landed
+# BEFORE red at 27f68c8 with the doc changes citing them — the spec you
+# read is already correct); Doc E §4.1/§4.2/§4.3/§5; Doc B §4 + scope
+# line; Doc F §1 step 3; roadmap §3's two amended rows.
+#
+# Declared settled-class exceptions, each bounded (full bounds in issue
+# #24's table — the issue is the contract):
+#
+#   Parley.Parley - releaseFiles beside the settled version, 'release'
+#     category. Nothing else.
+#   CommandLine   - the env read at wiring (ONE injectable seam; default
+#     Smalltalk getenv:), the per-row PARLEY_* field on the source-flag
+#     declaration, the two-variables refusal wording, flag > env > file
+#     at the existing precedence site. Mode flags and usage lines
+#     untouched.
+#   CLI           - needsIndexRefusalFor: gains the variables clause from
+#     the declared table; exec:'s script path resolved against the
+#     WORKING DIRECTORY (the :894 precondition and the path handed to
+#     ExecutionScope). verbRows and usageBlock DO NOT MOVE.
+#   Publisher     - stage creates each fileIn's parent directories via
+#     PathGuard, preserving relative paths (Doc F §1 step 3).
+#
+# Settled TEST files that move: CliTest (S18 exec family re-pins for the
+# workdir-resolved path); PinVerificationTest and Sprint3AcceptanceTest
+# each LOSE TWO LAWS (the ApplicationManifest deletion, §8 decision 87 —
+# the count moves DOWN 4 before this sprint's laws move it up);
+# SourceFlagTest:149 re-pins (the declared row grows the PARLEY_* field);
+# UsageGroundTest and Sprint19AcceptanceTest re-pin the needs-index
+# sentence; the README-pinning families re-pin for the restructure.
+#
+# NOT exceptions, each a halt-and-ask on #24: Configuration (§8 decision
+# 85 keeps it the FILE reader — its non-movement is a checkable claim),
+# ExecutionScope, Resolver and every strategy and ConstraintLedger,
+# PathOverlay, PathDependency, IndexSnapshot, Resolution, PinVerification
+# (the production class — only its test file moves), all three sources,
+# Installer/InstalledSet/ContentStore, ProcessRunner, ManifestBuilder,
+# LibraryManifest, ManifestFile, ManifestCapture, ManifestEditor,
+# PathGuard, Sha256, IndexEntryWriter/Reader, SchemaShape.
+#
+# THE ARGV GRAMMAR DOES NOT MOVE: no new verb, no new flag; every new
+# refusal is in-verb at exit 1 (decisions 80/83). The env layer's suite
+# is IMMUNE to the harness process environment: every law pins its env
+# through the seam; an exported PARLEY_SOURCE on the operator's machine
+# must not change a single outcome.
+#
+# DECLARED PASSES-IN-RED: EXACTLY THREE — S24 (the CI drift law: the
+# workflow has invoked the one gate since H0), S25 (row 15: the wrap
+# staging list vs THIS regex, over existing files), S26 (the
+# docs/sprints/README.md drift law: the index was trued at the Sprint 21
+# close-out). Derived fresh per law — the plan's pre-brainstorm "none"
+# row is superseded. Any OTHER pass in red is undeclared by definition
+# and is a finding at Gate A.
+#
+# THE CENSUS STAYS AT EIGHT: Publisher already holds its seat and the
+# stage's parent creation routes through PathGuard.
+# deserializationBoundaries does not grow. The §4.2 error partition does
+# not grow.
+#
+# The dogfooding hygiene is already committed (.gitignore): the
+# checkout's .parley/ holds the harness's TRACKED scope and UNTRACKED
+# audit beside the runtime state a root Package.st makes possible — the
+# reset gesture inside THIS checkout is the three state subdirectories,
+# never .parley whole (§8 decision 86).
+#
+# bin/ stays in scope — the shipped binary is law-guarded, and S12's
+# showcase loop and S13's cwd contrast spawn it.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-21 record.
+scope-22: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)

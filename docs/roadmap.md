@@ -24,9 +24,11 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-*Nothing in flight. Sprint 22 — the release, item 7, the last of the seven — is staged at
-Gate C against the list below, after the deferred-work review and repository-professionalism
-brainstorm that gate names as its input.*
+*Sprint 22 — the release, item 7, the last of the seven — **in flight** as issue
+[#24](https://github.com/leocamello/parley/issues/24), staged at Gate C 2026-08-14 against
+this list, `deferred 0×`, **undisplaced — the twelfth consecutive sprint the ranking won on
+its own merits.** The two §3 overrules ride by the operator's recorded, counter-argued
+decisions (decisions.md, readback-confirmed 2026-08-14), not by displacement.*
 
 ### Recently delivered
 
