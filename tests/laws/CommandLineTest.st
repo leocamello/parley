@@ -100,12 +100,17 @@ diagnosis boundary.'>
          instead of reaching the boundary. It never reached it for the
          right reason before either: these laws claim the boundary sees
          what the seam raises, and a path that does not exist could not
-         have proved that. The fixture is restored, no assertion moves,
-         and the argv is unchanged."
+         have proved that.
+
+         THE ARGV IS THE WORKDIR-RELATIVE SPELLING from Sprint 22: the
+         precondition resolves the script against the WORKING
+         DIRECTORY, never the process cwd (the exec-cwd family re-pin,
+         issue #24 C1), and the script is written exactly where the
+         resolution will look."
         SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
             toFile: 'script.st' in: aWorkDir.
         ^(self commandLineIn: aWorkDir runner: aRunner)
-            run: (Array with: 'exec' with: aWorkDir, '/script.st')
+            run: (Array with: 'exec' with: 'script.st')
     ]
 
     resultOfRaising: aBlock in: aWorkDir [

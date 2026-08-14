@@ -1,22 +1,23 @@
-"Parley Sprint 3 — pin verification, ApplicationManifest and lock
- read-back laws (Doc C §6 pure half; Doc B §4; issue #5 S7-S13).
+"Parley Sprint 3 — pin verification and lock read-back laws
+ (Doc C §6 pure half; Doc B §4; issue #5 S7-S13).
 
  PinVerification is an immutable verdict value, a pure function of
  (root LibraryManifest, lock Resolution): it checks the root manifest's
  constraints ONLY — no snapshot, no resolver, no I/O — and batches every
  problem into one value in manifest-declaration order (the ManifestError
- problems style). ApplicationManifest is the immutable manifest+lock
- association of Doc B §4. Resolution class >> fromLockEntry: is the lock
- read-back path mirroring LibraryManifest fromIndexEntry:."
+ problems style). Resolution class >> fromLockEntry: is the lock
+ read-back path mirroring LibraryManifest fromIndexEntry:. The
+ ApplicationManifest value laws this file carried were deleted with the
+ class in Sprint 22 (§8 decision 87; Doc B §4 keeps the Bundler rule as
+ prose about the artifacts)."
 
 Namespace current: Parley.
 
 TestCase subclass: PinVerificationTest [
 
     <comment: 'Law suite for PinVerification (valid, violated, missing
-and extra-pin verdicts, problem batching, purity), the
-ApplicationManifest value, and the write -> read -> fromLockEntry:
-round-trip identity.'>
+and extra-pin verdicts, problem batching, purity) and the
+write -> read -> fromLockEntry: round-trip identity.'>
 
     version: aString [
         ^Version fromString: aString
@@ -111,36 +112,6 @@ round-trip identity.'>
         second := PinVerification of: manifest lock: self baselineLock.
         self assert: first isValid = second isValid.
         self assert: first problems = second problems
-    ]
-
-    "---- ApplicationManifest value laws (S7) ----"
-
-    testApplicationManifestAssociatesAndDelegates [
-        | lib lock app |
-        lib := ResolverFixtures diamondRoot.
-        lock := ResolverFixtures resolve: lib
-            against: ResolverFixtures satisfiableDiamondSnapshot.
-        app := ApplicationManifest manifest: lib lock: lock.
-        self assert: app hasLock.
-        self assert: app lock = lock.
-        self assert: app manifest == lib.
-        self assert: app name = lib name.
-        self assert: app version = lib version.
-        self assert: app summary = lib summary.
-        self assert: app author = lib author.
-        self assert: app license = lib license.
-        self assert: app fileIns = lib fileIns.
-        self assert: app dependencies = lib dependencies
-    ]
-
-    testApplicationManifestWithoutLock [
-        | lib app |
-        lib := ResolverFixtures diamondRoot.
-        app := ApplicationManifest manifest: lib.
-        self deny: app hasLock.
-        self assert: app lock isNil.
-        self assert: app name = lib name.
-        self assert: app version = lib version
     ]
 
     "---- lock read-back (S8) ----"

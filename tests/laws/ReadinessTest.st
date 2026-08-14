@@ -162,7 +162,10 @@ update <pkg> with its over-narrowing guard on each.'>
         self deny: (self exists: script)
             description: 'the missing-script fixture exists'.
         runner := RecordingRunner new.
-        result := self resultOf: (Array with: 'exec' with: script)
+        "The argv is the workdir-relative spelling (Sprint 22, the
+         exec-cwd family re-pin): the refusal names the
+         workdir-resolved path the oracle composes."
+        result := self resultOf: (Array with: 'exec' with: 'typo.st')
             in: work runner: runner.
         self assert: result exitCode = 1
             description: 'a missing script answered exit ',
@@ -185,7 +188,7 @@ update <pkg> with its over-narrowing guard on each.'>
         self assert: (self exists: script)
             description: 'the directory fixture was not created'.
         runner := RecordingRunner new.
-        result := self resultOf: (Array with: 'exec' with: script)
+        result := self resultOf: (Array with: 'exec' with: 'adir')
             in: work runner: runner.
         self assert: result exitCode = 1
             description: 'a directory script answered exit ',
@@ -210,7 +213,7 @@ update <pkg> with its over-narrowing guard on each.'>
         self assert: (self exists: script)
             description: 'the pass-through fixture was not written'.
         runner := RecordingRunner answering: 7.
-        result := self resultOf: (Array with: 'exec' with: script)
+        result := self resultOf: (Array with: 'exec' with: 'quit-three.st')
             in: work runner: runner.
         self assert: result exitCode = 7
             description: 'the child code did not pass through: ',

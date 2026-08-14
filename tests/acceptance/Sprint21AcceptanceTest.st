@@ -494,21 +494,19 @@ and the holding-map exclusion that a narrow-to-locked build fails.'>
             include: PathDepFixtures secondShout)
             description: 'the edit was not picked up: ',
                 (after at: 2) printString.
-        "THE IN-PROCESS HALF QUALIFIES ITS SCRIPT PATH, and the two
-         halves above deliberately do not (amended mid-sprint, GREEN
-         step 4). exec's settled precondition resolves the script
-         against the PROCESS cwd, which in-process is the repository
-         root, so a bare 'probe.st' is refused before any line is
-         composed — `runner commands` comes back empty and the claim
-         below cannot be reached. The shipped-binary halves run IN the
-         working directory, so the bare spelling is the operator's
-         natural one and stays what they prove. The needle widens with
-         the argv; the claim — the sibling's file-ins PRECEDE the
-         script on the composed line — is unchanged and still
-         falsifiable, since a build composing them in the other order
-         fails it."
+        "THE IN-PROCESS HALF SPELLS ITS SCRIPT WORKDIR-RELATIVE, the
+         same bare spelling the shipped-binary halves above prove
+         (re-pinned at Sprint 22, closing the carried gap this
+         comment's earlier form documented: the precondition now
+         resolves the argv against the WORKING DIRECTORY, never the
+         process cwd, so the bare 'probe.st' resolves under work and
+         is no longer refused in-process). The needle carries the
+         workdir-resolved path; the claim — the sibling's file-ins
+         PRECEDE the script on the composed line — is unchanged and
+         still falsifiable, since a build composing them in the other
+         order fails it."
         runner := RecordingRunner new.
-        self resultOf: (Array with: 'exec' with: work, '/probe.st')
+        self resultOf: (Array with: 'exec' with: 'probe.st')
             in: work runner: runner.
         self assert: runner commands size = 1
             description: runner commands printString.

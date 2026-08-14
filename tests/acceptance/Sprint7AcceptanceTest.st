@@ -490,7 +490,9 @@ under tmp/ and are removed recursively in tearDown.'>
         SourceFixtures
             write: (PublishFixtures greetingProofScriptContentsFor: proofPath)
             toFile: 'proof-script.st' in: bWork.
-        rExec := cliB run: (Array with: 'exec' with: bWork, '/proof-script.st').
+        "workdir-relative argv (Sprint 22: the script resolves against
+         the working directory, never the process cwd)"
+        rExec := cliB run: (Array with: 'exec' with: 'proof-script.st').
         self assert: rExec exitCode = 0.
         self assert: (self contentsOf: proofPath) = 'present'.
         "the same index, resolved through a GitIndexSource clone"

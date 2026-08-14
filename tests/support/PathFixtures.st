@@ -794,7 +794,7 @@ Object subclass: Quiet [
             with: (Array with: 'the exec script (read)'
                 with: script, '/run.st'
                 with: [self resultOf:
-                    (Array with: 'exec' with: script, '/run.st')
+                    (Array with: 'exec' with: 'run.st')
                     in: script]
                 with: (ReadinessFixtures execRefusalLineFor: script, '/run.st'))
             with: (Array with: 'the source directory (read)'
@@ -951,10 +951,13 @@ Object subclass: Quiet [
         "The shipped-wrapper command composed around an ARBITRARY
          wrapper path, so the laws can run bin/parley through a symlink
          without a second composition drifting from the settled
-         shellWrapperCommandIn:args:."
+         shellWrapperCommandIn:args:. The declared variables are pinned
+         empty exactly as that composition pins them (Sprint 22, §8
+         decision 85: set-empty is unset)."
         <category: 'wrapper'>
         ^'cd ', (CommandLineFixtures absolutePathOf: aWorkDir),
-            ' && ', aWrapperPath, ' ', anArgsString
+            ' && ', EnvFixtures pinnedEmptyPrefix,
+            aWrapperPath, ' ', anArgsString
     ]
 
     PathFixtures class >> wrapperCommandAt: aWrapperPath in: aWorkDir args: anArgsString outputTo: anOutputPath [
@@ -973,10 +976,15 @@ Object subclass: Quiet [
          output captured. The pre-set root is what makes S19's Given
          constructible at all: a wrapper that overwrites the variable
          cannot be pointed at an installation that is missing its main
-         script."
+         script. The declared variables are pinned empty like every
+         other composition that spawns the shipped chain (Sprint 22
+         Gate A amendment: decision 85's pin rule is categorical, and
+         this composer and the relative one below were outside the
+         ruled three)."
         <category: 'wrapper'>
         ^'cd ', (CommandLineFixtures absolutePathOf: aWorkDir),
-            ' && PARLEY_ROOT=', aRootPath, ' ', aWrapperPath, ' ',
+            ' && ', EnvFixtures pinnedEmptyPrefix,
+            'PARLEY_ROOT=', aRootPath, ' ', aWrapperPath, ' ',
             anArgsString, ' > ', anOutputPath, ' 2>&1'
     ]
 
@@ -985,9 +993,13 @@ Object subclass: Quiet [
          checkout, which is the other half of S20's ordinary path and
          the one a contributor types. The cwd is the checkout itself;
          --version is answered before any state directory is created
-         (§8 decision 57), so the run leaves nothing behind in it."
+         (§8 decision 57), so the run leaves nothing behind in it. The
+         declared variables are pinned empty (Sprint 22 Gate A
+         amendment, same ground as the root:outputTo: composer above)."
         <category: 'wrapper'>
-        ^'cd ', CommandLineFixtures repoRoot, ' && ./', self wrapperPath,
+        ^'cd ', CommandLineFixtures repoRoot, ' && ',
+            EnvFixtures pinnedEmptyPrefix,
+            './', self wrapperPath,
             ' ', anArgsString, ' > ', anOutputPath, ' 2>&1'
     ]
 

@@ -581,14 +581,21 @@ Namespace current: Smalltalk.', SourceFixtures newline
     PathDepFixtures class >> needsIndexRefusalFor: someNames [
         "S32: decision 83's in-verb refusal, at exit 1 on decision 80's
          precedent — the argv is well formed and the project is the
-         limit. It names what the manifest declares and the flags or the
-         config file that can answer, and NEVER the usage block."
+         limit. It names what the manifest declares and the flags, the
+         config file or the environment variables that can answer, and
+         NEVER the usage block.
+
+         RE-PINNED AT SPRINT 22 (§8 decision 85): the sentence gains
+         the variables as its third remedy, composed from the declared
+         table's own field — here through the EnvFixtures mirror, which
+         the EnvLayerTest drift law holds equal to the table."
         <category: 'pinned wordings'>
         ^'no index is wired, and Package.st declares ',
             (CommandLine list: someNames conjunction: 'and'),
             ' - give ',
             (CommandLine list: CommandLine sourceFlagNames conjunction: 'or'),
-            ', or record one in parley.config.st'
+            ', record one in parley.config.st, or set ',
+            EnvFixtures variableListText
     ]
 
     PathDepFixtures class >> offlineRefusalFor: aFlag [

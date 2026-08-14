@@ -809,8 +809,10 @@ location contract.'>
             in: work.
         SourceFixtures write: 'ObjectMemory quit: 0'
             toFile: 'run.st' in: work.
+        "workdir-relative argv (Sprint 22: the script resolves against
+         the working directory, never the process cwd)"
         result := self resultOf:
-            (Array with: 'exec' with: work, '/run.st')
+            (Array with: 'exec' with: 'run.st')
             in: work
             runner: (RaisingRunner raising:
                 [Error new signal: CommandLineFixtures plainErrorMessage]).

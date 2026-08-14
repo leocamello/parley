@@ -15,7 +15,9 @@ TestCase subclass: Sprint3AcceptanceTest [
 
     <comment: 'Acceptance scenarios for Sprint 3: decision-pin
 soundness and its narration, the randomized post-hoc soundness law,
-ApplicationManifest, the lock read-back path, and pin verification.'>
+the lock read-back path, and pin verification. The S7 scenario''s
+ApplicationManifest law was deleted with the class in Sprint 22
+(§8 decision 87).'>
 
     version: aString [
         ^Version fromString: aString
@@ -153,23 +155,6 @@ ApplicationManifest, the lock read-back path, and pin verification.'>
         self assert: (self lockBytesFor: resolution)
             = ('#(#''parley-lock'' 1 #root ''my-app'' #packages #(#(''a'' ''1.0.0'' #sha256 ''ab12000000000000000000000000000000000000000000000000000000000000'') #(''b'' ''1.0.0'' #sha256 ''cd34000000000000000000000000000000000000000000000000000000000000'') #(''c'' ''2.4.0'' #sha256 ''ef56000000000000000000000000000000000000000000000000000000000000'')))',
                 (String with: Character nl))
-    ]
-
-    testS7_applicationManifestAssociatesManifestWithLock [
-        | lib lock app bare |
-        lib := ResolverFixtures diamondRoot.
-        lock := ResolverFixtures resolve: lib
-            against: ResolverFixtures satisfiableDiamondSnapshot.
-        app := ApplicationManifest manifest: lib lock: lock.
-        self assert: app hasLock.
-        self assert: app lock = lock.
-        self assert: app name = lib name.
-        self assert: app version = lib version.
-        self assert: app dependencies = lib dependencies.
-        self assert: app fileIns = lib fileIns.
-        bare := ApplicationManifest manifest: lib.
-        self deny: bare hasLock.
-        self assert: bare lock isNil
     ]
 
     testS8_lockReadBackRoundTripsToTheResolution [

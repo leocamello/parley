@@ -138,15 +138,22 @@ together are a usage error.'>
                 = LockBoundaryFixtures sourceClassNames
     ]
 
-    testEveryFlagTableRowIsAFlagAClassAndABuilder [
+    testEveryFlagTableRowIsAFlagAClassABuilderAndAVariable [
         "One row shape, so the wiring reads the table rather than
-         branching on what it finds there."
+         branching on what it finds there. RE-PINNED AT SPRINT 22 (§8
+         decision 85): the row grows a fourth field, the environment
+         variable that supplies the same value the flag would — a
+         per-row declaration, never spelled at a use site, read by the
+         wiring, the amended needs-index sentence and the completions
+         alike."
         | work commandLine |
         work := self freshDir: 'flag-shape-work'.
         commandLine := CommandLine in: work runner: TrapRunner new.
         self deny: CommandLine sourceFlags isEmpty.
         CommandLine sourceFlags do: [:row |
-            self assert: row size = 3.
+            self assert: row size = 4
+                description: 'a source-flag row holds flag, class, builder and variable: ',
+                    row printString.
             self assert: (row at: 1) isString.
             self assert: ((row at: 1) startsWith: '--')
                 description: 'a source flag must look like a flag: ', (row at: 1).
@@ -155,7 +162,11 @@ together are a usage error.'>
             self assert: (row at: 3) isSymbol
                 description: 'the third column names the builder message'.
             self assert: (commandLine respondsTo: (row at: 3))
-                description: 'nothing builds ', (row at: 2) name asString]
+                description: 'nothing builds ', (row at: 2) name asString.
+            self assert: (row at: 4) isString
+                description: 'the fourth column names the environment variable'.
+            self assert: ((row at: 4) startsWith: 'PARLEY_')
+                description: 'a variable must look like Parley''s own: ', (row at: 4)]
     ]
 
     "---- S8/S9: --git wires a real GitIndexSource ----"

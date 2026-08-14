@@ -107,10 +107,19 @@ labels.'>
          child's cwd is the fixture working directory, PARLEY_ROOT is
          the checkout, and the argv follows -a (3.2.5 passes every
          remaining argument to Smalltalk). Every path in anArgsString
-         must already be absolute."
+         must already be absolute.
+
+         THE DECLARED VARIABLES ARE PINNED EMPTY from Sprint 22 (§8
+         decision 85): the shipped binary reads the process
+         environment, the child inherits the harness's, and set-empty
+         is unset — so the prefix is what keeps every shipped-binary
+         law immune to a developer's exported PARLEY_SOURCE. A law
+         driving an environment state exports its variable AFTER these
+         pins (EnvFixtures)."
         <category: 'shipped binary'>
         ^'cd ', (self absolutePathOf: aWorkDir),
-            ' && PARLEY_ROOT=', self repoRoot,
+            ' && ', EnvFixtures pinnedEmptyPrefix,
+            'PARLEY_ROOT=', self repoRoot,
             ' gst -q ', self repoRoot, '/bin/parley-main.st -a ',
             anArgsString
     ]
@@ -130,10 +139,13 @@ labels.'>
         "bin/parley itself — the POSIX sh wrapper that finds the
          checkout from its own location and execs the main script with
          a leading '--'. The only path that exercises the leading-'--'
-         strip end to end."
+         strip end to end. The declared variables are pinned empty for
+         the same reason the direct composition pins them (§8 decision
+         85: set-empty is unset)."
         <category: 'shipped binary'>
         ^'cd ', (self absolutePathOf: aWorkDir),
-            ' && ', self repoRoot, '/bin/parley ', anArgsString
+            ' && ', EnvFixtures pinnedEmptyPrefix,
+            self repoRoot, '/bin/parley ', anArgsString
     ]
 
     CommandLineFixtures class >> backtraceMarkers [

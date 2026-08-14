@@ -96,12 +96,14 @@ through the product.'>
          review of issue #18): from Doc E §4.1 and §8 decision 56 exec
          refuses a path that is not an existing regular readable file
          before any process is spawned, so S5 and S6 need a real script
-         to reach the seam the boundary is being observed through. No
-         assertion moves and the argv is unchanged."
+         to reach the seam the boundary is being observed through. The
+         argv is the workdir-relative spelling from Sprint 22: the
+         precondition resolves it against the WORKING DIRECTORY, never
+         the process cwd (the exec-cwd family re-pin, issue #24 C1)."
         SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
             toFile: 'script.st' in: aWorkDir.
         ^(self commandLineIn: aWorkDir runner: aRunner)
-            run: (Array with: 'exec' with: aWorkDir, '/script.st')
+            run: (Array with: 'exec' with: 'script.st')
     ]
 
     runChild: aCommandString [

@@ -171,7 +171,9 @@ end to end so it cannot regress.'>
         self deny: (self exists: script)
             description: 'the missing-script fixture exists'.
         runner := RecordingRunner new.
-        result := self resultOf: (Array with: 'exec' with: script)
+        "workdir-relative argv (Sprint 22): the refusal names the
+         workdir-resolved path the oracle composes"
+        result := self resultOf: (Array with: 'exec' with: 'typo.st')
             in: work runner: runner.
         self assert: result exitCode = 1
             description: 'parley exec on a missing script answered exit ',
@@ -199,7 +201,7 @@ end to end so it cannot regress.'>
         self assert: (self exists: script)
             description: 'the directory fixture was not created'.
         runner := RecordingRunner new.
-        result := self resultOf: (Array with: 'exec' with: script)
+        result := self resultOf: (Array with: 'exec' with: 'adir')
             in: work runner: runner.
         self assert: result exitCode = 1
             description: 'parley exec on a directory answered exit ',
@@ -231,7 +233,7 @@ end to end so it cannot regress.'>
         script := ReadinessFixtures writeQuitThreeScriptIn: work.
         self assert: (self exists: script)
             description: 'the pass-through fixture was not written'.
-        result := self resultOf: (Array with: 'exec' with: script)
+        result := self resultOf: (Array with: 'exec' with: 'quit-three.st')
             in: work runner: ProcessRunner new.
         self assert: result exitCode = 3
             description: 'the child exit code did not pass through: ',
@@ -788,7 +790,7 @@ end to end so it cannot regress.'>
         proofPath := work, '/proof.txt'.
         SourceFixtures write: (ExecFixtures proofScriptContentsFor: proofPath)
             toFile: 'good.st' in: work.
-        exec := self resultOf: (Array with: 'exec' with: work, '/good.st')
+        exec := self resultOf: (Array with: 'exec' with: 'good.st')
             in: work runner: ProcessRunner new.
         results add: exec.
         self assert: exec exitCode = 0

@@ -232,7 +232,9 @@ tearDown.'>
         SourceFixtures
             write: (ExecFixtures proofScriptContentsFor: proofPath)
             toFile: 'proof-script.st' in: work.
-        rExec := cli run: (Array with: 'exec' with: work, '/proof-script.st').
+        "workdir-relative argv (Sprint 22: the script resolves against
+         the working directory, never the process cwd)"
+        rExec := cli run: (Array with: 'exec' with: 'proof-script.st').
         self assert: rExec exitCode = 0.
         self assert: rExec lines = #().
         self assert: (File name: proofPath) contents = 'present'
@@ -475,34 +477,28 @@ tearDown.'>
 
     "---- S18: exec propagates the child's exit code ----"
 
-    execScriptNamed: aBaseName [
-        "A REAL script at a tmp/ path, tracked for teardown (Sprint 16,
-         sanctioned at the RED review of issue #18). From Doc E §4.1 and
-         §8 decision 56 exec refuses a path that is not an existing
-         regular readable file before anything is spawned, and S18's
-         claim is the PASS-THROUGH — which needs a script that really
-         is there. The path is unchanged, so the pinned child command
-         line stays byte-identical."
-        (File name: 'tmp') exists ifFalse: [Directory create: 'tmp'].
-        SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
-            toFile: aBaseName in: 'tmp'.
-        ^self track: 'tmp/', aBaseName
-    ]
-
     testS18_execPropagatesTheChildsExitCode [
-        | runner cli result |
-        self execScriptNamed: 'parley-s18-script.st'.
+        "The script is REAL and lives IN the working directory (Sprint
+         16 sanctioned the real file; Sprint 22 re-pins the location —
+         the exec precondition resolves the argv against the WORKING
+         DIRECTORY, never the process cwd, so the argv is the
+         workdir-relative spelling and the pinned child line carries
+         the workdir-resolved path)."
+        | work runner cli result |
+        work := self freshDir: 's18-work'.
+        SourceFixtures write: (ExecFixtures quitScriptContentsFor: 0)
+            toFile: 'parley-s18-script.st' in: work.
         runner := RecordingRunner answering: 7.
-        cli := self cliIn: 'tmp/parley-s18-work'
+        cli := self cliIn: work
             source: nil
             storeRoot: 'tmp/parley-s18-store'
             target: 'tmp/parley-s18-target'
             runner: runner.
-        result := cli run: #('exec' 'tmp/parley-s18-script.st').
+        result := cli run: #('exec' 'parley-s18-script.st').
         self assert: result exitCode = 7.
         self assert: result lines = #().
         self assert: runner commands = (Array with:
-            'gst -g -i -I tmp/parley-s18-target/parley.im --no-user-files tmp/parley-s18-script.st')
+            'gst -g -i -I tmp/parley-s18-target/parley.im --no-user-files tmp/parley-s18-work/parley-s18-script.st')
     ]
 
     "---- S19: unknown input answers usage ----"
