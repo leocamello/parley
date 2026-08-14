@@ -30,7 +30,7 @@ brainstorm that gate names as its input.*
 
 ### Recently delivered
 
-- **Sprint 21 — dependencies you are developing.** ✅ **DELIVERED 2026-08-13**, issue [#23](https://github.com/leocamello/parley/issues/23) closed, commit `3b299da`, **983 → 1091 laws**. §2 **item 6**, staged at Gate C 2026-08-12 against **983 laws**, `deferred 0×`, **undisplaced — the eleventh consecutive sprint the ranking won on its own merits.** `path:` and `devDependency:` as root-manifest-only vocabulary (the entry schema does not move), the overlay computed by the source layer, `--offline` and `--locked` as guard invariants, and the dependency-free-resolve rider (the plan's named orphan c, staged as S30–S33). §8 decisions **68, 69, 83** landed pre-RED at `c86a754` with the docs citing them. Carried gaps disposed at staging: **CF-1 re-deferred** with its reason (and this sprint's deliberate additions to its class declared), **CF-6 staged as a Gate A reviewer amendment**; F23's companion resolved by Ban 105 (`1f4cfce`). **Decision 84 minted mid-sprint** (`check`, `tree`, `why` leave the grammar; `search`/`info`/`outdated` excluded deliberately) and **68 amended in place** at Gate A. **Delivered and walked through the shipped binary at Gate B** — the edit-and-rerun workflow with the lock byte-identical and stderr empty at every step. **Gate B found and fixed a fail-wrong at exit 0**: `add`/`remove --locked` exited 0 while writing nothing, because `Exception>>pass` does not unwind on 3.2.5; falsifier `7f93a4f` red first, fix `9979ccd`. Close-out findings **F24–F32**, tally **25 defect-findings, 13 mechanism / 12 luck** — the ratio moved the wrong way. **Carried gap, ranked and probed, unscheduled:** `exec`'s script precondition resolves against the process cwd where Doc E §4.2 rules working-directory derivation (fail-stop, invisible under `bin/parley`).
+- **Sprint 21 — dependencies you are developing.** ✅ **DELIVERED 2026-08-13**, issue [#23](https://github.com/leocamello/parley/issues/23) closed, commit `3b299da`, **983 → 1091 laws**. §2 **item 6**, staged at Gate C 2026-08-12 against **983 laws**, `deferred 0×`, **undisplaced — the eleventh consecutive sprint the ranking won on its own merits.** `path:` and `devDependency:` as root-manifest-only vocabulary (the entry schema does not move), the overlay computed by the source layer, `--offline` and `--locked` as guard invariants, and the dependency-free-resolve rider (the plan's named orphan c, staged as S30–S33). §8 decisions **68, 69, 83** landed pre-RED at `c86a754` with the docs citing them. Carried gaps disposed at staging: **CF-1 re-deferred** with its reason (and this sprint's deliberate additions to its class declared), **CF-6 staged as a Gate A reviewer amendment**; F23's companion resolved by Ban 105 (`1f4cfce`). **Decision 84 minted mid-sprint** (`check`, `tree`, `why` leave the grammar; `search`/`info`/`outdated` excluded deliberately) and **68 amended in place** at Gate A. **Delivered and walked through the shipped binary at Gate B** — the edit-and-rerun workflow with the lock byte-identical and stderr empty at every step. **Gate B found and fixed a fail-wrong at exit 0**: `add`/`remove --locked` exited 0 while writing nothing, because `Exception>>pass` does not unwind on 3.2.5; falsifier `7f93a4f` red first, fix `9979ccd`. Close-out findings **F24–F32**, tally **25 defect-findings, 13 mechanism / 12 luck** — the ratio moved the wrong way. **Carried gap, ranked and probed:** `exec`'s script precondition resolves against the process cwd where Doc E §4.2 rules working-directory derivation (fail-stop, invisible under `bin/parley`). **Scheduled into Sprint 22 as a rider at Gate C, 2026-08-14** (decisions.md B-1a).
 
 ### Recently delivered
 
@@ -126,9 +126,14 @@ roadmap item that wins on its own merits rather than a displacement.
    **84** (minted mid-sprint — `check`, `tree` and `why` leave the grammar too). 983 laws →
    **1091**. **Not fully closed:** `exec`'s script precondition resolves against the process
    cwd where Doc E §4.2 rules working-directory derivation — fail-stop, invisible under
-   `bin/parley`, see Carried gaps.
+   `bin/parley`, see Carried gaps; scheduled into Sprint 22 as a rider at Gate C, 2026-08-14
+   (decisions.md B-1a).
 7. **The release** — *deferred 0×.* CHANGELOG, the declared release manifest with a law over
-   it, shell completions, the CI drift law, and the tag. §8 decisions 70, 71.
+   it, shell completions, the CI drift law, and the tag. §8 decisions 70, 71. **Grown at the
+   2026-08-14 brainstorm by two recorded overrules riding in the same sprint** (§3: the
+   environment layer, §8 decision 85; the self-hosting showcase, §8 decision 86), **plus two
+   disposals riding as riders**: the `exec` process-cwd conformance fix (decisions.md B-1a)
+   and the `ApplicationManifest` deletion (§8 decision 87).
 
 ### Harness, not a sprint
 
@@ -234,11 +239,11 @@ Recorded at Gate B — or, for the first item below, at an operator walkthrough 
 | Optional dependencies / feature flags | Unlike `path:` and `devDependency:`, these **must** appear in the index entry, so they are a schema change with a migration. Every benchmarked manager that has them added them after 1.0. Trigger: a package that genuinely cannot be expressed without them | §6, §8 decision 69 |
 | Workspaces / multi-package repositories | Real machinery — a workspace manifest, shared lock, member resolution — and nobody has three Parley packages in one repository yet. Trigger: a repository with three or more Parley packages | §6 |
 | `parley config` verb | The file is a small literal artifact edited by hand; a verb is ergonomics. Same reasoning as `parley retire`. Trigger: users mis-editing the file | §6; *getting Parley, and telling it where your index is* (§2) |
-| **Environment-variable source configuration** (`PARLEY_SOURCE` / `PARLEY_GIT` / `PARLEY_INDEX`) | **Ruled out explicitly at Sprint 20's Gate C, 2026-08-12, because it had vanished from decision 64 without a ruling either way** — and an unruled absence is what this row exists to end. Probed: the tree contains exactly one `getenv`, `PARLEY_ROOT` in `bin/parley-main.st`, which is decision 66's installation route and not a source. An environment layer inserts a third precedence level whose value **cannot be read out of the checkout**, so a resolution depending on an exported shell variable is not reproducible from the repository — the exact property `parley.config.st` exists to provide (decision 64). The stated use case, a CI caller injecting a source, is already answered twice: CI can write the two-line file, or pass the flag, which is what CI does anyway. Trigger: the first caller that can neither write a file **nor** pass a flag | §8 decision 64; Doc E §4.2 |
+| **Environment-variable source configuration** (`PARLEY_SOURCE` / `PARLEY_GIT` / `PARLEY_INDEX`) | **OVERRULED at the 2026-08-14 v1.0 pre-release brainstorm — rides in Sprint 22** (decisions.md A-Q1, held on second answer after a counter-argument, readback-confirmed). *Operator's ground:* the most user-visible 1.x candidate, and CI — the `--locked` audience Sprint 21 just served — is exactly who injects configuration through the environment; it should be in the tool a stranger meets at launch. *Counter-argument made and declined:* no external clock; the settled `Configuration` precedence is touched; a precedence-matrix law family plus the Doc E §4.2 amendment; one more surface on the release gate's stranger-walk. The precedence seat is §8 decision **85**: flag > env > file, amending decision 64's chain. — *Original reason, standing as the record; its trigger never fired:* Ruled out explicitly at Sprint 20's Gate C, 2026-08-12, because it had vanished from decision 64 without a ruling either way — and an unruled absence is what this row exists to end. Probed: the tree contains exactly one `getenv`, `PARLEY_ROOT` in `bin/parley-main.st`, which is decision 66's installation route and not a source. An environment layer inserts a third precedence level whose value **cannot be read out of the checkout**, so a resolution depending on an exported shell variable is not reproducible from the repository — the exact property `parley.config.st` exists to provide (decision 64). The stated use case, a CI caller injecting a source, is already answered twice: CI can write the two-line file, or pass the flag, which is what CI does anyway. Trigger: the first caller that can neither write a file **nor** pass a flag | §8 decisions 64, 85; Doc E §4.2; decisions.md A-Q1 (2026-08-14) |
 | `parley test` verb | `parley exec` already runs a script in the resolved environment; a `test` verb is a naming convention over it. Trigger: a conventional test path emerging in real packages | §6 |
 | `parley cache` verb | Rides with the already-deferred `--git` cache pruning. Trigger: the same as pruning | §6 |
 | Distro packaging, Homebrew, man pages, a documentation site | Distribution for a tool whose only installation route was broken until Sprint 17. Do the route first, measure demand second. Trigger: the first external contributor or packaging request | §6 |
-| Publishing Parley itself into a Parley index | Charming, and it proves nothing the test suite does not already prove end to end. No trigger | the 2026-08-07 re-ranking |
+| Publishing Parley itself into a Parley index | **OVERRULED at the 2026-08-14 v1.0 pre-release brainstorm — the launch showcase, rides in Sprint 22** (decisions.md A-Q2, held on second answer after a counter-argument, readback-confirmed). *Operator's ground:* marketing value the 2026-08-07 ruling never weighed — the launch must impress, and "the package manager that packages itself" is the impressive sentence. *Counter-argument made and declined:* Parley has no `Package.st` anywhere in the tree (probed 2026-08-14), so this starts from nothing; the suite already proves the publish→consume loop offline (Sprint 15 S16); two heroes is no hero; comparables self-host as dogfooding under real use, not day-one stunts. It ships with its cost named — the package-of-Parley is §8 decision **86**; its README seat is its **own section beside "How this was built", never the quickstart hero** (decisions.md C-1). — *Original reason, standing as the record:* Charming, and it proves nothing the test suite does not already prove end to end. No trigger | the 2026-08-07 re-ranking; §8 decision 86; decisions.md A-Q2/C-1 (2026-08-14) |
 
 ---
 
@@ -284,7 +289,7 @@ So v1.0 builds the protocol and proves it offline. The day someone hosts a Parle
 | 19 | Running your first command; getting Parley, configuring it | ⏱ **Items 3 AND 4, paired at Gate C 2026-08-10**: the Gate C probes shrank both — `exec` carved out of item 3 (carve-out re-ruled to `-g` pre-RED, decision 77), item 4's installation half found already delivered in Sprint 17 — so the pair held one sprint. §8 decisions 63, 64, 65, 76, 77, 78. ✅ Delivered, issue #21, commit `89ab038`. |
 | 20 | The verbs that close the grammar | Parity: all four exist in all seven benchmarked managers. §8 decisions 67, 79, 80, 81, 82. ✅ Delivered, issue #22, commit `91586dc`. |
 | 21 | Dependencies you are developing | Root-only vocabulary; cheapest **before** entries exist. §8 decisions 68, 69, 83, 84. ✅ Delivered, issue #23, commit `3b299da`. |
-| 22 | The release | CHANGELOG, release manifest, completions, **the tag**. |
+| 22 | The release | CHANGELOG, release manifest, completions, **the tag** — grown 2026-08-14 by the brainstorm's absorbed scope: env layer, showcase, `exec` cwd fix, `ApplicationManifest` deletion. |
 
 *(Rows 20–22 renumbered 2026-08-11, at the Sprint 19 document review: pairing items 3 and 4
 into Sprint 19 shifted every planned row below it, and the previous mapping ran to Sprint 23.
@@ -323,18 +328,29 @@ service and a from-scratch crypto implementation. This section is the ordinary n
 deferred for a reason, merely not in v1.0. Each item carries a **trigger, never a date**
 (finding F9), and none of them competes for a slot until its trigger fires.
 
+**Re-ranked 2026-08-14 at the v1.0 pre-release brainstorm** (decisions.md A-Q3/B-2), in the
+order the operator ranked it: a launch README saying "what's next" makes this ordering a
+public claim. The environment layer and the self-hosting showcase left this list for
+Sprint 22 by recorded overrule (§3).
+
 1. **⏱ CI's toolchain source.** Ubuntu 22.04 (`gnu-smalltalk` 3.2.5-1.3ubuntu1) is the only
    distro release still packaging the baseline — dropped from Ubuntu 24.04+ and Debian bookworm+.
    When GitHub retires the `ubuntu-22.04` runner label, CI needs a pinned container image on
    `ghcr.io` or a cached source build. **The external clock is somebody else's support calendar**,
    which is precisely what ⏱ marks. Trigger: *GitHub announces the label's deprecation.*
 2. **Color output.** §3. Trigger: the fixture set surviving one release unchanged.
-3. **`--json` / machine-readable output.** §3. Trigger: the first consuming tool.
-4. **Optional dependencies and feature flags.** §3 — a schema change with a migration.
-5. **Workspaces.** §3.
-6. **Changing an existing constraint (`add` over an existing clause).** §3.
-7. **`parley config`, `parley test`, `parley cache`.** §3 — ergonomics over settled mechanics.
-8. **Distribution: Homebrew, distro packaging, man pages, a documentation site.** §3.
+3. **`--json` / machine-readable output.** §3. Trigger: the first consuming tool; the
+   `#'parley-report' 1` alternative stays noted.
+4. **In-place constraint editing (`add` over an existing clause).** §3. Trigger: the first
+   user blocked by the refusal.
+5. **Provenance in the diagnosis** (release-plan orphan **d**; from Sprint 22 the same
+   trigger also covers `PARLEY_*`-supplied sources, per §8 decision 85). Trigger unchanged:
+   a user who cannot see which of two places supplied a failing path.
+6. **Distribution: Homebrew, distro packaging, man pages, a documentation site.** §3.
+   Trigger: the first external request.
+7. **Optional dependencies and feature flags.** §3 — a schema change with a migration.
+8. **Workspaces.** §3. Trigger: a three-package repository.
+9. **`parley config`, `parley test`, `parley cache`.** §3 — ergonomics over settled mechanics.
 
 **What is explicitly NOT on this line:** anything that would reopen the resolver's purity
 contract, the constraint normal form, or the index entry schema. Those are 2.0 conversations.

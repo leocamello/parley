@@ -2,6 +2,16 @@
 .parley/loop-state
 .parley/audit
 
+# Dogfooding state: the checkout is itself a Parley project (§8 decision 86).
+# A flagless resolve here writes runtime state BESIDE the harness's tracked
+# scope — these entries keep it out of git status, the sentinel and the gates.
+# Reset gesture in THIS checkout: remove these three subdirectories, never
+# .parley whole (scope is tracked; audit is unrecoverable).
+.parley/packages/
+.parley/git/
+.parley/index/
+/parley.lock
+
 # GNU Smalltalk artifacts
 *.im
 *.star

@@ -1,6 +1,6 @@
 # Parley Design — Manifest Authoring & Micro-Format Serialization
 
-> **Scope:** `Package.st` authoring, `ManifestBuilder`, `LibraryManifest` / `ApplicationManifest`, `ManifestVocabularyError` / `ManifestError`, the literal micro-format, and the `IndexEntryWriter` / `IndexEntryReader` pair. All classes in the `Parley` namespace.
+> **Scope:** `Package.st` authoring, `ManifestBuilder`, `LibraryManifest`, `ManifestVocabularyError` / `ManifestError`, the literal micro-format, and the `IndexEntryWriter` / `IndexEntryReader` pair. All classes in the `Parley` namespace. (`ApplicationManifest` was deleted in Sprint 22 — §8 decision 87.)
 
 ---
 
@@ -136,7 +136,7 @@ On any problems: signal **one `ManifestError`** carrying the full problem list (
 ## 4. Manifests
 
 - **`LibraryManifest`** — name, version (`Version`), summary/author/license, fileIns (ordered), dependencies (collection of `Dependency` with **loose** constraints). From Sprint 21 (§8 decision 69) it also carries **pathDependencies** (collection of `Parley.PathDependency`, `src/domain/` — an immutable `(name, declared path string)` value) and **devDependencies** (ordinary `Dependency` values in their own collection). **Both collections are root-manifest-only vocabulary and are never serialized into an index entry** — the entry writer reads neither. Immutable; read-only accessors.
-- **`ApplicationManifest`** — a `LibraryManifest` plus the application's lockfile association. Applications commit lockfiles; libraries never ship pins as constraints (the Bundler Gemfile/gemspec lesson — prevents graph deadlock).
+- **Applications commit lockfiles; libraries never ship pins as constraints** (the Bundler Gemfile/gemspec lesson — prevents graph deadlock). The rule is about the artifacts and is enforced by their shapes — the lock is the `CLI`'s own artifact (Doc E §4.1) and an index entry carries loose constraints only — so it needs no carrier object: `ApplicationManifest`, the manifest+lock association that once restated it, had zero production senders since Phase 1 and was deleted in Sprint 22 (§8 decision 87; §8 decision 23 amended in place).
 - `LibraryManifest class >> fromIndexEntry:` reconstructs a manifest from a parsed index entry; constraints re-parse through `VersionConstraint fromString:`, landing in the exact same normalized objects the builder produced. **Author path and resolver path converge on identical values** — provable via the round-trip law (§7). It reconstructs **no path or dev dependency**, because an entry never carries one (§8 decision 69): both collections are empty on that path by construction.
 
 ---
