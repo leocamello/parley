@@ -178,3 +178,54 @@ This section used to duplicate a roadmap summary, and it went stale — Sprints 
 | How do the human gates run? | this file | ✅ |
 | Narrative sprint history, staging notes | `operator/master-plan.md` §9 | ❌ local |
 | What each agent session was told | `operator/kickoffs/` | ❌ local |
+
+---
+
+## 6. The release gate — Gate B when the sprint ships a version
+
+Written at the v1.0.0 release (Sprint 22, issue #24), which ran this sequence; it is the
+close-out's §2 with a release stapled to the end. **The tag is cut by the operator, never
+by the agent, and nothing below starts until §2 steps 1–5 are done** — the wrap inspected,
+the settled diffs within bounds, the findings written with the tally and the README moved
+in the same edit, and the suite green over the finished tree.
+
+**Standing rule from F38: every close-out edit lands BEFORE the final verify.** A wrap or
+close-out that verifies and then writes has a hole the size of what it wrote — the sprints
+index drifted exactly there, and S26 caught it at this gate's first run.
+
+1. **Green twice at one commit, both seeds.** Locally: `verify-sprint.sh --observe` green
+   on the default seed **and** on a second explicit seed (a randomized suite that only ever
+   ran one seed did not run randomized). Then the push (step 4) and CI green on the same
+   SHA — two installations of the baseline, not one.
+2. **The stranger-walk, from a fresh clone, using only the README.** Mandatory, budgeted,
+   never skipped because the laws are green: **every defect this walk has ever found was in
+   a repository whose laws were green** (five in Sprint 16, six at its close-out, two
+   README gaps at v1.0.0). Clone to an isolated directory — committed state only, exactly
+   what the push will publish — and walk Installing, the sixty-second hero, the transcripts,
+   and the suite's own self-verification (`verify-sprint.sh --phase green` in the clone). A
+   product defect found here is fixed BEFORE the tag, through the ordinary gates; a
+   README defect is the operator's close-out edit, re-verified.
+3. **The release laws re-confirmed at the exact SHA being tagged**: the `releaseFiles`
+   walk, both CHANGELOG laws, the completions byte-identity, the CI one-gate law. They ran
+   inside step 1's suite; the point of this step is the SHA — nothing may land between the
+   verified commit and the tag. Set the CHANGELOG's release date to the tag's date before
+   this, not after.
+4. **The sprint's only push** (F17), preceded by F28's range check:
+   `git log origin/main..HEAD --oneline` and confirm **every** commit in the range is meant
+   to publish — the held flip, ruling commits, the wrap, the close-out docs. Push, then
+   **watch CI to green including the second-seed step before anything else happens.**
+5. **Tag the pushed HEAD**: `git tag -a v<X.Y.Z> -m "<message the operator writes>"`, then
+   `git push origin v<X.Y.Z>`. **No `Co-Authored-By`, no AI-attribution trailer — in the
+   tag message, the Release body, and every commit the release carries.**
+6. **The GitHub Release**: title `v<X.Y.Z>`, body = the CHANGELOG's section for this
+   version, **verbatim** — one source of the release's words, no trailers, nothing composed
+   fresh at the form.
+7. **The settings checklist** (decisions.md C-3, run at v1.0.0): repository description =
+   the tagline (*Smalltalk packages, resolved by conversation.*); topics `smalltalk`,
+   `gnu-smalltalk`, `package-manager`, `dependency-resolver`; confirm the Releases page
+   renders the body and the tag.
+8. **Roadmap and records**: strike the tag hold the release discharges (§5 at v1.0.0),
+   move the delivered item, promote the next-work section to the standing list, fill the
+   sprints-index commit cell, reconcile `operator/master-plan.md` §9 and say which way it
+   moved. Then the close-out comment on the milestone issue (`--body-file` from
+   `operator/staging/sprint-NN/`) and `gh issue close <N> --reason completed`.
