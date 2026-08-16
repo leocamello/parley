@@ -49,7 +49,7 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 13 | The ranking ↔ its own deferral history | deferral counters + written displacement at Gate C | Procedural — F2 <sup>[f]</sup> |
 | 14 | A new implementation of a settled protocol ↔ the settled consumers of it | Stage 2 checklist item 2, widened | Procedural — F1 <sup>[g]</sup> |
 | 15 | `wrap-sprint.sh`'s staging list ↔ the `scope-<N>` regex | Sprint 22 S25 law: every staged path, over existing files, admitted by the active scope; the matcher shape-guarded and proved able to refuse | Mechanical — F5 <sup>[h]</sup> |
-| 16 | A documented guarantee ↔ what the code actually does | — | **Unforced** — F8 <sup>[i]</sup> |
+| 16 | A documented guarantee ↔ what the code actually does | — | **Unforced** — F8, F39 <sup>[i]</sup> |
 | 17 | `§8` decision entries ↔ the design docs citing them | — | **Unforced** <sup>[j]</sup> |
 | 18 | `docs/sprints/README.md` index rows ↔ the sprint notes files that exist | Sprint 22 S26 drift law, both directions | Mechanical — first catch F38, in its first sprint alive <sup>[k]</sup> |
 | 19 | New tests that **pass** in RED ↔ the sprint's declared passes-in-red list | runbook Gate A step 3 weak-test item, via the pass-count arithmetic | Procedural — F10 |
@@ -86,7 +86,7 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 - **[s]** Both sides are enumerable and the comparison is cheap, which is what makes this row uncomfortable: for any argv, the refusals reachable from it are a finite list a person can write, and a law asserting only the code is checkable against that list by reading. Nothing does it. **The failure is silent by construction** — the law passes, and passes for a reason indistinguishable from the one it intends. Sprint 21's `testS29` survived a RED review, a Gate A review, eleven GREEN rounds and a wrap while proving nothing about the flag in its own name. A drift law is not obviously available (the reachable-refusal set is a property of control flow, not of a declared table), so the honest status is unforced with a **cheap procedural remedy**: when a law asserts an exit code, assert the sentence too, and where two refusals genuinely share a sentence, say so in the law.
 - **[t]** Raised by F24 and the most uncomfortable row in this table, because the pair is invisible in **both** artifacts: the code reads correctly against the language standard, and the toolchain's departure from that standard is not written anywhere in the repository until a probe puts it there. There is no text walk that finds it — `pass` is a legitimate send whose safe and unsafe shapes differ only in whether the handler's value is returned. **What is available is narrow and worth stating:** the repository now records the probed behaviour beside the one construct that depends on it, and the count of `pass` sends in `src/` is two, small enough that a reviewer can read both. That is not forcing. It is a small enough domain to enumerate, which is the weakest useful thing to say about a pair and is said here rather than dressed up.
 - **[h]** Both sides plain text and enumerable: the cheapest available drift law, unwritten. Open; scheduling is a Gate C question.
-- **[i]** Four instances (§8 decisions 43, 45, 49, 52), every one caught by a human reading. Not a drift-law candidate — comparing prose to behaviour is not a text walk.
+- **[i]** **Five** instances (§8 decisions 43, 45, 49, 52, and F39's stale `exec` transcript), every one caught by a human reading. *Amended at Sprint 23's Gate C:* the original verdict — "not a drift-law candidate, comparing prose to behaviour is not a text walk" — is right about **byte**-comparison and too strong as stated. F39's transcript names a fictional path (`/home/you/project/…`) precisely so it reads on any machine, so no run can reproduce its bytes; but its **shape** is checkable — that the documented diagnosis names an *absolute* path is exactly the property the fix introduced and the stale transcript violated. A shape law over documented examples is a live candidate. The row stays **Unforced** because no such law exists, not because none could.
 - **[j]** No finding raised it, and it has drifted before: the tracked log and the operator's copy diverged by four decisions, leaving tracked docs citing decisions a cloner could not resolve. The repair was a convention ("same commit as the doc change"), not a check. **Verified in sync at the time of writing** — 31 distinct decisions cited across tracked docs, all 31 resolve in §8. **Re-verified at the Sprint 15 close-out:** 55 decisions defined, every citation across `docs/`, `.github/` and `AGENTS.md` resolves, no dangling reference. Two consecutive clean checks is not forcing — it is two clean checks.
 - **[l]** Forced at Sprint 15 by F11's adopted runbook change, and it **paid out at the very next close-out**: Sprint 16's "the next boundary added will be in the same blind spot" is a claim that the present is safe, and §2.4 required it probed. Six `chmod` calls, six defects (F12). Procedural, not mechanical — a reviewer working a checklist, which is what every catch in this file has been.
 - **[m]** The pair F12 names and the reason it was invisible for eight sprints: `ManifestFile`'s diagnosis said `missing or unreadable Package.st` from Sprint 8 while its predicate tested `exists` alone. Both sides are enumerable — the diagnosis literals are in `src/`, the boundaries are a list somebody can write — so this is a drift-law candidate, unlike [i]. **Scheduled: Sprint 17 converts it into a table with a law over it.** Until then, the only thing standing between a new boundary and this defect is a reviewer remembering.
@@ -150,13 +150,18 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **31** |
-| — caught by a mechanism | **17** (F3, F4, F6, F10, F12, F14, F15, F16, F18, F21, F23, F24, F27, F33, F35, F36, F38) |
+| Defect-findings | **32** |
+| — caught by a mechanism | **18** (F3, F4, F6, F10, F12, F14, F15, F16, F18, F21, F23, F24, F27, F33, F35, F36, F38, F39) |
 | — caught by luck | **14** (F1, F2, F5, F11, F13, F17, F19, F22, F25, F28, F29, F30, F34, F37) |
 | Confirmation-findings (excluded from the ratio) | 6 (F7, F8, F9, F20, F31, F32) |
 
-**Sprint 22 moved the ratio the right way, and the reading still has an edge.** Six
-defect-findings, four mechanism / two luck (13/25 → 17/31). Three of the four mechanism
+**Sprint 22 moved the ratio the right way, and the reading still has an edge.** **Seven**
+defect-findings, five mechanism / two luck (13/25 → 18/32) — **six written at the close-out
+and the seventh, F39, written a week later at Sprint 23's Gate C.** The lateness is recorded
+rather than smoothed: F39 was found by the release gate's stranger-walk, survived only because
+it was carried in a staging note and named in the Gate C comment on issue #25, and would
+otherwise have been a defect the record forgot. That is F21's shape a second time, and the
+tally rows above already include it. Three of the four mechanism
 catches are the pipeline catching the sprint's own construction — the green gate halting on
 a stale shape freeze (F35) and on filtered-away family members (F36), and the brand-new
 sprints-index drift law catching the wrap's own sequence hole on its first day alive (F38)
@@ -1082,3 +1087,26 @@ What makes it a confirmation worth writing rather than a routine count: the zero
 **What caught it: a mechanism** — the S26 drift law, at the first gate that ran after the write. Three sprints of index drift were luck-found backfills; the law's first sprint alive converted the fourth into a halt.
 
 **Status.** First instance of the wrap-sequence hole as a named class; the wrap-order rule above is the companion.
+
+## F39 — A marker law asks whether a claim is *present*, never whether it is still *true*, and a transcript is a claim about bytes
+
+**Rule (portable).** Documentation laws that check for the presence of a string can only ever catch **deletion**. They are structurally blind to **staleness**, because a stale example still contains every marker — what changed is the world it describes, not the text. So a document held by presence-checking laws is *unheld* wherever it makes a claim about behaviour: transcripts, sample output, exit codes, exact diagnoses. Before trusting a documentation law family, ask of each law not *"what does it require the document to say?"* but *"what could go wrong in the world that would leave the document still passing?"* — and write that answer down beside the law, because it is the law's real bound.
+
+**Evidence (Parley, v1.0.0 Gate B stranger-walk, 2026-08-16).** The README's `exec` pre-flight transcript read:
+
+```
+$ parley exec typo.st
+typo.st: missing or unreadable script - nothing was run
+```
+
+Sprint 22's `exec` cwd conformance fix (decisions.md B-1a) had changed that diagnosis to name the **working-directory-resolved path**, so the shipped binary emitted `/home/you/project/typo.st: missing or unreadable script - nothing was run`. The README documented output the tool had stopped producing, and it did so **in the release commit** — `af53fa0`, suite green at 1140/1140, CI green, both seeds. Repaired at the gate in `df8f30a`.
+
+**Not one law noticed, and none of them was broken.** The README law family pins the badge, `## Installing`, the hero and how-built **in order**; the tally and law-count equalities; every verb the usage line declares; the `exec` consumer constraint; both publish layouts; and S27–S30's opening shape, links, count sentence and showcase seat. Every one of those passed over a README containing a false transcript, correctly — the section was present, the verb was named, the order held. **The family checks that the words are there. Nothing in it checks that they are true.**
+
+**What caught it: a mechanism, and the weakest kind there is** — the stranger-walk, runbook §6 step 2: a person cloning the repository fresh and typing the commands the README tells them to type. It is mandatory, budgeted and never skipped, which makes it a checklist item that halts rather than luck. But it is a human executing a procedure, and it is the *only* thing standing between a stale transcript and a released README in a project with 1140 laws. Worth stating in exactly those terms rather than filed as a routine catch.
+
+**Why no law covers it, and the honest limit on fixing that.** The obvious mechanism — run the command in a fixture and compare bytes against the transcript — **cannot work here, and the reason is instructive**: the repaired line reads `/home/you/project/typo.st`, a *fictional* path chosen so the example reads well on any machine. A transcript written for a human contains bytes no machine will reproduce. So footnote [i]'s verdict on inventory row 16 — *"not a drift-law candidate — comparing prose to behaviour is not a text walk"* — is right about byte-comparison and **too strong as stated**. What is checkable is the transcript's **shape**: that the diagnosis in the README's `exec` example names an *absolute* path, which is precisely the property the fix introduced and the stale transcript violated. A shape law over documented examples is a real candidate; a byte law is not.
+
+**The same blind spot has a second form, found independently one week later.** At Sprint 23's Gate C, §8 decision 89 recorded that `testTheReadmeDocumentsPublishingIntoBothLayouts` has two of its three markers — `flat` and `sparse` — satisfied by a *marketing sentence* in the Status paragraph that documents nothing. Delete the entire Publishing section and that law fails on one marker of three while its name goes on claiming a stranger can publish into either layout. **F39 is a claim no law pinned; that is a claim a law pins in name only.** Same failure, one level in: presence is not truth, and a marker is not a claim. The pair is the finding, and either alone understates it.
+
+**Status.** Inventory row 16's **fifth** instance (§8 decisions 43, 45, 49, 52, and this), and the first that suggests the row is *partly* forceable after all — footnote [i] is amended rather than left standing. **Written at Sprint 23's Gate C, one sprint after the gate that found it**, which is its own small entry in the same ledger as F21: a finding that is real when it is found and unwritten a week later is a finding the record nearly lost. It was carried across the gate boundary in a staging note and in the Gate C comment on issue #25, which is the only reason it survived at all.

@@ -431,8 +431,8 @@ The record is public, and it is the interesting half of the repository:
 
 | Findings tally (quoted from the audit) | Count |
 | --- | --- |
-| Defect-findings | **31** |
-| — caught by a mechanism | **17** |
+| Defect-findings | **32** |
+| — caught by a mechanism | **18** |
 | — caught by luck | **14** |
 | Confirmation-findings (excluded from the ratio) | **6** |
 
