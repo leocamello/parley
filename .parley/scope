@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 22
-phase: green
+sprint: 23
+phase: red
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -439,3 +439,83 @@ scope-21: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # docs/method/ remains operator-authored and is NOT agent-writable, as
 # scope-15 through scope-21 record.
 scope-22: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)
+
+# scope-23 is scope-22 VERBATIM — the first unchanged regex since Sprint
+# 21, and it is checked rather than assumed: docs/ already admits the new
+# docs/guide/ tree, tests/ admits the new law and fixture files,
+# CONTRIBUTING.md is already named, and the sprint adds NO src/ directory
+# and NO class. scripts/run-tests.st is therefore unchanged and must not
+# be edited.
+#
+# Issue #25. Specs of record: §8 decisions 88 (a diagram is a declaration
+# and the law states what it cannot prove), 89 (the README is
+# first-contact; a claim that moves takes its law with it) and 90 (§8 is
+# never relocated; it gains a lawed index) — all three landed BEFORE red
+# with the doc changes citing them, so the spec you read is already
+# correct. Beside them: decision 70 (a growing set rides as the file that
+# declares it), decision 43 (a law states its own textual bound), and
+# finding F19 (enumerate a rule's domain in the units the RULE quantifies
+# over).
+#
+# THE TOOL'S BEHAVIOUR DOES NOT CHANGE THIS SPRINT. No verb, no flag, no
+# diagnosis, no exit code, no serialized byte moves. If an implementation
+# step would change what the tool does, that is the signal to halt.
+#
+# Declared settled-class exceptions, each bounded (full bounds in issue
+# #25 — the issue is the contract):
+#
+#   Parley.Parley - releaseFiles gains EXACTLY ONE entry,
+#     'docs/guide/README.md', and it lands as a SIXTH Array group:
+#     3.2.5's Array class answers no with: longer than five, which is why
+#     the declaration is already five groups of five. Nothing else in the
+#     method, and nothing else in the file — `version` in particular does
+#     NOT move.
+#
+# Settled TEST files that move, and the ONLY two:
+#
+#   ReleaseHardeningTest - exactly two selectors,
+#     testTheReadmeCarriesTheExecConsumerConstraint and
+#     testTheReadmeDocumentsPublishingIntoBothLayouts, each re-pointed to
+#     its docs/guide/ page AND STRENGTHENED. Re-pointing alone is the
+#     defect: two of the layout law's three markers are satisfied today
+#     by a marketing sentence at README:13 that documents nothing (S4).
+#   PublishLayoutFixtures - the two marker selectors above, plus the
+#     page-source readers the re-pointed laws need.
+#
+# NOT movers, and each must still pass over the trimmed README (S5, S6):
+# ReleaseDriftTest's three laws and Sprint22AcceptanceTest S27-S30 keep
+# their current subjects while the subject is rewritten underneath them.
+#
+# THE VERSION DOES NOT MOVE. Parley version, the Package.st literal and
+# CHANGELOG.md all stay 1.0.0 and are not to be touched: the heading-set
+# law asserts the released set is exactly one member, so a bump breaks a
+# settled release law rather than adding a section. A docs increment is
+# not a release.
+#
+# THE DIAGRAMS AND THE §8 INDEX ARE GREEN DELIVERABLES, never pre-RED doc
+# amendments. A diagram that arrives before its law makes the law pass on
+# arrival and proves nothing. The assertion that fails on today's
+# diagramless tree is the CENSUS (S12); write it red first.
+#
+# DECLARED PASSES-IN-RED: EXACTLY TWO — S5 (the untrimmed README already
+# names every verb) and S6 (it already satisfies the slots law, the tally
+# equality and S27/S28/S30). Both are regression guards over artefacts
+# that already conform. THE LAW-COUNT LAW IS NOT AMONG THEM: it compares
+# the README's number against the DISCOVERED suite, so it goes red the
+# moment RED's new test files load and returns green only when the
+# sentence is rewritten at GREEN's end. Any OTHER pass in red is
+# undeclared by definition and is a finding at Gate A.
+#
+# NOT exceptions, each a halt-and-ask on #25: Configuration, CommandLine,
+# CLI, Publisher, ExecutionScope, Resolver and every strategy,
+# ConstraintLedger, PathOverlay, PathDependency, IndexSnapshot,
+# Resolution, PinVerification, all three sources,
+# Installer/InstalledSet/ContentStore, ProcessRunner, ManifestBuilder,
+# LibraryManifest, ManifestFile, ManifestCapture, ManifestEditor,
+# PathGuard, Sha256, IndexEntryWriter/Reader, SchemaShape.
+#
+# docs/method/ remains operator-authored and is NOT agent-writable, as
+# scope-15 through scope-22 record. F39 is owed and is the operator's to
+# write; the tally sentence in README.md moves only with findings.md, in
+# one edit, and neither moves this sprint.
+scope-23: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)

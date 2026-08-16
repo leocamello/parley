@@ -210,6 +210,14 @@ index drifted exactly there, and S26 caught it at this gate's first run.
    inside step 1's suite; the point of this step is the SHA — nothing may land between the
    verified commit and the tag. Set the CHANGELOG's release date to the tag's date before
    this, not after.
+
+   **The second release amends a law before it runs.** `testTheHeadingSetEqualsTheReleasedSet`
+   hard-codes the released set as `(Array with: Parley version)` — true at v1.0.0, and false
+   the moment a second version exists. Declaring the released set is a **staging** ruling for
+   the sprint that ships the version, never gate work discovered here with the tag pending.
+   (Probed at Sprint 23's Gate C, where the same law ruled the other question: a docs sprint
+   moves no version, so all three of the constant, the manifest literal and the CHANGELOG
+   stay put.)
 4. **The sprint's only push** (F17), preceded by F28's range check:
    `git log origin/main..HEAD --oneline` and confirm **every** commit in the range is meant
    to publish — the held flip, ruling commits, the wrap, the close-out docs. Push, then

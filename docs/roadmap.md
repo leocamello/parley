@@ -24,9 +24,26 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-*Nothing — Sprint 22 delivered and closed 2026-08-16 at the **v1.0.0 release**; the v1.0
-line is complete. The next sprint is staged at Gate C from **§6, the standing next-work
-list** (each item trigger-gated; §3's deferred list unchanged).*
+- **Sprint 23 — the documentation increment: the diagrams, the decision index, and the
+  README a stranger actually meets.** Issue #25, staged at Gate C 2026-08-16 against
+  **1140 laws**, `phase: red`. **Staged from the operator's post-release documentation
+  proposal rather than from §6 — and that is not a displacement.** Read cold at the gate,
+  **every one of §6's nine items is trigger-gated and not one trigger has fired.** Item 1's
+  ⏱ clock was probed rather than assumed: CI still pins `runs-on: ubuntu-22.04`, and the
+  only annotation on the latest run is a Node 20 deprecation for `actions/checkout@v4`, not
+  a runner-label deprecation. Items 2–9 all wait on users and adoption that a release
+  announced the same day cannot yet have produced. **Ranking rule §1.5 governs** — a
+  trigger-gated item does not compete for the top slot — so nothing was jumped, no deferral
+  counter moves, and no displacement declaration is owed; writing one would misdescribe what
+  happened. The first sprint of the 1.x line, and the first whose value is measured in how
+  easily a stranger understands the repository: the suite cannot check that, and the
+  stranger-walk can. Scope is the five-part proposal folded into one sprint at the
+  operator's ruling — the diagrams (P4), the decision index (P3), the two small fixes (P5),
+  the README trim (P1) and `docs/guide/` (P2) — with the trim's declared mover set as the
+  riskiest, lowest-numbered work. §8 decisions **88** (a diagram is a declaration, and the
+  law states what it cannot prove), **89** (the README is first-contact; a claim that moves
+  takes its law with it, strengthened rather than re-pointed) and **90** (§8 is never
+  relocated; it gains a lawed index).
 
 ### Recently delivered
 
@@ -367,6 +384,15 @@ Sprint 22 by recorded overrule (§3).
 
 **Promoted 2026-08-16 at the release close-out: the tag is cut, §2's seven-item line is
 complete, and this section is the standing list the next Gate C reads cold.**
+
+**Read cold at Sprint 23's Gate C, 2026-08-16, and the reading is worth recording: every
+item below was trigger-unfired, so this list ranked nothing.** That is the list working as
+designed in the week after a release — the project's own clock had outrun its users' — and
+not a gap in it. A list where nothing is *forced* is a different situation from a list with
+a clear #1, and the honest move is to name it rather than promote something to look
+decisive. The sprint staged instead came from the operator's post-release documentation
+proposal, under ranking rule §1.5 rather than by displacement. Item 1's external clock was
+probed rather than assumed and had not started.
 
 1. **⏱ CI's toolchain source.** Ubuntu 22.04 (`gnu-smalltalk` 3.2.5-1.3ubuntu1) is the only
    distro release still packaging the baseline — dropped from Ubuntu 24.04+ and Debian bookworm+.
