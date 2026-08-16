@@ -8,7 +8,7 @@ resolver enforces. The newest version heading below is held equal to
 mechanically current: bumping the constant without an entry fails the
 build.
 
-## [1.0.0] - 2026-08-14
+## [1.0.0] - 2026-08-16
 
 The first release: a complete, honest, local-and-git package manager
 for GNU Smalltalk 3.2.5, written entirely in Smalltalk, whose client

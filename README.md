@@ -64,6 +64,24 @@ $ echo $?
 
 No Parley command writes this file, which is why every one of those lines ends the same way: fix it or remove it. Removing it always works — the tool goes back to the flags it always had.
 
+### Supplying the index from the environment
+
+The same three values travel as environment variables — `PARLEY_SOURCE`, `PARLEY_GIT` and `PARLEY_INDEX` — for the caller that can neither type a flag nor write a file into your checkout: CI. Each supplies exactly what its flag would, and the precedence chain is **flag > environment > file**: a flag on the command line skips both lower levels, and a set variable skips the file, malformations included — the same skip the flag has always performed.
+
+```sh
+PARLEY_SOURCE=/ci/index parley resolve                    # resolves from /ci/index
+PARLEY_SOURCE=/ci/index parley resolve --source ../other  # the flag wins; the variable is not consulted
+```
+
+An **empty variable is unset**: `PARLEY_SOURCE= parley resolve` reaches your `parley.config.st` exactly as if nothing were exported. And two set variables under a flagless command are refused, not ranked — the file's own two-source rule, applied to the environment:
+
+```
+$ PARLEY_SOURCE=/ci/index PARLEY_GIT=/ci/repo parley resolve
+PARLEY_SOURCE and PARLEY_GIT are both set - the environment supplies at most one source, unset one or give a source flag
+$ echo $?
+1
+```
+
 ## The sixty-second walk
 
 The fastest true thing Parley can show you is the workflow that usually hurts: a library and its consumer, side by side, edited together. Sixty seconds, no index and no publish anywhere.
@@ -335,7 +353,7 @@ This is the closest thing to `python` inside an activated virtualenv, and it is 
 
 ```
 $ parley exec typo.st
-typo.st: missing or unreadable script - nothing was run
+/home/you/project/typo.st: missing or unreadable script - nothing was run
 $ echo $?
 1
 ```
@@ -413,9 +431,9 @@ The record is public, and it is the interesting half of the repository:
 
 | Findings tally (quoted from the audit) | Count |
 | --- | --- |
-| Defect-findings | **25** |
-| — caught by a mechanism | **13** |
-| — caught by luck | **12** |
+| Defect-findings | **31** |
+| — caught by a mechanism | **17** |
+| — caught by luck | **14** |
 | Confirmation-findings (excluded from the ratio) | **6** |
 
 The suite behind all of it stands at **1140** axiomatic laws, and both numbers above are held by drift laws in that same suite: the tally must equal the audit's own table, and the law count must equal the suite CI discovers — this section fails the build when it goes stale.

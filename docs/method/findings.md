@@ -48,10 +48,10 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 12 | `docs/roadmap.md` §3 deferred list ↔ what the sprint proposes to build | Stage 1 checklist item 5 | Procedural |
 | 13 | The ranking ↔ its own deferral history | deferral counters + written displacement at Gate C | Procedural — F2 <sup>[f]</sup> |
 | 14 | A new implementation of a settled protocol ↔ the settled consumers of it | Stage 2 checklist item 2, widened | Procedural — F1 <sup>[g]</sup> |
-| 15 | `wrap-sprint.sh`'s staging list ↔ the `scope-<N>` regex | — | **Unforced** — F5 <sup>[h]</sup> |
+| 15 | `wrap-sprint.sh`'s staging list ↔ the `scope-<N>` regex | Sprint 22 S25 law: every staged path, over existing files, admitted by the active scope; the matcher shape-guarded and proved able to refuse | Mechanical — F5 <sup>[h]</sup> |
 | 16 | A documented guarantee ↔ what the code actually does | — | **Unforced** — F8 <sup>[i]</sup> |
 | 17 | `§8` decision entries ↔ the design docs citing them | — | **Unforced** <sup>[j]</sup> |
-| 18 | `docs/sprints/README.md` index rows ↔ the sprint notes files that exist | — | **Unforced** <sup>[k]</sup> |
+| 18 | `docs/sprints/README.md` index rows ↔ the sprint notes files that exist | Sprint 22 S26 drift law, both directions | Mechanical — first catch F38, in its first sprint alive <sup>[k]</sup> |
 | 19 | New tests that **pass** in RED ↔ the sprint's declared passes-in-red list | runbook Gate A step 3 weak-test item, via the pass-count arithmetic | Procedural — F10 |
 | 20 | A carried gap's asserted **reachability** ↔ the runtime behaviour that would make it reachable | runbook Gate B §2.4 probe-or-mark-unprobed | Procedural — F11, F12 <sup>[l]</sup> |
 | 21 | A boundary's stated diagnosis (its **sentence**) ↔ the predicate that boundary actually **checks** | Sprint 17's boundary table: S12 drives every row through its hostile state and requires the row's own declared error | **Mechanical, known-partial** — F12, F13 <sup>[m]</sup> |
@@ -59,9 +59,14 @@ not a defect: it is a place a defect can live undetected for as long as it likes
 | 23 | `operator/master-plan.md` §9's narrative sprint history ↔ `docs/roadmap.md` §2, the tracked ranking it narrates | runbook §3 step 6 | **Unforced** <sup>[o]</sup> |
 | 24 | A gate whose validity depends on the **order** its steps ran in ↔ any evidence that they ran in that order | — | **Unforced** <sup>[p]</sup> |
 | 25 | A gate artifact's **self-asserted date** ↔ any durable record that the artifact existed on that date | — | **Unforced** — F21 <sup>[q]</sup> |
-| 26 | A number asserted in one document ↔ the same number in the document it was quoted from | — | **Unforced** — F22 <sup>[r]</sup> |
+| 26 | A number asserted in one document ↔ the same number in the document it was quoted from | Sprint 22 S28/S29 drift laws, for the README's quoted tally and law count | **Mechanical for those two instances; Unforced as a class** — F22 <sup>[r]</sup> |
 | 27 | A law's asserted **exit code** ↔ the set of distinct refusal paths that can reach that law's argv | — | **Unforced** — F26 <sup>[s]</sup> |
 | 28 | A control-flow construct that must **unwind** ↔ the toolchain's actual unwinding semantics for it | — | **Unforced** — F24 <sup>[t]</sup> |
+| 29 | The version constant ↔ every artifact restating it (the CHANGELOG's newest heading; the root `Package.st`'s literal) | §8 decision 70/86 drift laws, with falsifiers | Mechanical |
+| 30 | `.github/workflows/verify.yml` ↔ the one gate it must invoke | Sprint 22 S24 law (§8 decision 71; textual bound stated) | Mechanical |
+| 31 | `Parley releaseFiles` ↔ the files a release actually ships | the release-walk law and its grown-by-an-absent-name falsifier (§8 decision 70) | Mechanical |
+| 32 | `completions/*` ↔ the CLI's declared tables | generate-and-compare byte-identity laws, five declared inputs | Mechanical |
+| 33 | The root `Package.st` `fileIns` ↔ the recursive `src/` walk in load order | the fileIns drift law with its directory census and removed-name half (§8 decision 86) | Mechanical |
 
 **Eight mechanical, nine procedural, eleven unforced.**
 
@@ -145,10 +150,19 @@ denominator is defects, and it stays defects.
 
 | | Count |
 | --- | --- |
-| Defect-findings | **25** |
-| — caught by a mechanism | **13** (F3, F4, F6, F10, F12, F14, F15, F16, F18, F21, F23, F24, F27) |
-| — caught by luck | **12** (F1, F2, F5, F11, F13, F17, F19, F22, F25, F28, F29, F30) |
+| Defect-findings | **31** |
+| — caught by a mechanism | **17** (F3, F4, F6, F10, F12, F14, F15, F16, F18, F21, F23, F24, F27, F33, F35, F36, F38) |
+| — caught by luck | **14** (F1, F2, F5, F11, F13, F17, F19, F22, F25, F28, F29, F30, F34, F37) |
 | Confirmation-findings (excluded from the ratio) | 6 (F7, F8, F9, F20, F31, F32) |
+
+**Sprint 22 moved the ratio the right way, and the reading still has an edge.** Six
+defect-findings, four mechanism / two luck (13/25 → 17/31). Three of the four mechanism
+catches are the pipeline catching the sprint's own construction — the green gate halting on
+a stale shape freeze (F35) and on filtered-away family members (F36), and the brand-new
+sprints-index drift law catching the wrap's own sequence hole on its first day alive (F38)
+— which is what the gates are for, and still worth saying plainly. Both luck entries are
+review-eyes finding what no checklist demanded (F34's composition sweep, F37's cross-run
+comparison): the un-mechanized remainder is, as it has been since F1, the reviewer.
 
 **Sprint 21 moved the ratio the wrong way and that is the honest result.** Six defect-findings
 were added, **four of them luck** — and the two mechanism entries are qualified rather than
@@ -996,3 +1010,75 @@ Sprint 21 closed it **arithmetically**: `1091 − 983 = 108` new selectors, and 
 What makes it a confirmation worth writing rather than a routine count: the zero **held through eleven GREEN rounds of reviewer edits**, and it held for a reason that was chosen rather than lucky — every one of the eleven behaviour re-pins added assertions **inside** an existing method, so `run` never moved off 1091 from RED to green. Had any re-pin been written as a new law beside the old one — the natural shape, and the tidier-looking diff — the category would have been non-zero, and the only thing that would have noticed is this declaration.
 
 **No defect behind it.** Counted as a confirmation and excluded from the ratio.
+
+---
+
+## F33 — A count carried in the wrong units survives every document and dies at the first machine
+
+**Rule (portable).** A number that gates arithmetic states its **unit**, and is derived by enumerating that unit — a grep for occurrences counts hits, sends or lines, never the selectors, files or laws the sentence claims. And a count quoted from document to document carries its unit error with it: **re-derive at each consumer, or the chain launders a miscount into a fact.**
+
+**Evidence (Parley, Sprint 22).** §8 decision 87 as pushed at `27f68c8` declared the `ApplicationManifest` deletion as "four test laws (`PinVerificationTest` ×2, `Sprint3AcceptanceTest` ×2)". The repository held **three**: `Sprint3AcceptanceTest` has one `ApplicationManifest` selector, `testS7_applicationManifestAssociatesManifestWithLock`, whose two **sends** the ×2 counted. The miscount originated in the brainstorm's own §0 probe — a section titled *fact corrections found by probe* — and propagated through decision 87 into issue #24's scope bullet, exception table, F18 arithmetic and DoD. Falsified while opening RED by the count-reconciliation sweep (1091 selectors at HEAD, exactly three referencing the class), machine-confirmed at `run=1140 = 1091 − 3 + 52`, decision 87 amended in place at `83cd101`.
+
+**What caught it: a mechanism** — the RED count reconciliation the kickoff mandates, and behind it a second fence: Gate A's F10/CF-5 arithmetic cannot close on the wrong count (`1091 − 4 + 52 = 1139 ≠ 1140` halts the review).
+
+**Status.** First instance. Kin to **F19** (enumerate a rule's domain in the rule's own units) — F19 is about domains, this is about counts; the same disease, one artifact over.
+
+---
+
+## F34 — A categorical rule's domain was enumerated by declaration, and the sweep that found the rest was nobody's checklist item
+
+**Rule (portable).** When a rule says *every X does Y*, the list of X is derived by sweeping for X's defining property, never by asking the author to name the members. A declared list is a snapshot of the author's attention. And the sweep must belong to a mandated step — a sweep that lives in one reviewer's judgment runs exactly once.
+
+**Evidence (Parley, Sprint 22).** The pre-RED P1 ruling on issue #24 pinned "the three shipped-binary command composers" empty against the harness environment (§8 decision 85's immunity rule — categorical over compositions that spawn the shipped chain). A Gate A sweep over every composition spawning `bin/parley`/`parley-main.st` in `tests/` found **five**: `PathFixtures wrapperCommandAt:in:args:root:outputTo:` and `relativeWrapperCommandWithArgs:outputTo:` carried no pins, their immunity resting on unprobed by-construction claims ("the wrapper dies first", "`--version` answers first"). Pinned by reviewer amendment in the reviewed suite (`5c56e06`).
+
+**What caught it: luck** — the reviewer swept on their own judgment; no checklist item demanded a composition sweep, and every law around the gap was green.
+
+**Status.** First instance of this flavor; **F35** and **F36** are the same lesson caught by the gate instead. The mandate now lives here: a categorical rule's Gate A review enumerates the domain by sweep and reconciles it against the declaration, both directions.
+
+---
+
+## F35 — A sprint-local non-mover proof standing as a shape freeze fails the sprint that follows the rules
+
+**Rule (portable).** A law written to prove *this sprint did not touch X* must assert X's **boundary**, never X's **shape**. A shape frozen in a second file becomes a contradiction the moment a ruling legitimately grows the shape — and it fails in the sprint that follows the process, not the one that broke it. One property, one law: shape lives with its single authority, and the non-mover proof keeps only the set and separation clauses that were its actual claim.
+
+**Evidence (Parley, Sprint 22, mid-GREEN — issue #24 comment 5297752635).** Sprint 21's `ModeFlagTest>>testTheSourceFlagTableIsUntouched` froze `sourceFlags` at three columns to prove the mode flags entered no source row. §8 decision 85's ruled fourth column made the reviewed `SourceFlagTest` re-pin (`row size = 4`) and the freeze mutually unsatisfiable — invisible in red, when the table was still three columns wide. GREEN halted on the contradiction; ruled as drop-the-clause, law renamed `testTheModeFlagsNeverEnterTheSourceTable` with the set freeze and mode/source separation intact, shape authority consolidated on `SourceFlagTest` alone (the `isLockString:`/`SchemaShape` dedup precedent). Landed in `af53fa0`. The mover sweep that missed it had enumerated the shape's consumers in one file — the enumeration half of this story is **F36**'s.
+
+**What caught it: a mechanism** — the green gate failed the moment the ruled column landed.
+
+**Status.** First instance.
+
+---
+
+## F36 — A domain sweep run through a filter throws away exactly the members the filter matches
+
+**Rule (portable).** An enumeration sweep runs **unfiltered**; every exclusion added to cut noise is a claim that no member lives in the excluded set, and that claim is reviewed nowhere. When a sweep must be narrowed, the excluded remainder is listed and eyeballed — the filter's job is triage, never definition.
+
+**Evidence (Parley, Sprint 22, GREEN).** C1's exec-cwd settled-mover family (ten files, pre-RED round, issue #24) was derived by a sweep whose `grep -v argv` exclusion — added to drop usage-grammar noise — hid the three members that drive `exec` through `argv:`-keyword helpers: `Sprint14AcceptanceTest` S14, `Sprint15AcceptanceTest` S16, and `Sprint16AcceptanceTest`'s typo'd-exec walk step. All three passed in red (the code still resolved against the process cwd) and failed the moment the fix landed; re-pinned under C1's property bound in `af53fa0`, and the sweep re-ran with no exclusions and closed (`docs/sprints/sprint-22-notes.md`, ambiguity 5).
+
+**What caught it: a mechanism** — the green gate; the hidden members could not stay green against the fix they existed to pin.
+
+**Status.** First instance as a named class. Kin to **F16** (spelling-derived impact lists): there the needle was too narrow, here the anti-needle swallowed members.
+
+---
+
+## F37 — "Byte-identical" was written about output whose print order is not deterministic
+
+**Rule (portable).** Compare run outputs as **sorted sets** of outcome lines, and write "set-identical" unless the comparison actually sorted. A byte-identity claim over unsorted output is falsified by the next run even when nothing changed — and a record that byte-compares unsorted output will one day report a phantom difference or mask a real swap.
+
+**Evidence (Parley, Sprint 22, Gate A — issue #24).** The Gate A review draft claimed "byte-identical outcome lines" across independent gate runs. Two verifier runs at the same seed printed the same 79 outcome lines in different orders — the sets identical, the order not. The review was amended before posting (the posted comment on #24 carries the caveat and the capture citation); no gate was affected, because the F10 recipe already pipes through `sort`.
+
+**What caught it: luck** — a second observer happened to run twice and compare; nothing mandated the cross-run comparison.
+
+**Status.** First instance. Practice adopted in the same gate: review records compare sorted outcome sets, and say so.
+
+---
+
+## F38 — What a wrap writes after its last verify is unverified, and the new drift law caught it on its first day alive
+
+**Rule (portable).** A gate's verify covers the tree at the moment it ran; anything written afterward ships unverified. Order the wrap **write everything, then verify, then commit** — a wrap that verifies and then writes has a hole exactly the size of what it wrote, and the hole sits in the artifact most recently touched, which is the one everyone assumes is freshest.
+
+**Evidence (Parley, Sprint 22, Gate B pre-pass).** The wrap wrote `docs/sprints/sprint-22-notes.md` **after** its final verify run, and `docs/sprints/README.md` carried no row 22 — the sprints index's **fourth** drift (inventory row 18's history), and the first caught by a mechanism: S26, the index↔notes drift law shipped by this same sprint, failed the Gate B pre-pass at `run=1140 passed=1139 failed=1`. Fixed by amending the index row into the wrap (`af53fa0`); both seeds re-verified green (20260718 and 42).
+
+**What caught it: a mechanism** — the S26 drift law, at the first gate that ran after the write. Three sprints of index drift were luck-found backfills; the law's first sprint alive converted the fourth into a halt.
+
+**Status.** First instance of the wrap-sequence hole as a named class; the wrap-order rule above is the companion.
