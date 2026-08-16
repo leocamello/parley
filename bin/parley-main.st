@@ -6,7 +6,11 @@
  It does exactly four things and holds no logic of its own:
 
    1. file in EVERY directory under src/, in load order;
-   2. send CommandLine in: <cwd> runner: ProcessRunner new  run: <argv>;
+   2. send CommandLine in: <cwd> runner: ProcessRunner new
+      environment: CommandLine processEnvironment  run: <argv>
+      (the environment keyword is Sprint 22's declared exception, C3 at
+      the issue #24 pre-RED round: the shipped seam is OPEN here and
+      closed everywhere else — naming a reader is not logic);
    3. print the result's lines;
    4. ObjectMemory quit: the result's exit code.
 
@@ -37,7 +41,8 @@ root := (Smalltalk getenv: 'PARLEY_ROOT') ifNil: ['.'].
 
 result := (Parley.CommandLine
     in: Directory workingName
-    runner: Parley.ProcessRunner new) run: Smalltalk arguments.
+    runner: Parley.ProcessRunner new
+    environment: Parley.CommandLine processEnvironment) run: Smalltalk arguments.
 result lines do: [:each | Transcript showCr: each].
 Transcript flush.
 ObjectMemory quit: result exitCode

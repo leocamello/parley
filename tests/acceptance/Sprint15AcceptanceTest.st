@@ -700,8 +700,11 @@ end-to-end loop that closes v1.0.'>
         SourceFixtures
             write: (PublishLayoutFixtures proofScriptContentsFor: proofPath)
             toFile: 'proof-script.st' in: consumer.
+        "workdir-relative argv (Sprint 22, the exec-cwd family's ruled
+         re-pin: the script resolves against the working directory,
+         never the process cwd — a member the C1 sweep found late)"
         result := self runIn: consumer
-            argv: (Array with: 'exec' with: consumer, '/proof-script.st')
+            argv: (Array with: 'exec' with: 'proof-script.st')
             runner: runner.
         self assert: result exitCode = 0.
         self assert: (self contentsOf: proofPath) = 'present'

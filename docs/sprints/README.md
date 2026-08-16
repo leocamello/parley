@@ -34,6 +34,7 @@ number is the total axiomatic laws green at that sprint's close.
 | [19](sprint-19-notes.md) | The commands stop shouting, and the project remembers its index — `Configuration`, the plumbing redirects | [#21](https://github.com/leocamello/parley/issues/21) | `89ab038` | 910 |
 | [20](sprint-20-notes.md) | The verbs that close the grammar — `remove`, `search`, `info`, `outdated`, the six usage grounds | [#22](https://github.com/leocamello/parley/issues/22) | `91586dc` | 983 |
 | [21](sprint-21-notes.md) | Dependencies you are developing — `PathOverlay`, `PathDependency`, `--offline`, `--locked` | [#23](https://github.com/leocamello/parley/issues/23) | `3b299da` | 1091 |
+| [22](sprint-22-notes.md) | The release — v1.0.0: the machinery, the environment layer, the self-hosting showcase | [#24](https://github.com/leocamello/parley/issues/24) | — *(this sprint's own wrap; SHA filled at the close-out)* | 1140 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a

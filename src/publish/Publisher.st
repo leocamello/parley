@@ -273,18 +273,42 @@ setters; no value equality.'>
     stage [
         "Private — the destination-confined staging directory (the Doc
          D §4 precedent): the composed package.xml and a byte-exact
-         copy of every fileIn. A stage left behind by an earlier failed
-         build is swept first, so staging is deterministic and publish
-         is re-runnable. The stage is a subdirectory, so it is
-         invisible to a DirectorySource scan."
+         copy of every fileIn, PRESERVING EACH FILEIN'S RELATIVE
+         SUBDIRECTORY PATH with its parents created through PathGuard
+         (Doc F §1 step 3, §8 decision 86 — nested fileIns are a
+         probed toolchain fact: gst-package builds a star from a
+         nested filein and the settled child composition loads it).
+         A stage left behind by an earlier failed build is swept
+         first, so staging is deterministic and publish is
+         re-runnable. The stage is a subdirectory, so it is invisible
+         to a DirectorySource scan."
         <category: 'private-staging'>
         self removeStage.
         PathGuard createDirectory: self stageDir
             ifRefused: [:path | self refuseWrite: (PathGuard parentOf: path)].
         self write: self packageXml toFile: self stageDir, '/package.xml'.
         manifest fileIns do: [:each |
+            self ensureStageParentsFor: each.
             self write: (self contentsOfFileIn: each)
                 toFile: self stageDir, '/', each]
+    ]
+
+    ensureStageParentsFor: aFileIn [
+        "Private — the staging parents of a nested fileIn, created one
+         level at a time because 3.2.5's Directory create: is not
+         recursive. A flat fileIn has no parents and this answers
+         quietly; every level routes through PathGuard, so a refusal
+         is the stage's own declared PublishError exactly as the
+         stage directory's creation answers it."
+        <category: 'private-staging'>
+        | segments path |
+        segments := aFileIn substrings: '/'.
+        segments size < 2 ifTrue: [^self].
+        path := self stageDir.
+        1 to: segments size - 1 do: [:i |
+            path := path, '/', (segments at: i).
+            PathGuard ensureDirectory: path
+                ifRefused: [:p | self refuseWrite: (PathGuard parentOf: p)]]
     ]
 
     land [
@@ -453,16 +477,33 @@ setters; no value equality.'>
     ]
 
     removeStage [
-        "Private — remove the flat stage and the directory itself;
-         silent when absent."
+        "Private — remove the stage TREE and the directory itself;
+         silent when absent. Recursive from Sprint 22 (§8 decision 86,
+         inside the stage exception): the stage now preserves nested
+         fileIn paths, so its sweep and its post-land removal own the
+         directories the staging created — a flat removal would refuse
+         its own successful publish at the cleanup step, on exactly
+         the nested paths the showcase exists to prove."
         <category: 'private-staging'>
         (PathGuard exists: self stageDir) ifFalse: [^self].
-        (PathGuard filePathsIn: self stageDir
+        self removeStageTree: self stageDir
+    ]
+
+    removeStageTree: aPath [
+        "Private — depth-first removal through the chokepoint;
+         entryNamesIn: is the enumeration that SEES subdirectories,
+         which File>>files does not."
+        <category: 'private-staging'>
+        (PathGuard entryNamesIn: aPath
             ifRefused: [:path | self refuseWrite: path])
                 do: [:each |
-                    PathGuard remove: each
-                        ifRefused: [:path | self refuseWrite: path]].
-        PathGuard remove: self stageDir
+                    | full |
+                    full := aPath, '/', each.
+                    (PathGuard isDirectory: full)
+                        ifTrue: [self removeStageTree: full]
+                        ifFalse: [PathGuard remove: full
+                            ifRefused: [:path | self refuseWrite: path]]].
+        PathGuard remove: aPath
             ifRefused: [:path | self refuseWrite: path]
     ]
 

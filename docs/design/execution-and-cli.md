@@ -275,7 +275,7 @@ Each declared boundary owes one law: a malformed input reaches its verb and is a
 `bin/parley` (POSIX sh) locates the Parley checkout and execs `gst -f "$PARLEY_ROOT/bin/parley-main.st" -- <argv>`; `parley-main.st` lives in `bin/` — NOT `src/exec/`, whose every `.st` the test harness files in, and a main script executes on file-in. It does exactly four things and holds no logic:
 
 1. file in **every** directory under `src/`, in load order;
-2. send `CommandLine in: <cwd> runner: ProcessRunner new` `run: <argv>`;
+2. send `CommandLine in: <cwd> runner: ProcessRunner new environment: CommandLine processEnvironment` `run: <argv>` — the `environment:` keyword is Sprint 22's declared exception (issue #24 pre-RED C3, §8 decision 85): the shipped entry point passes the one open environment reader, declared on `CommandLine` itself so the wrapper names a collaborator rather than composing one; the settled two-argument constructor keeps the seam closed, which is what makes the suite immune to the harness process's environment;
 3. print the result's lines;
 4. `ObjectMemory quit:` the result's exit code.
 

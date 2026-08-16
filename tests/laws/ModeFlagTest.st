@@ -92,18 +92,18 @@ them.'>
                     row printString]
     ]
 
-    testTheSourceFlagTableIsUntouched [
-        "THE DECLARED NON-MOVER, ASSERTED IN THIS SPRINT'S OWN FILE.
-         sourceFlags keeps exactly its three rows and its three columns:
-         the new flags build no source, and SourceFlagTest:149's shape
-         law must not move."
+    testTheModeFlagsNeverEnterTheSourceTable [
+        "Sprint 21's boundary, kept precise: the mode flags build no
+         source and enter no source-flag row, and the source-flag SET
+         stays exactly its three names. The row SHAPE is deliberately
+         not asserted here - its single authority is SourceFlagTest's
+         Sprint 22 law (row size = 4 with the PARLEY_ variable field,
+         §8 decision 85). Renamed at the Sprint 22 GREEN grant from
+         testTheSourceFlagTableIsUntouched: a column a ruling grew is
+         not the boundary this law guards."
         self assert: CommandLine sourceFlagNames
             = (Array with: '--source' with: '--git' with: '--index')
             description: CommandLine sourceFlagNames printString.
-        CommandLine sourceFlags do: [:row |
-            self assert: row size = 3
-                description: 'a source-flag row grew to ',
-                    row size printString, ' columns'].
         CommandLine modeFlagNames do: [:flag |
             self deny: (CommandLine sourceFlagNames includes: flag)
                 description: flag, ' was forced into the source table']

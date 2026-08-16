@@ -573,8 +573,11 @@ end-to-end exit criterion.'>
         SourceFixtures
             write: (ExecFixtures proofScriptContentsFor: proofPath)
             toFile: 'proof-script.st' in: work.
+        "workdir-relative argv (Sprint 22, the exec-cwd family's ruled
+         re-pin: the script resolves against the working directory,
+         never the process cwd — a member the C1 sweep found late)"
         result := self runIn: work
-            argv: (Array with: 'exec' with: work, '/proof-script.st')
+            argv: (Array with: 'exec' with: 'proof-script.st')
             runner: runner.
         self assert: result exitCode = 0.
         self assert: (self contentsOf: proofPath) = 'present'

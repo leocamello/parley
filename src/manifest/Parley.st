@@ -42,6 +42,47 @@ Parley namespace binding inside the namespace itself (issue #3).'>
         ^'1.0.0'
     ]
 
+    Parley class >> releaseFiles [
+        "WHAT A PARLEY RELEASE CONSISTS OF, declared once and consumed
+         twice — the walk law asserts every named file exists and is
+         non-empty, and the falsifier drives the same walk over this
+         declaration grown by an absent name (§8 decision 70; issue
+         #24 P4). It lives beside version because a release is the
+         version's other half, and the gateway is the one class every
+         path already reaches.
+
+         EACH GROWING SET RIDES AS THE FILE THAT DECLARES IT, held by
+         the law that already owns the pair: the shipped code is the
+         root Package.st (its fileIns held to src/ by the recursive
+         drift law), and the delivery record is the sprint index (held
+         to the notes files by its own drift law). A second copy of
+         either list here would be a copy with no law over the pair.
+
+         The groups are concatenated in fives — 3.2.5's Array class
+         answers no with: longer than that."
+        <category: 'release'>
+        ^(Array with: 'bin/parley' with: 'bin/parley-main.st'
+            with: 'Package.st' with: 'README.md' with: 'LICENSE'),
+        (Array with: 'CHANGELOG.md' with: 'CONTRIBUTING.md'
+            with: 'SECURITY.md' with: 'CODE_OF_CONDUCT.md'
+            with: '.github/ISSUE_TEMPLATE/bug.md'),
+        (Array with: '.github/ISSUE_TEMPLATE/feature.md'
+            with: '.github/PULL_REQUEST_TEMPLATE.md'
+            with: '.github/workflows/verify.yml'
+            with: 'completions/parley.bash'
+            with: 'completions/_parley'),
+        (Array with: 'docs/design/README.md'
+            with: 'docs/design/rationale.md'
+            with: 'docs/design/architecture.md'
+            with: 'docs/design/domain-model.md'
+            with: 'docs/design/manifest-and-serialization.md'),
+        (Array with: 'docs/design/resolver.md'
+            with: 'docs/design/installer.md'
+            with: 'docs/design/execution-and-cli.md'
+            with: 'docs/design/publish-and-sources.md'
+            with: 'docs/sprints/README.md')
+    ]
+
     Parley class >> define: aBlock [
         "Evaluate aBlock with a fresh ManifestBuilder and answer the
          immutable LibraryManifest built from its declarations. The

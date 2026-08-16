@@ -1,5 +1,7 @@
 # Parley
 
+[![verify](https://github.com/leocamello/parley/actions/workflows/verify.yml/badge.svg)](https://github.com/leocamello/parley/actions/workflows/verify.yml)
+
 > *Smalltalk packages, resolved by conversation.*
 
 Parley is a modern, native command-line package manager for [GNU Smalltalk](https://www.gnu.org/software/smalltalk/) 3.2.5, written entirely in Smalltalk.
@@ -9,6 +11,104 @@ The language is called Smalltalk — casual conversation. A **parley** is the fo
 ## Status
 
 **v1.0, and the loop closes in both directions.** An author can publish a package into an index — flat, or the per-package sparse layout a client reads without ever downloading the whole index — and a consumer can resolve it, install it, and execute code against it in a curated child image, over a local directory, a git checkout or a `file://`/HTTP base. Every step is driven through the shipped `bin/parley` binary and proven that way by the test suite. What is *not* here yet: **registry hosting**, **prerelease versions**, **index signing**, and a `parley retire` verb (retirement *records* are honoured — a retired release is excluded from fresh resolution and reported by `parley check` — but the index owner writes the record by hand).
+
+## Installing
+
+Parley runs from a checkout. Clone it, then put the wrapper on your `PATH`:
+
+```bash
+git clone https://github.com/leocamello/parley.git ~/src/parley
+ln -s ~/src/parley/bin/parley ~/.local/bin/parley
+parley --version
+```
+
+The symlink is the supported route: `bin/parley` resolves its own symlink chain — including a link to a link — before locating the checkout, so it works from anywhere on your `PATH`. If you would rather point it explicitly, set `PARLEY_ROOT` to the checkout and the wrapper honours it:
+
+```bash
+PARLEY_ROOT=~/src/parley ~/src/parley/bin/parley --version
+```
+
+An installation whose `bin/parley-main.st` is missing exits `70` naming the path it looked for — a broken install is a defect in Parley, and it will not pretend to have succeeded.
+
+### Recording your index once, in `parley.config.st`
+
+`--source`, `--git` and `--index` are how you tell Parley where your index is. You do not have to retype them on every command: write them once, in a `parley.config.st` at the **project root**, beside `Package.st` and `parley.lock`.
+
+```smalltalk
+#(#'parley-config' 1 #source '../my-index' #git '' #index '')
+```
+
+It is Parley's own literal format — the same one index entries and lockfiles use — read by the same reader. All three keys are present, in that order, and the empty string means *not set*. Declare **at most one**: a file naming two sources is refused, for the same reason `--source` with `--git` is a usage error rather than a silent preference.
+
+```sh
+parley resolve                  # uses ../my-index, from the file
+parley resolve --source ../other  # uses ../other; the file is not read at all
+```
+
+**A flag on the command line always wins**, and when you pass one the configuration file is not consulted at all — not for the flag you gave, and not for the ones you left out. That is what makes the file safe to add to a project that already works: it can only supply a default you did not type.
+
+It lives at the project root and **not** under `.parley/`, deliberately. That directory is regenerable state — the store, the caches, the package target — and deleting it is a fair way to clean a project. Your configuration is yours, and it survives that:
+
+```sh
+rm -rf .parley && parley resolve   # still finds your index
+```
+
+Four things can be wrong with the file, and each answers one line naming it at exit `1`, never a backtrace: it is not a regular readable file, it does not parse, it is not a `#'parley-config' 1` artifact, or its body is malformed — a missing, misordered or unknown key, a value that is not a string, or two sources at once.
+
+```
+$ parley resolve
+/home/you/project/parley.config.st: malformed configuration, the keys must be #source #git #index in that order - fix it or remove it and try again
+$ echo $?
+1
+```
+
+No Parley command writes this file, which is why every one of those lines ends the same way: fix it or remove it. Removing it always works — the tool goes back to the flags it always had.
+
+## The sixty-second walk
+
+The fastest true thing Parley can show you is the workflow that usually hurts: a library and its consumer, side by side, edited together. Sixty seconds, no index and no publish anywhere.
+
+Make the pair, and give the library one class and a manifest (`parley init` writes a starter to edit):
+
+```smalltalk
+"demo/kernel-text/Text.st"
+Object subclass: KernelText [
+    KernelText class >> shout: aString [ ^aString, '!' ]
+]
+```
+
+```smalltalk
+"demo/kernel-text/Package.st"
+Parley define: [:pkg |
+    pkg
+        name: 'kernel-text';
+        version: '0.1.0';
+        fileIns: #('Text.st') ]
+```
+
+The consumer declares the library **by path** — a directory, not a constraint:
+
+```smalltalk
+"demo/my-app/Package.st"
+Parley define: [:pkg |
+    pkg
+        name: 'my-app';
+        version: '0.1.0';
+        fileIns: #('App.st');
+        dependency: 'kernel-text' path: '../kernel-text' ]
+```
+
+```sh
+cd demo/my-app
+parley resolve                # no index needed: the dependency is a directory
+cat > run.st <<'ST'
+Transcript showCr: (KernelText shout: 'sixty seconds').
+ObjectMemory quit: 0
+ST
+parley exec run.st            # → sixty seconds!
+```
+
+Now edit the sibling — make `shout:` append `'!!'` in `../kernel-text/Text.st` — and run `parley exec run.st` again. The change is there. No publish, no rebuild, no re-registration: `exec` reads a path dependency fresh on every run, and `parley.lock` records it as provenance (`#path '../kernel-text'`) rather than as a digest. When the library is ready for the world, `parley publish` takes over — and refuses a manifest that still declares a path, because a release cannot depend on a directory on your laptop.
 
 ## Commands
 
@@ -135,58 +235,6 @@ invalid constraint 'garbage' for dependency 'demo'
 - **`Package.st:3: parse error, expected ']'`, on standard error.** When the file will not even parse, GNU Smalltalk says so — naming your file *and* the line — and Parley **keeps** it, because it is the most useful sentence anything produces about a manifest that cannot be read and Parley cannot reconstruct it. On standard output Parley then reports `no manifest defined - the file never sent Parley define:`: it genuinely cannot tell a file that failed to parse from one that never declared a package, and rather than guess it says the thing that is true of both. The line on standard error is what tells you which you have.
 
 **Your own `Transcript` output during a load is captured and discarded, and that is deliberate.** If your `Package.st` prints something while Parley is reading it — a progress line, a computed version — you will not see it. A manifest is a *declaration*, and the only thing Parley takes from running it is the package it declares; everything the run writes to the terminal is captured so that the toolchain's own output cannot reach you, and your own writing is in that same stream with nothing to tell it apart. Parley's standard output is a contract with whoever is reading it: every line is one Parley composed or one it documents keeping. If you want a program whose output you see, that is `parley exec`.
-
-## Installing
-
-Parley runs from a checkout. Clone it, then put the wrapper on your `PATH`:
-
-```bash
-git clone https://github.com/leocamello/parley.git ~/src/parley
-ln -s ~/src/parley/bin/parley ~/.local/bin/parley
-parley --version
-```
-
-The symlink is the supported route: `bin/parley` resolves its own symlink chain — including a link to a link — before locating the checkout, so it works from anywhere on your `PATH`. If you would rather point it explicitly, set `PARLEY_ROOT` to the checkout and the wrapper honours it:
-
-```bash
-PARLEY_ROOT=~/src/parley ~/src/parley/bin/parley --version
-```
-
-An installation whose `bin/parley-main.st` is missing exits `70` naming the path it looked for — a broken install is a defect in Parley, and it will not pretend to have succeeded.
-
-### Recording your index once, in `parley.config.st`
-
-`--source`, `--git` and `--index` are how you tell Parley where your index is. You do not have to retype them on every command: write them once, in a `parley.config.st` at the **project root**, beside `Package.st` and `parley.lock`.
-
-```smalltalk
-#(#'parley-config' 1 #source '../my-index' #git '' #index '')
-```
-
-It is Parley's own literal format — the same one index entries and lockfiles use — read by the same reader. All three keys are present, in that order, and the empty string means *not set*. Declare **at most one**: a file naming two sources is refused, for the same reason `--source` with `--git` is a usage error rather than a silent preference.
-
-```sh
-parley resolve                  # uses ../my-index, from the file
-parley resolve --source ../other  # uses ../other; the file is not read at all
-```
-
-**A flag on the command line always wins**, and when you pass one the configuration file is not consulted at all — not for the flag you gave, and not for the ones you left out. That is what makes the file safe to add to a project that already works: it can only supply a default you did not type.
-
-It lives at the project root and **not** under `.parley/`, deliberately. That directory is regenerable state — the store, the caches, the package target — and deleting it is a fair way to clean a project. Your configuration is yours, and it survives that:
-
-```sh
-rm -rf .parley && parley resolve   # still finds your index
-```
-
-Four things can be wrong with the file, and each answers one line naming it at exit `1`, never a backtrace: it is not a regular readable file, it does not parse, it is not a `#'parley-config' 1` artifact, or its body is malformed — a missing, misordered or unknown key, a value that is not a string, or two sources at once.
-
-```
-$ parley resolve
-/home/you/project/parley.config.st: malformed configuration, the keys must be #source #git #index in that order - fix it or remove it and try again
-$ echo $?
-1
-```
-
-No Parley command writes this file, which is why every one of those lines ends the same way: fix it or remove it. Removing it always works — the tool goes back to the flags it always had.
 
 ## Publishing a package
 
@@ -352,6 +400,29 @@ and maps the Doc A–F letters used throughout the code to their files.
 | [Doc E — execution-and-cli.md](docs/design/execution-and-cli.md) | `ProcessRunner`, `ExecutionScope`, the CLI verbs, and the diagnosis boundary |
 | [Doc F — publish-and-sources.md](docs/design/publish-and-sources.md) | The publish pipeline, entry validation, and `GitIndexSource` |
 | [docs/sprints/](docs/sprints/) | The delivery record — what each sprint built, with its seed and law count |
+
+## How this was built
+
+Parley doubles as a methodology experiment: a five-stage sprint pipeline — requirements, architecture, failing tests, implementation, wrap — in which the test suite is written and human-reviewed before any implementation exists, every behavior ships as a law, and every design ruling lands in a decision log in the same commit as the change that cites it.
+
+The record is public, and it is the interesting half of the repository:
+
+- The six component specs — [domain-model.md](docs/design/domain-model.md), [manifest-and-serialization.md](docs/design/manifest-and-serialization.md), [resolver.md](docs/design/resolver.md), [installer.md](docs/design/installer.md), [execution-and-cli.md](docs/design/execution-and-cli.md) and [publish-and-sources.md](docs/design/publish-and-sources.md) — under [docs/design/](docs/design/), beside the system blueprint and its decision log.
+- The sprint-by-sprint delivery record in [docs/sprints/](docs/sprints/): what each sprint built, the ambiguities it hit and how each was resolved, and the seed and law count it closed at.
+- The method audit in [docs/method/findings.md](docs/method/findings.md), which grades the pipeline against its own misses and counts what actually caught each defect:
+
+| Findings tally (quoted from the audit) | Count |
+| --- | --- |
+| Defect-findings | **25** |
+| — caught by a mechanism | **13** |
+| — caught by luck | **12** |
+| Confirmation-findings (excluded from the ratio) | **6** |
+
+The suite behind all of it stands at **1140** axiomatic laws, and both numbers above are held by drift laws in that same suite: the tally must equal the audit's own table, and the law count must equal the suite CI discovers — this section fails the build when it goes stale.
+
+## Parley, packaged by Parley
+
+The checkout you are reading is itself a Parley package. A root [Package.st](Package.st) declares `parley` at the version the tool answers — the literal and the constant held equal by a drift law — and names every source file under `src/`, with its subdirectory path, in load order, held equal to the tree by a second one. On every suite run Parley **publishes itself** into a transient index through its own `publish` machinery, a consumer project resolves and installs `parley 1.0.0`, and a curated child image loads the star and asks the gateway its version. The package manager, packaged by itself, proved by the same laws that prove everything else; the showcase index is transient test state and is never committed.
 
 ## License
 

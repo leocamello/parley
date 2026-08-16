@@ -375,17 +375,21 @@ construction; zero public setters.'>
 
          Exit 1 rather than 2 on decision 80's precedent — the argv is
          well formed and the PROJECT is the limit — and it names what
-         the manifest declares plus the flags or the config file that
-         can answer, NEVER the usage block: the operator's command was
-         legal, so telling them how to type it would answer a question
-         they did not ask."
+         the manifest declares plus the three remedies that can answer:
+         the flags, the config file, and — from Sprint 22, §8 decision
+         85 — the environment variables, EACH LIST COMPOSED FROM THE
+         DECLARED TABLE and never spelled here. NEVER the usage block:
+         the operator's command was legal, so telling them how to type
+         it would answer a question they did not ask."
         <category: 'usage'>
         ^'no index is wired, and Package.st declares ',
             (CommandLine list: someNames conjunction: 'and'),
             ' - give ',
             (CommandLine list: CommandLine sourceFlagNames
                 conjunction: 'or'),
-            ', or record one in parley.config.st'
+            ', record one in parley.config.st, or set ',
+            (CommandLine list: CommandLine environmentVariableNames
+                conjunction: 'or')
     ]
 
     CLI class >> usageLinesFor: aGroundSymbol subject: aSubject [
@@ -796,14 +800,34 @@ construction; zero public setters.'>
          without this check no discipline an operator could adopt would
          make parley exec typo.st fail."
         <category: 'verbs'>
-        | code |
-        self requireRunnableScript: aScriptPath.
+        | resolved code |
+        resolved := self resolvedScriptPathFor: aScriptPath.
+        self requireRunnableScript: resolved.
         code := (ExecutionScope
             on: (InstalledSet tuples: Dictionary new)
             target: target
             runner: runner
-            fileIns: self siblingFileIns) run: aScriptPath.
+            fileIns: self siblingFileIns) run: resolved.
         ^CliResult lines: #() exitCode: code
+    ]
+
+    resolvedScriptPathFor: aScriptPath [
+        "Private — the script argv resolved against the WORKING
+         DIRECTORY, never the process cwd (Doc E §4.2's derivation
+         rule, conformed to at Sprint 22 — the Sprint 21 carried gap;
+         issue #24 S13). The one resolution site: the precondition and
+         the path handed to ExecutionScope both read this value, so
+         they can never disagree about which file the verb means.
+
+         THE BOUND IS STATED WITH THE CLAIM (P5, pre-RED round;
+         decision 43's standard): a path opening with a slash is
+         already resolved and passes through — resolution against a
+         base is defined only for relative paths, and a blind join
+         would break every absolute invocation through the shipped
+         binary."
+        <category: 'private'>
+        (aScriptPath startsWith: '/') ifTrue: [^aScriptPath].
+        ^workingDir, '/', aScriptPath
     ]
 
     siblingFileIns [

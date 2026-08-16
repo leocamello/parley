@@ -742,9 +742,11 @@ end to end so it cannot regress.'>
             = ExecFixtures initTemplateContents
             description: 'init did not write the settled skeleton'.
 
-        "3. the typo every first session contains."
-        typo := self resultOf: (Array with: 'exec'
-            with: (ReadinessFixtures missingScriptPathIn: work))
+        "3. the typo every first session contains — spelled
+         workdir-relative (Sprint 22, the exec-cwd family's ruled
+         re-pin); the refusal still names the workdir-resolved path
+         the oracle composes."
+        typo := self resultOf: (Array with: 'exec' with: 'typo.st')
             in: work runner: RecordingRunner new.
         results add: typo.
         self assert: typo exitCode = 1

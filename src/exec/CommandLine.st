@@ -38,22 +38,80 @@
 Namespace current: Parley.
 
 Object subclass: CommandLine [
-    | workingDir runner |
+    | workingDir runner environment |
 
     <comment: 'The composition root of one Parley invocation: the
 working directory (Package.st, parley.lock and the .parley/ state
-beneath it) and the one process seam, held immutably. run: answers a
-CliResult — it strips a leading ''--'', parses the flag grammar, wires
-the real collaborators, sends CLI run:, and maps anything that escapes
-to a diagnosis. Class-side construction; zero public setters; no value
-equality (the decision-23 precedent).'>
+beneath it), the one process seam, and the one environment seam, held
+immutably. run: answers a CliResult — it strips a leading ''--'',
+parses the flag grammar, wires the real collaborators, sends CLI run:,
+and maps anything that escapes to a diagnosis. Class-side
+construction; zero public setters; no value equality (the decision-23
+precedent).'>
 
     CommandLine class >> in: aWorkingDir runner: aProcessRunner [
         "Answer a command line over aWorkingDir and the one process
-         seam. Pathname-passive: nothing is read, written or spawned
-         here — the state directories are created by run:."
+         seam, with the ENVIRONMENT SEAM CLOSED. Pathname-passive:
+         nothing is read, written or spawned here — the state
+         directories are created by run:.
+
+         CLOSED IS THE CONTRACT, NOT A DEFAULT THAT HAPPENED (Sprint
+         22, §8 decision 85; pre-RED P1 ruling): the settled suite
+         holds 59 construction sites through this constructor, and a
+         constructor that read the process environment would hand every
+         flagless law's outcome to whatever the developer's shell has
+         exported. The one production construction —
+         bin/parley-main.st's single send — passes processEnvironment
+         explicitly, which is what makes the layer real in the shipped
+         tool and invisible to every law that did not ask for it."
+        <category: 'instance creation'>
+        ^self in: aWorkingDir runner: aProcessRunner
+            environment: self emptyEnvironment
+    ]
+
+    CommandLine class >> in: aWorkingDir runner: aProcessRunner environment: anEnvReader [
+        "Answer a command line whose environment seam is anEnvReader —
+         a one-argument valuable answering a variable's String value or
+         nil (the ProcessRunner precedent: laws drive environment
+         states by injection, never by mutating the harness process).
+         Pathname-passive, exactly as the two-argument form."
         <category: 'instance creation'>
         ^self new setWorkingDir: aWorkingDir runner: aProcessRunner
+            environment: anEnvReader
+    ]
+
+    CommandLine class >> processEnvironment [
+        "THE SHIPPED DEFAULT (§8 decision 85): the real process
+         environment through the kernel's one read. Declared on the
+         seam's own class so bin/parley-main.st stays glue — it names
+         this reader, it does not compose one. Probed on 3.2.5: an
+         unset name answers nil and a set-empty name answers the empty
+         string; the wiring folds both into UNSET, because a variable
+         set to the empty string is unset by rule."
+        <category: 'environment'>
+        ^[:name | Smalltalk getenv: name]
+    ]
+
+    CommandLine class >> emptyEnvironment [
+        "The closed seam: every variable unset. What the two-argument
+         constructor pins by delegation."
+        <category: 'environment'>
+        ^[:name | nil]
+    ]
+
+    CommandLine class >> twoVariablesRefusalFor: aName and: anotherName [
+        "The declared refusal for two source variables set while the
+         argv carries no source flag (pinned in RED, issue #24): the
+         configuration file's own two-source rule — Doc B §5.7, at most
+         one recorded source, both offenders named — applied to the
+         second supplier of recorded state. One declared wording,
+         consumed by the refusing site and by the law that holds it
+         (§8 decision 81's rule). The remedy is checked (decision 58):
+         unsetting one always works, and a source flag always wins by
+         the precedence chain itself."
+        <category: 'environment'>
+        ^aName, ' and ', anotherName,
+            ' are both set - the environment supplies at most one source, unset one or give a source flag'
     ]
 
     "---- the declared error taxonomy (Doc E §4.2) ----"
@@ -131,15 +189,31 @@ equality (the decision-23 precedent).'>
          The third column exists because the two sources' construction
          protocols genuinely differ — a directory needs a path, a git
          index needs a repo, a cache and the process seam — and neither
-         settled class is touched to pretend otherwise."
+         settled class is touched to pretend otherwise.
+
+         THE FOURTH COLUMN IS THE ROW'S ENVIRONMENT VARIABLE (Sprint
+         22, §8 decision 85): the name that supplies the same value the
+         flag would, when the argv carries no source flag. A PER-ROW
+         FIELD, NEVER SPELLED AT A USE SITE — the wiring, the amended
+         needs-index sentence and the completions all read these rows,
+         and the SourceFlagTest shape law holds the grown row."
         <category: 'source flags'>
         ^Array
             with: (Array with: '--source' with: DirectorySource
-                with: #directorySourceOn:)
+                with: #directorySourceOn: with: 'PARLEY_SOURCE')
             with: (Array with: '--git' with: GitIndexSource
-                with: #gitSourceOn:)
+                with: #gitSourceOn: with: 'PARLEY_GIT')
             with: (Array with: '--index' with: SparseIndexSource
-                with: #indexSourceOn:)
+                with: #indexSourceOn: with: 'PARLEY_INDEX')
+    ]
+
+    CommandLine class >> environmentVariableNames [
+        "Every variable the table declares, in row order — derived
+         exactly as sourceFlagNames is, so a sentence or a completion
+         naming the variables can never name a set the wiring does
+         not."
+        <category: 'source flags'>
+        ^self sourceFlags collect: [:row | row at: 4]
     ]
 
     CommandLine class >> modeFlags [
@@ -151,10 +225,10 @@ equality (the decision-23 precedent).'>
          THEY ARE NOT sourceFlags ROWS, AND THAT IS A RULING RATHER THAN
          A CONVENIENCE. --offline and --locked are VALUELESS: they build
          nothing and take no value, while every sourceFlags row is
-         (flag, Class, builder) and SourceFlagTest holds each row to
-         exactly three columns. Forcing a flag that constructs no source
-         into that shape would move a law this sprint declares a
-         non-mover.
+         (flag, Class, builder, variable) and SourceFlagTest holds each
+         row to exactly four columns. Forcing a flag that constructs no
+         source into that shape would move a law it has no business
+         moving.
 
          EACH IS A GUARD INVARIANT WITH ONE ENFORCEMENT SITE, so no
          per-verb applicability table exists and a verb that cannot
@@ -251,9 +325,11 @@ equality (the decision-23 precedent).'>
          isKindOf: chain and not a respondsTo:, which is a kind-check
          spelled differently.
 
-         The table itself does not grow a column: SourceFlagTest holds
-         every row to exactly three, and a fourth would be an undeclared
-         change to the one row shape this suite pins."
+         This predicate reads no new column of its own: SourceFlagTest
+         holds every row to the declared four (flag, Class, builder,
+         variable — the last added by §8 decision 85), and a
+         searchability column was refused at Sprint 20 for the same
+         reason the row shape is under law at all."
         <category: 'source flags'>
         | row |
         aPackageSource isNil ifTrue: [^true].
@@ -655,11 +731,12 @@ equality (the decision-23 precedent).'>
         ^self sourceFlags collect: [:row | row at: 1]
     ]
 
-    setWorkingDir: aWorkingDir runner: aProcessRunner [
-        "Private — initialization from the class-side constructor."
+    setWorkingDir: aWorkingDir runner: aProcessRunner environment: anEnvReader [
+        "Private — initialization from the class-side constructors."
         <category: 'private'>
         workingDir := aWorkingDir.
-        runner := aProcessRunner
+        runner := aProcessRunner.
+        environment := anEnvReader
     ]
 
     "---- running ----"
@@ -696,7 +773,7 @@ equality (the decision-23 precedent).'>
          grammar, and hand the remaining arguments to the settled CLI
          unchanged."
         <category: 'private'>
-        | args choice modes |
+        | args choice modes envRefusal |
         args := self withoutLeadingMarker: anArgvArray.
         "The two question flags are answered ahead of verb dispatch and
          BEFORE any state directory is created (§8 decision 57): asking
@@ -727,7 +804,20 @@ equality (the decision-23 precedent).'>
          configuration must be diagnosed as a broken file and not as an
          operator who forgot a flag; and BEFORE createStateDirectories,
          because a refused command leaves the filesystem as it found
-         it."
+         it.
+
+         THE ENVIRONMENT CONFLICT IS CHECKED AT THE SAME MOMENT AND FOR
+         THE SAME REASONS (§8 decision 85, placement ruled at the
+         pre-RED round as the file's true mirror and nothing more): two
+         set variables under a flagless argv are the second supplier's
+         two-source defect, diagnosed exactly where the file's own
+         malformed body is — before the usage determination, in every
+         case including an argv that would answer usage, and before any
+         state exists. With a source flag present the environment is
+         never examined at all, this conflict included, exactly as the
+         file is never read under a flag."
+        envRefusal := self twoVariablesRefusalIn: args.
+        envRefusal notNil ifTrue: [^envRefusal].
         choice := self sourceChoiceIn: args.
         "AND NO OTHER USAGE ERROR CREATES PROJECT STATE EITHER (§8
          decision 57, second half). The question flags were placed above
@@ -791,6 +881,14 @@ equality (the decision-23 precedent).'>
          file and answers values, and choosing between a value and a
          flag is wiring.
 
+         THE CHAIN IS flag > environment > file (§8 decisions 64 and
+         85), AND EACH WINNING LEVEL SKIPS EVERYTHING BELOW IT: a flag
+         consults neither the environment nor the file, and an
+         environment-supplied source skips the file — so a malformed
+         parley.config.st under PARLEY_SOURCE is not diagnosed, the
+         same ruled silence a flag produces, driven explicitly by the
+         suite so it is behavior and not accident.
+
          It is a pair rather than a built source because the two must
          happen at different moments: the CHOICE is needed before the
          usage determination, and building a --git or --index source
@@ -798,12 +896,69 @@ equality (the decision-23 precedent).'>
          until createStateDirectories has run (3.2.5's Directory create:
          is not recursive)."
         <category: 'private-wiring'>
-        | rows |
+        | rows envChoice |
         rows := self sourceRowsIn: anArgvArray.
         rows isEmpty ifFalse: [
             ^Array with: rows first
                 with: (self valueOf: (rows first at: 1) in: anArgvArray)].
+        envChoice := self environmentChoice.
+        envChoice isNil ifFalse: [^envChoice].
         ^self configuredChoice
+    ]
+
+    twoVariablesRefusalIn: anArgvArray [
+        "Private — the declared two-variables refusal as a CliResult,
+         or nil when the argv carries a source flag (the whole level is
+         then unexamined, conflict included) or the environment sets at
+         most one variable. Named are the FIRST TWO set variables in
+         the table's order — the config boundary's own precedent for
+         its two-source refusal. Exit 1, never the usage block: the
+         argv is legal (decisions 80/83), and a composed answer rather
+         than a signaled error, so the §4.2 partition does not grow."
+        <category: 'private-wiring'>
+        | rows |
+        (self sourceRowsIn: anArgvArray) isEmpty ifFalse: [^nil].
+        rows := self setVariableRows.
+        rows size > 1 ifFalse: [^nil].
+        ^CliResult
+            lines: (Array with: (self class
+                twoVariablesRefusalFor: ((rows at: 1) at: 4)
+                and: ((rows at: 2) at: 4)))
+            exitCode: 1
+    ]
+
+    environmentChoice [
+        "Private — the (row, value) pair the environment supplies, or
+         nil when it supplies nothing. The conflict was refused before
+         this runs, so at most one row is set here; the declared table
+         is asked in its own order exactly as configuredChoice asks it."
+        <category: 'private-wiring'>
+        | rows |
+        rows := self setVariableRows.
+        rows isEmpty ifTrue: [^nil].
+        ^Array with: rows first
+            with: (self environmentValueOf: ((rows first) at: 4))
+    ]
+
+    setVariableRows [
+        "Private — every declared row whose environment variable is
+         SET: present and non-empty, because a variable set to the
+         empty string is unset (§8 decision 85; probed — 3.2.5's
+         getenv answers nil for absent and the empty string for
+         set-empty, and the rule folds both)."
+        <category: 'private-wiring'>
+        ^self class sourceFlags select: [:row |
+            (self environmentValueOf: (row at: 4)) notNil]
+    ]
+
+    environmentValueOf: aVariableName [
+        "Private — the variable's value through the one seam, folded to
+         nil when unset by either spelling."
+        <category: 'private-wiring'>
+        | value |
+        value := environment value: aVariableName.
+        (value isNil or: [value isEmpty]) ifTrue: [^nil].
+        ^value
     ]
 
     configuredChoice [
