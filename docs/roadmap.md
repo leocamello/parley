@@ -24,11 +24,34 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ### In flight
 
-*Sprint 22 — the release, item 7, the last of the seven — **in flight** as issue
-[#24](https://github.com/leocamello/parley/issues/24), staged at Gate C 2026-08-14 against
-this list, `deferred 0×`, **undisplaced — the twelfth consecutive sprint the ranking won on
-its own merits.** The two §3 overrules ride by the operator's recorded, counter-argued
-decisions (decisions.md, readback-confirmed 2026-08-14), not by displacement.*
+*Nothing — Sprint 22 delivered and closed 2026-08-16 at the **v1.0.0 release**; the v1.0
+line is complete. The next sprint is staged at Gate C from **§6, the standing next-work
+list** (each item trigger-gated; §3's deferred list unchanged).*
+
+### Recently delivered
+
+- **Sprint 22 — the release: v1.0.0.** ✅ **DELIVERED 2026-08-16**, issue #24 closed, commit
+  `af53fa0`, **1091 → 1140 laws**, tag **`v1.0.0`** cut at Gate B (the operator's release
+  gate, landed as runbook §6). §2 item 7, staged undisplaced — the **twelfth** consecutive
+  sprint the ranking won on its own merits, and the last of the seven holding the tag. The
+  release machinery (§8 decisions 70/71): `Parley class >> releaseFiles` — 25 entries walked
+  with a grown-by-an-absent-name falsifier; `CHANGELOG.md` held to `Parley version` by two
+  laws, one `[1.0.0]` section, no Unreleased heading; completions generated from five
+  declared inputs and held byte-identical by law; CI bound to the one gate by a textual law.
+  The **environment layer** (§8 decision 85, recorded overrule): `PARLEY_SOURCE`/`PARLEY_GIT`/
+  `PARLEY_INDEX` as the source-flag table's per-row fourth field, **flag > environment >
+  file** at the one settled choice site, the ruled skip driven explicitly, two set variables
+  refused naming both, set-empty is unset, and the suite immune to the harness environment
+  through one injectable seam. The **self-hosting showcase** (§8 decision 86, recorded
+  overrule): a root `Package.st` with 47 subdirectory-pathed fileIns held to the recursive
+  `src/` walk by law — Parley publishes, installs and answers itself on every suite run. The
+  `exec` cwd conformance fix closed Sprint 21's carried gap (three late family members
+  caught by the green gate — **F36**), and `ApplicationManifest` was deleted (§8 decision
+  87, amended in place at Gate A: three laws, not four — **F33**). Close-out findings
+  **F33–F38**; tally **31 defect-findings, 17 mechanism / 14 luck — moved the right way**;
+  inventory rows 29–33 added, rows 15/18/26 now forced. The stranger-walk found **no product
+  defect** and two README gaps (the environment layer undocumented; a transcript predating
+  the cwd fix), both fixed at the gate.
 
 ### Recently delivered
 
@@ -130,12 +153,18 @@ roadmap item that wins on its own merits rather than a displacement.
    cwd where Doc E §4.2 rules working-directory derivation — fail-stop, invisible under
    `bin/parley`, see Carried gaps; scheduled into Sprint 22 as a rider at Gate C, 2026-08-14
    (decisions.md B-1a).
-7. **The release** — *deferred 0×.* CHANGELOG, the declared release manifest with a law over
-   it, shell completions, the CI drift law, and the tag. §8 decisions 70, 71. **Grown at the
-   2026-08-14 brainstorm by two recorded overrules riding in the same sprint** (§3: the
-   environment layer, §8 decision 85; the self-hosting showcase, §8 decision 86), **plus two
-   disposals riding as riders**: the `exec` process-cwd conformance fix (decisions.md B-1a)
-   and the `ApplicationManifest` deletion (§8 decision 87).
+7. ~~**The release**~~ — ✅ **DELIVERED in Sprint 22** (issue #24, commit `af53fa0`,
+   **1091 → 1140 laws**), *deferred 0×, undisplaced — the twelfth consecutive sprint the
+   ranking won on its own merits* — **and the `v1.0.0` tag is cut at its Gate B.** CHANGELOG,
+   the declared release manifest with a law over it, shell completions, the CI drift law,
+   and the tag. §8 decisions 70, 71. **Grown at the 2026-08-14 brainstorm by two recorded
+   overrules riding in the same sprint** (§3: the environment layer, §8 decision 85; the
+   self-hosting showcase, §8 decision 86), **plus two disposals riding as riders**: the
+   `exec` process-cwd conformance fix (decisions.md B-1a) and the `ApplicationManifest`
+   deletion (§8 decision 87).
+
+**All seven delivered. The v1.0 line closed at the `v1.0.0` tag (2026-08-16, Sprint 22);
+§6 is the standing next-work list a future Gate C reads.**
 
 ### Harness, not a sprint
 
@@ -298,8 +327,9 @@ into Sprint 19 shifted every planned row below it, and the previous mapping ran 
 These sprint numbers are predictions, not identifiers — §2's item numbers are the identifiers,
 and those are never compacted.)*
 
-**🔒 THE v1.0 TAG IS HELD UNTIL §2 ITEM 7 — THE RELEASE — LANDS** (Sprint 22 on the current
-mapping). Re-keyed 2026-08-11 from *"until Sprint 23 lands"*: the hold is keyed to the item
+~~**🔒 THE v1.0 TAG IS HELD UNTIL §2 ITEM 7 — THE RELEASE — LANDS** (Sprint 22 on the current
+mapping).~~ **STRUCK 2026-08-16 — item 7 landed (Sprint 22, issue #24, `af53fa0`) and
+`v1.0.0` is tagged at its Gate B (runbook §6).** Re-keyed 2026-08-11 from *"until Sprint 23 lands"*: the hold is keyed to the item
 rather than to a sprint number, because the mapping has already moved once — the pairing of
 items 3 and 4 into Sprint 19 shifted every planned row — and a hold spelled as a sprint
 number goes stale by citation the moment it does. Re-ruled 2026-08-07, replacing the
@@ -334,6 +364,9 @@ deferred for a reason, merely not in v1.0. Each item carries a **trigger, never 
 order the operator ranked it: a launch README saying "what's next" makes this ordering a
 public claim. The environment layer and the self-hosting showcase left this list for
 Sprint 22 by recorded overrule (§3).
+
+**Promoted 2026-08-16 at the release close-out: the tag is cut, §2's seven-item line is
+complete, and this section is the standing list the next Gate C reads cold.**
 
 1. **⏱ CI's toolchain source.** Ubuntu 22.04 (`gnu-smalltalk` 3.2.5-1.3ubuntu1) is the only
    distro release still packaging the baseline — dropped from Ubuntu 24.04+ and Debian bookworm+.
