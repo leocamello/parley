@@ -69,9 +69,13 @@ as pure values. Class-side construction; no value equality.'>
         | lines |
         lines := OrderedCollection new.
         self packageNames do: [:name || staged |
-            staged := aTargetDir, '/.parley-staging/', name, '.star'.
-            lines add: 'install -D -m 644 ', (self pathFor: name), ' ', staged.
-            lines add: 'gst-package --target-directory ', aTargetDir, ' ', staged].
+            staged := (ShellArgument fromString:
+                aTargetDir, '/.parley-staging/', name, '.star') shellString.
+            lines add: 'install -D -m 644 ',
+                (ShellArgument fromString: (self pathFor: name)) shellString,
+                ' ', staged.
+            lines add: 'gst-package --target-directory ',
+                (ShellArgument fromString: aTargetDir) shellString, ' ', staged].
         ^lines asArray
     ]
 ]

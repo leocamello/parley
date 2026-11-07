@@ -15,8 +15,10 @@ Parley define: [:pkg |
         author: 'Leonardo Nascimento';
         license: 'MIT';
         fileIns: #(
+            'src/compat/CommandArgumentError.st'
             'src/compat/Compat.st'
             'src/compat/PathGuard.st'
+            'src/compat/ShellArgument.st'
             'src/domain/Dependency.st'
             'src/domain/PathDependency.st'
             'src/domain/Version.st'

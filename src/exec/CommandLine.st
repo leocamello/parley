@@ -134,9 +134,10 @@ precedent).'>
     CommandLine class >> messageErrorClasses [
         "The declared Parley errors that carry only a messageText: it
          contributes as a single line. Execution failure is
-         environmental and fail-stop, so it batches nothing."
+         environmental and fail-stop, so it batches nothing. Invalid
+         process arguments are diagnosed before a child is spawned."
         <category: 'diagnosis'>
-        ^Array with: ExecutionError
+        ^Array with: ExecutionError with: CommandArgumentError
     ]
 
     CommandLine class >> diagnosedErrorClasses [

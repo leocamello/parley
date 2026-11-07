@@ -280,7 +280,7 @@ labels.'>
          red with the sprint and pass again in green. Declared on issue
          #11."
         <category: 'closed set'>
-        ^#('ExecutionError' 'InstallError' 'LockError' 'ManifestError'
+        ^#('CommandArgumentError' 'ExecutionError' 'InstallError' 'LockError' 'ManifestError'
            'PublishError' 'SourceError')
     ]
 

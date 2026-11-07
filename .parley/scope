@@ -10,8 +10,8 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 23
-phase: red
+sprint: 24
+phase: green
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-2: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -519,3 +519,8 @@ scope-22: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # write; the tally sentence in README.md moves only with findings.md, in
 # one edit, and neither moves this sprint.
 scope-23: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)
+
+# Sprint 24: command argument preservation, staged separately before resuming
+# the documentation increment (23). New helpers use existing directories.
+# RED remains subject to the human review and phase-flip gate.
+scope-24: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)

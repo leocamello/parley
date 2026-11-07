@@ -130,8 +130,11 @@ until snapshot. Class-side construction; zero public setters.'>
          naming the command actually run — flag included."
         <category: 'private'>
         ^(PathGuard exists: cache)
-            ifTrue: ['git -C ', cache, ' pull --ff-only --quiet']
-            ifFalse: ['git clone --quiet ', repo, ' ', cache]
+            ifTrue: ['git -C ', (ShellArgument fromString: cache) shellString,
+                ' pull --ff-only --quiet']
+            ifFalse: ['git clone --quiet -- ',
+                (ShellArgument fromString: repo) shellString, ' ',
+                (ShellArgument fromString: cache) shellString]
     ]
 ]
 

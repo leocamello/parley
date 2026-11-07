@@ -22,7 +22,24 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ## 2. Current priority list
 
-### In flight
+**2026-11-07 maintenance priority amendment.** The operator authorized the
+sequence: CI toolchain continuity, command/path reliability, then the already
+staged documentation increment. The current runner announcement satisfies §6
+item 1's external trigger. The CI change follows the existing `chore(ci)`
+precedent and must pass both seeds locally and on the hosted runner.
+
+**Sprint 24 — command argument preservation, staged before resuming Sprint 23.**
+Architecture §8 decision 91 replaces the no-quoting premise: an existing script
+whose filename contains a space currently passes the precondition but is split
+by the shell, never runs, and exits 0. Apply the rule to all five composing
+classes, keeping the process seam, streaming output and resolver unchanged.
+**Displacement:** Sprint 23's documentation increment is deferred 1×. Correct
+execution wins over documentation polish; the cost of delaying the docs is
+bounded. Its approved scope remains intact, but its test/decision/class counts
+must be refreshed after this repair. No historical sprint is renumbered.
+
+
+### Suspended documentation increment
 
 - **Sprint 23 — the documentation increment: the diagrams, the decision index, and the
   README a stranger actually meets.** Issue #25, staged at Gate C 2026-08-16 against
@@ -276,7 +293,7 @@ Recorded at Gate B — or, for the first item below, at an operator walkthrough 
 | `parley retire` verb | Retirement records are authored by the index owner; a verb is ergonomics | Sprint 10 scope |
 | Retirement **reporting** on `install` | Requires the index on the fast path, which the settled no-snapshot law forbids; belongs to `parley check` | §8 decision 37 |
 | Un-retiring; package-level (vs release-level) retirement | Retirement is additive and monotonic in MVP | Sprint 10 scope |
-| Output capture; any shell-quoting layer | **Split, 2026-08-07** — the row deferred one mechanism and was read as forbidding a different one. *Output capture* — buffering a child's stream into the image — stays deferred, reason unchanged: the child streams to Parley's own stdout/stderr. *Discarding* a plumbing child's stdout by redirect is **ruled in**: it buffers nothing, touches no stderr, and interpolates no user text, so this row's stated reason never reached it. *Shell quoting* stays deferred — Parley still composes command lines from paths it controls | Doc E §1; §8 decision 63; *running your first command* (§2) |
+| Output capture; any shell-quoting layer | **Split, 2026-08-07** — the row deferred one mechanism and was read as forbidding a different one. *Output capture* — buffering a child's stream into the image — stays deferred, reason unchanged: the child streams to Parley's own stdout/stderr. *Discarding* a plumbing child's stdout by redirect is **ruled in**: it buffers nothing, touches no stderr, and interpolates no user text, so this row's stated reason never reached it. **Shell argument quoting overruled, 2026-11-07 (decision 91):** the reproduced valid-filename failure invalidates the controlled-path premise. The bounded command-argument repair is staged separately; output capture remains deferred. *Historical reason:* shell quoting was deferred because Parley was assumed to compose paths it controls | Doc E §1; §8 decision 63; *running your first command* (§2) |
 | A prebuilt image | Per-invocation file-in is the honest MVP cost; deferred tooling polish. **Confirmed 2026-08-07 with fresh evidence**, not merely carried: re-probed at `--version` **47 ms** and `init` **55 ms** end to end, so decision 54's measurement-based deferral stands and is stronger than when it was made. None of its three triggers fires | Doc E §4.3, §8 decision 54 |
 | Pruning the `--git` cache | No verb removes checkouts; one directory per distinct repo location | Sprint 9 notes |
 | **Changing** an existing constraint | **Narrowed 2026-08-07 to this half alone.** `parley remove <pkg>` leaves this row: its stated trigger — *`add`'s recognizer surviving a sprint of real use* — fired four sprints ago, and it is *the verbs that close the grammar* (§2). **In-place replacement stays deferred, same reason:** it is an *edit* wanting decision 49's recognize-or-refuse ruling applied to overwriting, with its own refusal surface, and nothing is silently wrong meanwhile because `add` refuses a different constraint rather than overwriting it. New trigger: the first user who reports that refusal as a blocker | Sprint 13 scope, §8 decision 49; §6 |

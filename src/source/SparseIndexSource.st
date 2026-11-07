@@ -279,7 +279,9 @@ setters.'>
          SourceError naming the exact command line and exit code."
         <category: 'private'>
         | command code |
-        command := 'curl -sfS ', aUrl, ' -o ', aFilePath.
+        command := 'curl -sfS --url ',
+            (ShellArgument fromString: aUrl) shellString, ' -o ',
+            (ShellArgument fromString: aFilePath) shellString.
         code := runner run: command.
         code = 0 ifTrue: [^#hit].
         (code = 37 or: [code = 22]) ifTrue: [^#miss].

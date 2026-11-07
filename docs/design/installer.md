@@ -72,3 +72,8 @@ A flat directory whose filenames ARE the content hashes: `<sha256>.star`. Integr
 - **`Installer`:** the happy diamond installs (set contents, cache contents); one hash mismatch batches with other problems into ONE `InstallError` in package-name order and the mismatched bytes are NOT in the store; the cache-hit law (pre-populated store + always-failing source ⇒ successful install, proving hits skip fetch); re-install no-op.
 - **End-to-end (extends Doc C §7):** a real directory of entries **with real archives and true `Sha256` hashes** → resolve → `writeLock:on:` a lockfile to disk (byte-stable across runs) → install → the store contains exactly the resolved hashes; the registration plan renders the pinned command lines.
 - **Hygiene:** every fixture directory (entries, archives, stores, targets) lives under `tmp/`, is unique per test, and is removed in tearDown; `tmp/` is empty or absent after a clean run.
+
+
+## Command argument boundary amendment
+
+Decision 91 applies to `InstalledSet>>registrationCommandsFor:`. Each complete stored-archive, staged-archive and target-directory argument is rendered through `ShellArgument`; encode after joining path components. Existing safe-path command bytes remain unchanged. The plan stays a pure value and execution remains the responsibility of `ExecutionScope`. Demonstrate registration from/to paths containing spaces by loading the installed package, not only by comparing composed strings.

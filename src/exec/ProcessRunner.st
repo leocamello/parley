@@ -6,9 +6,9 @@
  exit code x 256 (staging-verified: 'exit 7' answers 1792) — so run:
  normalizes with // 256. Zero is success; nothing is signaled: the
  code is an answer whose meaning belongs to the caller. No output
- capture (the child's stdout/stderr flow to Parley's own) and no
- shell-quoting layer (Parley composes its own command lines from
- paths it controls) in the MVP."
+ capture: the child's stdout/stderr flow to Parley's own. Composers
+ preserve their dynamic arguments through ShellArgument (decision 91);
+ this seam neither parses nor re-quotes the command string."
 
 Namespace current: Parley.
 

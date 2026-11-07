@@ -199,3 +199,10 @@ Doc F §7.5 rules that a listing naming an entry the index does not hold is an *
 - **The listing:** a first publish creates it; a second publish into the same package appends and re-renders; versions order semantically (`1.9.0` before `1.10.0`, asserted on bytes); the same versions published in either order give byte-identical files; a malformed existing listing is one pinned `PublishError` problem with nothing written.
 - **Atomicity:** every refusal leaves the destination byte-identical (compare the whole tree, not just the listing); no scenario can produce a listing naming an absent entry — asserted by scanning the published tree with the settled `SparseIndexSource` and requiring a clean snapshot.
 - **The loop closes:** author A publishes into a sparse tree with `--layout sparse`; author B resolves, locks, installs and `exec`s against it through `--index <base>` over `file://`, with a real toolchain-built `.star`. Offline, no network, every path under `tmp/`.
+
+
+## Command argument boundary amendment
+
+Decision 91 applies at the existing composers: `Publisher>>buildCommand` renders the complete stage and package.xml paths; `GitIndexSource>>refreshCommand` renders the repository/cache arguments in both cold and warm commands; `SparseIndexSource>>fetchUrl:to:` renders the URL and output path. Cold git clone uses its operand terminator, and curl receives the URL through `--url`; declare and update the corresponding exact command oracles. Quoting does not perform URL percent-encoding or change snapshot/cache semantics.
+
+Keep the publisher's stdout redirect at its current execution site. Validate real publish/consume, cold/warm git and file-URL sparse retrieval with spaces/apostrophes where the child tools support them. Do not claim to repair gst-package's internal shell encoding or package.xml escaping as part of this boundary change.

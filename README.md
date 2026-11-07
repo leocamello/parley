@@ -436,7 +436,7 @@ The record is public, and it is the interesting half of the repository:
 | — caught by luck | **14** |
 | Confirmation-findings (excluded from the ratio) | **6** |
 
-The suite behind all of it stands at **1140** axiomatic laws, and both numbers above are held by drift laws in that same suite: the tally must equal the audit's own table, and the law count must equal the suite CI discovers — this section fails the build when it goes stale.
+The suite behind all of it stands at **1169** axiomatic laws, and both numbers above are held by drift laws in that same suite: the tally must equal the audit's own table, and the law count must equal the suite CI discovers — this section fails the build when it goes stale.
 
 ## Parley, packaged by Parley
 

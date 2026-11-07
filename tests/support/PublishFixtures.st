@@ -491,7 +491,7 @@ stream close', SourceFixtures newline
          actually run — and it is declared because it is
          operator-visible."
         <category: 'pinned wordings'>
-        ^'git clone --quiet ', aRepoPath, ' ', aCacheDir
+        ^'git clone --quiet -- ', aRepoPath, ' ', aCacheDir
     ]
 
     PublishFixtures class >> pullCommandFor: aCacheDir [

@@ -155,7 +155,7 @@ builders and curl-counting helpers. Stateless.'>
     SparseIndexFixtures class >> curlCommandFor: aUrl to: aFilePath [
         "The one transport command line, pinned."
         <category: 'pinned wordings'>
-        ^'curl -sfS ', aUrl, ' -o ', aFilePath
+        ^'curl -sfS --url ', aUrl, ' -o ', aFilePath
     ]
 
     SparseIndexFixtures class >> curlFailureProblemFor: aCommandString code: anInteger [

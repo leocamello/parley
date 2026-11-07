@@ -276,12 +276,14 @@ git.'>
     "---- S6: the boundary declares six, and the partition holds ----"
 
     testS6_theBoundaryDeclaresSixAndThePartitionHolds [
+        "Sprint 24 adds CommandArgumentError to the six original
+         diagnoses; the exhaustive, disjoint partition still holds."
         | parleyErrors diagnosed undiagnosed |
         parleyErrors := CommandLineFixtures parleyErrorClasses.
         self deny: parleyErrors isEmpty.
         diagnosed := CommandLine diagnosedErrorClasses.
         undiagnosed := CommandLineFixtures undiagnosedErrorClassNames.
-        self assert: diagnosed size = 6.
+        self assert: diagnosed size = 7.
         self assert: (CommandLineFixtures namesOf: diagnosed)
             = CommandLineFixtures diagnosedErrorClassNames.
         self assert: ((CommandLineFixtures namesOf: diagnosed)

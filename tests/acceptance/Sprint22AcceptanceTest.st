@@ -188,7 +188,7 @@ the restructured README.'>
         self deny: runner commands isEmpty
             description: 'PARLEY_GIT wired nothing that spawns'.
         self assert: runner commands first
-            = ('git clone --quiet ', (self absolute: repo), ' ',
+            = ('git clone --quiet -- ', (self absolute: repo), ' ',
                 work, '/.parley/git/',
                 (Sha256 hexDigestOf: (self absolute: repo)))
             description: 'the git wiring composed ',
@@ -203,7 +203,7 @@ the restructured README.'>
             runner: runner.
         self deny: runner commands isEmpty
             description: 'PARLEY_INDEX wired nothing that spawns'.
-        self assert: (runner commands first startsWith: 'curl -sfS ', base)
+        self assert: (runner commands first startsWith: 'curl -sfS --url ', base)
             description: 'the sparse wiring composed ',
                 runner commands first printString.
         self assert: (CommandLineFixtures does: runner commands first

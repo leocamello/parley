@@ -151,8 +151,10 @@ zero public setters.'>
          and nothing else — stdout byte-identical, exit code unchanged,
          so decision 45's pass-through is untouched."
         <category: 'running'>
-        ^'gst -g -i -I ', target, '/parley.im --no-user-files ',
-            self fileInPrefix, aScriptPath
+        ^'gst -g -i -I ',
+            (ShellArgument fromString: target, '/parley.im') shellString,
+            ' --no-user-files ', self fileInPrefix,
+            (ShellArgument fromString: aScriptPath) shellString
     ]
 
     fileInPrefix [
@@ -174,7 +176,9 @@ zero public setters.'>
         | out |
         fileIns isEmpty ifTrue: [^''].
         out := WriteStream on: String new.
-        fileIns do: [:each | out nextPutAll: each; nextPut: Character space].
+        fileIns do: [:each |
+            out nextPutAll: (ShellArgument fromString: each) shellString;
+                nextPut: Character space].
         ^out contents
     ]
 

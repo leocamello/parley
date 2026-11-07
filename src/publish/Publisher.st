@@ -584,8 +584,9 @@ setters; no value equality.'>
          type themselves; the stdout redirect belongs to the ACT of
          running it and is composed in silencedBuildCommand."
         <category: 'private-paths'>
-        ^'gst-package --target-directory ', self stageDir, ' ',
-            self stageDir, '/package.xml'
+        ^'gst-package --target-directory ',
+            (ShellArgument fromString: self stageDir) shellString, ' ',
+            (ShellArgument fromString: self stageDir, '/package.xml') shellString
     ]
 
     silencedBuildCommand [
