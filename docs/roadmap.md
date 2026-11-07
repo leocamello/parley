@@ -30,15 +30,23 @@ locally and on hosted run `42400445676` against `4d5ac7d`. Sprint 23 now
 passes 1195 laws; its final audit and publication evidence belong to issue
 #25. No historical sprint is renumbered and no release version changes.
 
-**Carried gap — locked path provenance ([#27](https://github.com/leocamello/parley/issues/27)), unscheduled.**
-The documentation walk found that changing a dependency's path while retaining
-its version lets `resolve --locked` succeed with the old path still pinned;
-subsequent execution reads that old path. Resolve without `--locked` after a
-path change and review the refreshed lock before execution. The implemented
-guard compares versions, not full provenance; the analogous archive-digest
-case has not been exercised. Rank and define the complete provenance/write-verb
-domain at the next Gate C. This documentation sprint records the defect and
-workaround; it does not change locked-command behavior.
+**Sprint 25 — locked pin provenance ([#27](https://github.com/leocamello/parley/issues/27)), implemented.**
+The operator-requested repair follows Doc E §4.2's existing write-guard
+contract. The guard compares complete serialized pin identity, names the
+first difference across both pin sets, and checks root identity and an
+absent empty lock after pins agree. The source-free install fast path is
+unchanged. All **1216 tests** pass on GNU Smalltalk 3.2.5; the final audit,
+committed-checkout probe and hosted evidence belong to issue #27. No version
+or wire format changes. See the [delivery record](sprints/sprint-25-notes.md).
+
+**Carried gap — verifier load diagnostics ([#28](https://github.com/leocamello/parley/issues/28)), unscheduled.**
+The first RED run emitted nonthrowing compiler diagnostics and omitted 33
+planned tests while still reporting RED success. The independent count and
+diagnostic check caught it; corrected fixtures restored all 1216 tests.
+Rank this verification-reliability defect at the next Gate C and scope both
+phase coverage and legitimate diagnostic controls. Until repaired, reconcile
+expected selector totals and inspect compiler diagnostics as well as file
+markers and the sentinel. No harness repair is folded into issue #27.
 
 ### Recently delivered
 

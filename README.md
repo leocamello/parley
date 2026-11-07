@@ -103,7 +103,7 @@ Now edit the sibling — make `shout:` append `'!!'` in `../kernel-text/Text.st`
 | `--git <repo>` | Read a flat index through a git checkout |
 | `--index <base>` | Fetch sparse metadata per package |
 | `--offline` | Refuse git and curl source operations |
-| `--locked` | Refuse version-pin changes and leave the lock untouched |
+| `--locked` | Refuse changes to resolved lock data and leave the lock untouched |
 | `--layout flat` / `--layout sparse` | Select the publication layout |
 
 ## Configuration
@@ -170,7 +170,7 @@ The record is public, and it is the interesting half of the repository:
 | — caught by luck | **14** |
 | Confirmation-findings (excluded from the ratio) | **6** |
 
-The suite behind all of it stands at **1195** axiomatic laws, and both numbers above are held by drift laws in that same suite: the tally must equal the audit's own table, and the law count must equal the suite CI discovers — this section fails the build when it goes stale.
+The suite behind all of it stands at **1216** axiomatic laws, and both numbers above are held by drift laws in that same suite: the tally must equal the audit's own table, and the law count must equal the suite CI discovers — this section fails the build when it goes stale.
 
 ## Parley, packaged by Parley
 

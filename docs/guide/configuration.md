@@ -86,18 +86,26 @@ or the sparse base is a `file://` URL. A local `--source` directory works:
 parley resolve --source ../my-index --offline
 ```
 
-`--locked` guards the selected version pins. A command that would move, add
-or remove a version pin refuses at exit `1` and names a differing pin.
-It does not compare changes to path or digest provenance when versions stay
-the same. Existing lock bytes remain untouched on success. An already-current
-lock succeeds. The guard
-also applies to `add` and `remove`; refusal leaves both manifest and lock
-unchanged.
+`--locked` checks the lock data a command would write. Adding, removing or
+changing a pin refuses at exit `1`, naming the first differing package in
+alphabetical order. A pin includes its version and its source: a declared
+path or an archive digest. Changing either source at the same version also
+refuses, as does switching between a path and an archive. A changed root
+name or a missing lock is refused too. An already-current lock succeeds
+without writing; its original bytes remain untouched. `add` and `remove`
+restore both manifest and lock on refusal.
 
-After changing a dependency's path, run `parley resolve` without `--locked`
-and review the refreshed lock before executing the project. Otherwise, a
-same-version path change can succeed while the old path remains pinned.
-This observed limitation is tracked in [issue #27](https://github.com/leocamello/parley/issues/27).
+The check runs when a command resolves and attempts to write a lock.
+`install` can reuse valid existing pins without taking a fresh snapshot,
+and `exec` uses the paths already recorded in the lock. Use
+`parley resolve --locked` to check a changed declaration before execution.
+To accept an intentional change, run `parley resolve` without `--locked`
+and review the refreshed lock.
+
+Path pins record the declared directory string, not a digest of live source
+files. Editing source at the same path and version remains ordinary local
+development. Changing the declared path spelling changes the lock data,
+even if the new spelling reaches the same directory.
 
 ```sh
 parley install --source ../my-index --locked

@@ -300,6 +300,32 @@ precedent).'>
         ^'nothing'
     ]
 
+    CommandLine class >> lockedProvenanceRefusalFor: aName pinned: aPinnedText would: aWouldText [
+        "Issue #27: versions agree but the persisted marker/payload
+         differs. Both sides are complete quoted provenance descriptions;
+         the wording is declared here and independently pinned by law."
+        <category: 'mode flags'>
+        ^'--locked forbids changing parley.lock - ', aName printString,
+            ' changes provenance from ', aPinnedText,
+            ' to ', aWouldText, ', and nothing was written'
+    ]
+
+    CommandLine class >> lockedRootRefusalFrom: anOldName to: aNewName [
+        "A root-only difference has no differing package to name.
+         Pin diagnoses take precedence when both kinds differ."
+        <category: 'mode flags'>
+        ^'--locked forbids changing parley.lock - root would change from ',
+            anOldName printString, ' to ', aNewName printString,
+            ', and nothing was written'
+    ]
+
+    CommandLine class >> missingLockedFileText [
+        "Even an empty first lock is a new file. Nonempty resolutions
+         retain the settled first-pin/absent-side diagnosis."
+        <category: 'mode flags'>
+        ^'--locked requires an existing parley.lock - run parley resolve without --locked to create it'
+    ]
+
     CommandLine class >> unsearchableFlag [
         "The one declared source flag whose transport cannot answer
          parley search (§8 decision 80).

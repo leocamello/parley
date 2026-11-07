@@ -2381,41 +2381,71 @@ construction; zero public setters.'>
 
     lockedRefusalAgainst: aResolution [
         "Private — the declared --locked refusal naming the FIRST
-         differing pin in sorted order, or nil when this resolution
-         would leave parley.lock exactly as it stands.
+         differing pin over the sorted UNION of names. The canonical
+         four-field tuples include provenance: equal versions do not
+         make two paths, digests or provenance kinds interchangeable.
 
-         Both directions of difference are a change: a pin that moves,
-         a pin that is new (the current side renders as absent), and a
-         pin the resolution drops (the would-be side renders as absent).
-         A lock that does not exist at all is the new-pin case for every
-         name, which is right — writing a first lock IS changing it.
+         The existing version/new/removed wording retains precedence
+         within a pin. Only after every pin agrees do root identity and
+         an absent empty lock need their own metadata diagnosis. A
+         valid artifact's whitespace and package order are immaterial;
+         success never rewrites its original bytes.
 
-         It READS the lock through the settled boundary, so a corrupt
-         lock under --locked answers that boundary's own diagnosis. That
-         is a deliberate consequence of the flag rather than a change to
-         resolve: --locked is an assertion ABOUT the lock, so an
-         invocation making it must be able to read the file it is
-         asserting about."
+         Read through the settled lock boundary first, retaining its
+         corrupt-lock diagnosis. Canonical tuples come from the writer
+         and literal reader, not Resolution equality (which ignores
+         paths), nor raw accessors (a path pin's digest is not written)."
         <category: 'private'>
-        | pinned current |
+        | pinned current proposed names |
         pinned := self pinnedResolution.
-        current := Dictionary new.
-        pinned isNil ifFalse: [
-            pinned packageNames do: [:name |
-                current at: name put: (pinned versionOf: name) printString]].
-        aResolution packageNames do: [:name |
-            | was now |
-            now := (aResolution versionOf: name) printString.
-            was := current at: name ifAbsent: [CommandLine absentPinText].
+        current := self lockedPinTuplesOf: pinned.
+        proposed := self lockedPinTuplesOf: aResolution.
+        names := (current keys, proposed keys) asSet asSortedCollection.
+        names do: [:name |
+            | was now wasVersion nowVersion |
+            was := current at: name ifAbsent: [nil].
+            now := proposed at: name ifAbsent: [nil].
+            wasVersion := was isNil
+                ifTrue: [CommandLine absentPinText] ifFalse: [was at: 2].
+            nowVersion := now isNil
+                ifTrue: [CommandLine absentPinText] ifFalse: [now at: 2].
+            wasVersion = nowVersion ifFalse: [
+                ^CommandLine lockedRefusalFor: name
+                    pinned: wasVersion would: nowVersion].
             was = now ifFalse: [
-                ^CommandLine lockedRefusalFor: name
-                    pinned: was would: now]].
-        (current keys asSortedCollection: [:a :b | a <= b]) do: [:name |
-            (aResolution packageNames includes: name) ifFalse: [
-                ^CommandLine lockedRefusalFor: name
-                    pinned: (current at: name)
-                    would: CommandLine absentPinText]].
+                ^CommandLine lockedProvenanceRefusalFor: name
+                    pinned: (self lockedProvenanceTextOf: was)
+                    would: (self lockedProvenanceTextOf: now)]].
+        pinned isNil ifTrue: [^CommandLine missingLockedFileText].
+        pinned rootName = aResolution rootName ifFalse: [
+            ^CommandLine lockedRootRefusalFrom: pinned rootName
+                to: aResolution rootName].
         ^nil
+    ]
+
+    lockedPinTuplesOf: aResolution [
+        "Private — names mapped to the exact tuples the existing writer
+         persists. Doc B's fixed schema places #packages at position 5
+         and its value at 6. This is generated first-party data, read
+         only by the literals-only reader; no schema dispatch is copied
+         into the CLI. Nil is the absent lock, with no current pins."
+        <category: 'private'>
+        | out entry pins |
+        pins := Dictionary new.
+        aResolution isNil ifTrue: [^pins].
+        out := WriteStream on: String new.
+        IndexEntryWriter writeLock: aResolution on: out.
+        entry := IndexEntryReader readFrom: (ReadStream on: out contents).
+        (entry at: 6) do: [:tuple | pins at: tuple first put: tuple].
+        ^pins
+    ]
+
+    lockedProvenanceTextOf: aTuple [
+        "Private — both declared tuple forms have the same marker and
+         payload positions. Render those fields without branching on
+         their kind, quoting the full payload including apostrophes."
+        <category: 'private'>
+        ^'#', (aTuple at: 3) asString, ' ', (aTuple at: 4) printString
     ]
 
     lockBytes [
