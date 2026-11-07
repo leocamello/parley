@@ -14,11 +14,11 @@
 # committed tree. The red gate is a local, human-reviewed gate; what CI checks is
 # the invariant that holds at every commit: the committed suite passes.
 #
-# ⏱ TOOLCHAIN CLOCK. Ubuntu 22.04 (`jammy`) is the last distro release packaging
-# the 3.2.5 baseline (`gnu-smalltalk` 3.2.5-1.3ubuntu1); it is absent from Ubuntu
-# 24.04+ and Debian bookworm+. When GitHub retires the `ubuntu-22.04` runner
-# label this needs a pinned container image or a cached source build — see
-# `docs/roadmap.md` §6 item 1, whose trigger is that announcement.
+# The host can advance independently of the tested GNU Smalltalk baseline.
+# The image digest pins the initial userspace; the dated Ubuntu archive pins
+# the packages installed into it. Refresh both deliberately and verify both
+# seeds. Jammy preserves the tested toolchain, not indefinite OS support.
+# This is roadmap §6 item 1: the ubuntu-22.04 runner retires in April 2027.
 
 name: verify
 
@@ -38,35 +38,49 @@ concurrency:
 jobs:
   gate:
     name: lint guardrails + axiomatic SUnit suite
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24
+        with:
+          persist-credentials: false
 
-      # `gnu-smalltalk-common` is named EXPLICITLY and that is load-bearing: on
-      # Ubuntu it is a *Recommends* of `gnu-smalltalk`, not a Depends, so
-      # `--no-install-recommends` silently omits it — and it is the package that
-      # ships the class library, including `SUnit.star` and `packages.xml`. The
-      # first CI run failed exactly here: `PackageLoader fileInPackage: 'SUnit'`
-      # at `scripts/run-tests.st:24` answered "SUnit: package not found" after
-      # every source and test file had already loaded cleanly. The flag stays
-      # rather than being dropped, because naming what the suite needs is the
-      # point: this workflow DECLARES its dependencies instead of inheriting
-      # whatever the runner image happens to ship.
-      #
-      # zip, curl and git ship on GitHub's images and are installed anyway for
-      # the same reason. The suite spawns all three: Publisher (zip, via
-      # gst-package), SparseIndexSource (curl) and GitIndexSource (git).
-      #
-      # Note the layout difference this exposed, in case a later image moves
-      # again: the source build keeps the class library at
-      # `/usr/local/share/smalltalk/`, the distro at `/usr/share/gnu-smalltalk/`.
-      # Nothing here hardcodes either — `gst` finds its own prefix.
-      - name: Install GNU Smalltalk 3.2.5 and the tools the suite spawns
+      # Build here instead of requiring a separately published GHCR image.
+      # The official Jammy curl base includes CA certificates: the Ubuntu
+      # snapshot service requires HTTPS, which a bare Ubuntu image cannot
+      # validate until certificates have been installed.
+      # gnu-smalltalk-common is a Recommends, so name it explicitly for SUnit.
+      # The test user matches the checkout owner. Root would bypass the
+      # permission fixtures and invalidate the unreadable/unwritable laws.
+      - name: Build the pinned GNU Smalltalk 3.2.5 environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gnu-smalltalk gnu-smalltalk-common zip curl git
+          docker build --tag parley-ci:gst-3.2.5 \
+            --build-arg PARLEY_UID="$(id -u)" \
+            --build-arg PARLEY_GID="$(id -g)" - <<'DOCKERFILE'
+          FROM buildpack-deps:jammy-curl@sha256:10ffecf0416e47f8ed9a621ce234b209b69c3d1e7e79ba273394ef6ff74b4f5b
+          RUN printf '%s\n' \
+                'deb https://snapshot.ubuntu.com/ubuntu/20261101T000000Z jammy main universe' \
+                'deb https://snapshot.ubuntu.com/ubuntu/20261101T000000Z jammy-updates main universe' \
+                'deb https://snapshot.ubuntu.com/ubuntu/20261101T000000Z jammy-security main universe' \
+                > /etc/apt/sources.list \
+              && apt-get -o APT::Update::Error-Mode=any update \
+              && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+                gnu-smalltalk=3.2.5-1.3ubuntu1 \
+                gnu-smalltalk-common=3.2.5-1.3ubuntu1 \
+                libgst7=3.2.5-1.3ubuntu1 git curl zip unzip ca-certificates \
+              && rm -rf /var/lib/apt/lists/*
+          ARG PARLEY_UID
+          ARG PARLEY_GID
+          RUN test "$PARLEY_UID" -ne 0 \
+              && groupadd --gid "$PARLEY_GID" parley \
+              && useradd --uid "$PARLEY_UID" --gid "$PARLEY_GID" \
+                --create-home --shell /bin/bash parley
+          USER parley
+          WORKDIR /workspace
+          DOCKERFILE
 
       # A silently different toolchain would make every later green a lie, so
       # this fails loudly rather than proceeding. gst-package is checked
@@ -74,34 +88,29 @@ jobs:
       # useless without it.
       - name: Assert the toolchain is the 3.2.5 baseline
         run: |
-          gst --version 2>&1 | head -3
-          gst --version 2>&1 | grep -q '3\.2\.5' || {
-            echo "::error::gst is not 3.2.5 — the entire suite's claims are pinned to that baseline"
-            exit 1
-          }
-          command -v gst-package >/dev/null || {
-            echo "::error::gst-package is absent; the publish and install suites spawn it"
-            exit 1
-          }
-          # SUnit is probed through the very mechanism run-tests.st uses rather
-          # than by testing a path, because the path moved between the source
-          # build and the distro and a path check would encode the wrong one.
-          # The marker is grepped rather than trusting the exit code: gst 3.2.5
-          # exits 0 even on an unhandled error, which is the same reason this
-          # project's own harness looks for a PARLEY-VERIFY sentinel.
-          printf "PackageLoader fileInPackage: 'SUnit'.\nTranscript showCr: 'SUNIT-OK'.\n" > /tmp/sunit-probe.st
-          gst -q /tmp/sunit-probe.st 2>&1 | grep -q 'SUNIT-OK' || {
-            echo "::error::SUnit is not loadable — the class library package (gnu-smalltalk-common) is missing or relocated"
-            exit 1
-          }
+          docker run --rm --network none -i parley-ci:gst-3.2.5 bash -euo pipefail <<'PROBE'
+            test "$(id -u)" -ne 0
+            gst --version
+            gst --version | grep -Fx 'GNU Smalltalk version 3.2.5'
+            command -v gst-package
+            # gst can return 0 after an error; require SUnit's success marker.
+            printf "PackageLoader fileInPackage: 'SUnit'.\nTranscript showCr: 'SUNIT-OK'.\n" > /tmp/sunit-probe.st
+            gst -q /tmp/sunit-probe.st 2>&1 | grep -Fx 'SUNIT-OK'
+          PROBE
 
       # The default seed, which is the one every sprint's audit record cites.
       - name: Verify (default seed)
-        run: ./scripts/verify-sprint.sh --phase green
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/workspace" \
+            parley-ci:gst-3.2.5 ./scripts/verify-sprint.sh --phase green
 
       # A suite that only ever runs one seed is not a randomized suite. This is
       # a SEPARATE step so a seed-dependent failure is distinguishable at a
       # glance from a deterministic one, and it is NOT continue-on-error: a law
       # that holds at 20260718 and fails at 42 is a real defect.
       - name: Verify (second seed — the randomized suites are not seed-shaped)
-        run: ./scripts/verify-sprint.sh --phase green --seed 42
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/workspace" \
+            parley-ci:gst-3.2.5 ./scripts/verify-sprint.sh --phase green --seed 42
