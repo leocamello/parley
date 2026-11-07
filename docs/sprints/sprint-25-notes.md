@@ -104,6 +104,16 @@ candidate over baseline 8db6d97; final committed-checkout evidence belongs
 on issue #27. The probe uses locally authored packages and static metadata;
 no external service or third-party manifest evaluation is involved.
 
+A fresh local clone of implementation commit
+`34eabfba1540a897bb2cde5d187f4af489a686a2` subsequently passed all eleven
+product checks. Both changed-provenance refusals returned exit 1 with exact
+diagnoses; unlocked refresh switched execution to the second source. An edit
+at the unchanged path remained accepted and was visible on execution, while
+the same-digest archive metadata change was accepted. Every stderr stream
+was empty; the clone's HEAD/tree stayed unchanged and its git status clean.
+Only delivery references and this evidence record changed afterward, before
+the independent final verification.
+
 README's count and flag description, the configuration guide, this delivery
 record and the roadmap are updated before final verification. The wrap audit,
 final commits, both deterministic seeds and hosted results belong to the

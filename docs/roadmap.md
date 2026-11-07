@@ -30,7 +30,7 @@ locally and on hosted run `42400445676` against `4d5ac7d`. Sprint 23 now
 passes 1195 laws; its final audit and publication evidence belong to issue
 #25. No historical sprint is renumbered and no release version changes.
 
-**Sprint 25 — locked pin provenance ([#27](https://github.com/leocamello/parley/issues/27)), implemented.**
+**Sprint 25 — locked pin provenance ([#27](https://github.com/leocamello/parley/issues/27)), implemented at `34eabfb`.**
 The operator-requested repair follows Doc E §4.2's existing write-guard
 contract. The guard compares complete serialized pin identity, names the
 first difference across both pin sets, and checks root identity and an
