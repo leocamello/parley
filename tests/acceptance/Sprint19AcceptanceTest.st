@@ -727,18 +727,45 @@ half-succeeding manifest closed, and the README.'>
         "A STATED BEHAVIOUR THAT IS NOT WRITTEN WHERE USERS READ IS NOT
          STATED (§8 decision 45's standard). The file, where it lives,
          its schema tag, the flag-wins rule and the flag that quietened
-         exec.
+         exec. Sprint 23 keeps the four configuration claims in the
+         condensed README and moves the quiet-child detail to the
+         running-code guide. The label mapping covers every existing
+         marker exactly once and does not default new rows silently.
 
          ## INSTALLING IS EXTENDED, NOT REWRITTEN: the settled Sprint 17
          markers must still be there, and the section must still appear
          exactly once — a rewrite that produced a second heading would
          satisfy a containment law and confuse every reader."
-        | readme |
+        | readme markers labels destinations documents |
         readme := PublishLayoutFixtures readmeSource.
-        ConfigFixtures readmeMarkers do: [:row |
-            self assert: (CommandLineFixtures does: readme
+        markers := ConfigFixtures readmeMarkers.
+        self deny: markers isEmpty
+            description: 'the configuration documentation marker list is empty'.
+        destinations := Dictionary new
+            at: 'the configuration file' put: 'README.md';
+            at: 'where the file lives' put: 'README.md';
+            at: 'the schema tag' put: 'README.md';
+            at: 'the flag-wins rule' put: 'README.md';
+            at: 'the flag that quietened exec' put: 'docs/guide/running-code.md';
+            yourself.
+        labels := markers collect: [:row | row at: 1].
+        self assert: labels asSet = destinations keys asSet
+            description: 'the documentation destinations do not cover the configuration markers'.
+        self assert: labels size = destinations size
+            description: 'the configuration marker labels are not unique'.
+        documents := Dictionary new
+            at: 'README.md' put: readme;
+            at: 'docs/guide/running-code.md' put:
+                (DocumentationFixtures sourceAt: 'docs/guide/running-code.md');
+            yourself.
+        documents keysAndValuesDo: [:path :source |
+            self deny: source isEmpty description: path, ' is missing or empty'].
+        markers do: [:row |
+            | path |
+            path := destinations at: (row at: 1).
+            self assert: (CommandLineFixtures does: (documents at: path)
                 include: (row at: 2))
-                description: 'the README does not document ', (row at: 1)].
+                description: path, ' does not document ', (row at: 1)].
         PathFixtures installationDocumentationMarkers do: [:marker |
             self assert: (CommandLineFixtures does: readme include: marker)
                 description: 'the README dropped the settled installation marker: ',

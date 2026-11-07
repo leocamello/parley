@@ -531,8 +531,11 @@ README marker obligation for the two flags and the workflow.'>
          drift laws bind verbs only — so this sprint declares the
          obligation and the law that keeps it. The markers are declared
          once in the fixture and read here, in the Sprint 15
-         layoutDocumentationMarkers shape."
-        | readme |
+         layoutDocumentationMarkers shape. Sprint 23 retains both
+         mode flags and the unchanged hero vocabulary in README; only
+         devDependency: moves to the guide. Every marker label has one
+         explicit destination; new rows cannot default silently."
+        | readme markers labels destinations documents |
         readme := (File name: 'README.md') contents.
         "The non-empty guard is MANDATORY rather than decorative and
          lives here rather than in a law of its own: a marker list that
@@ -541,10 +544,32 @@ README marker obligation for the two flags and the workflow.'>
          paid for twice."
         self deny: PathDepFixtures readmeMarkers isEmpty
             description: 'the README marker list is empty'.
-        PathDepFixtures readmeMarkers do: [:row |
-            self assert: (CommandLineFixtures does: readme
+        markers := PathDepFixtures readmeMarkers.
+        destinations := Dictionary new
+            at: 'the path dependency vocabulary' put: 'README.md';
+            at: 'the path keyword itself' put: 'README.md';
+            at: 'the dev dependency vocabulary' put: 'docs/guide/developing-two-packages.md';
+            at: 'the offline mode flag' put: 'README.md';
+            at: 'the locked mode flag' put: 'README.md';
+            yourself.
+        labels := markers collect: [:row | row at: 1].
+        self assert: labels asSet = destinations keys asSet
+            description: 'the documentation destinations do not cover the workflow markers'.
+        self assert: labels size = destinations size
+            description: 'the workflow marker labels are not unique'.
+        documents := Dictionary new
+            at: 'README.md' put: readme;
+            at: 'docs/guide/developing-two-packages.md' put:
+                (DocumentationFixtures sourceAt: 'docs/guide/developing-two-packages.md');
+            yourself.
+        documents keysAndValuesDo: [:path :source |
+            self deny: source isEmpty description: path, ' is missing or empty'].
+        markers do: [:row |
+            | path |
+            path := destinations at: (row at: 1).
+            self assert: (CommandLineFixtures does: (documents at: path)
                 include: (row at: 2))
-                description: 'the README never mentions ', (row at: 1),
+                description: path, ' never mentions ', (row at: 1),
                     ' (looked for ', (row at: 2) printString, ')']
     ]
 

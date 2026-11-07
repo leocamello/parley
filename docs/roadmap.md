@@ -22,28 +22,41 @@ These exist because they were learned the hard way. Sprints 8, 9 and 10 were eac
 
 ## 2. Current priority list
 
-**2026-11-07 maintenance priority amendment.** The operator authorized the
-sequence: CI toolchain continuity, command/path reliability, then the already
-staged documentation increment. The current runner announcement satisfies §6
-item 1's external trigger. The CI change follows the existing `chore(ci)`
-precedent and must pass both seeds locally and on the hosted runner.
+**2026-11-07 maintenance close-out.** The operator-authorized sequence has
+been implemented: CI toolchain continuity (`42a4f74`), command argument
+preservation (Sprint 24, `2ba1939`, issue #26 closed), then the resumed
+Sprint 23 documentation increment. Sprint 24 passed 1169 laws at both seeds
+locally and on hosted run `42400445676` against `4d5ac7d`. Sprint 23 now
+passes 1195 laws; its final audit and publication evidence belong to issue
+#25. No historical sprint is renumbered and no release version changes.
 
-**Sprint 24 is implemented; Sprint 23 is next.** Architecture §8 decision 91
-replaced the no-quoting premise across all five command-composing classes.
-The repair and pinned CI environment passed 1169 laws at both seeds locally;
-publication and hosted verification complete Gate B on issue #26.
-**Displacement:** Sprint 23's documentation increment is deferred 1×. Correct
-execution wins over documentation polish; the cost of delaying the docs is
-bounded. Its approved scope remains intact. The resumption baseline is 1169
-laws and 91 decisions; its class-name oracle remains namespace-local lookup,
-not a fixed census. Its pre-RED extraction-protocol ruling is still pending
-on issue #25. No historical sprint is renumbered.
+**Carried gap — locked path provenance ([#27](https://github.com/leocamello/parley/issues/27)), unscheduled.**
+The documentation walk found that changing a dependency's path while retaining
+its version lets `resolve --locked` succeed with the old path still pinned;
+subsequent execution reads that old path. Resolve without `--locked` after a
+path change and review the refreshed lock before execution. The implemented
+guard compares versions, not full provenance; the analogous archive-digest
+case has not been exercised. Rank and define the complete provenance/write-verb
+domain at the next Gate C. This documentation sprint records the defect and
+workaround; it does not change locked-command behavior.
 
+### Recently delivered
 
-### Next: resume the documentation increment
+- **Sprint 23 — the documentation increment.** Issue #25, **1169 → 1195 laws**,
+  resumed after the one recorded displacement by Sprint 24. The README is
+  181 lines with its hero unchanged; seven guide pages carry the detailed
+  workflows; architecture §8 has a 91-row index preserving every original
+  ruling; four design diagrams are rendered and reviewed. The approved RED
+  protocol declares six passing acceptance cases and inventories all nine
+  settled selectors whose claims moved. Only `releaseFiles` changes in
+  production, adding the guide index; `1.0.0` remains unchanged. See the
+  [delivery record](sprints/sprint-23-notes.md) and issue #25 for verification
+  and publication evidence.
 
-The following paragraph records the **2026-08-16 staging**, including the
-toolchain state and counts at that gate. The amendment above governs resumption.
+### Historical Sprint 23 staging
+
+The following paragraph records the **2026-08-16 staging**, including its
+original baseline. The close-out above governs current status.
 
 - **Sprint 23 — the documentation increment: the diagrams, the decision index, and the
   README a stranger actually meets.** Issue #25, staged at Gate C 2026-08-16 against
@@ -66,7 +79,8 @@ toolchain state and counts at that gate. The amendment above governs resumption.
   takes its law with it, strengthened rather than re-pointed) and **90** (§8 is never
   relocated; it gains a lawed index).
 
-### Recently delivered
+### Earlier deliveries
+
 
 - **Sprint 24 — command argument preservation.** Implemented at `2ba1939`, issue
   #26, **1140 → 1169 laws**, decision 91. Scripts, registration, publication,

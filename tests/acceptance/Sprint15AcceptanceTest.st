@@ -627,12 +627,13 @@ end-to-end loop that closes v1.0.'>
     testS15_TheReadmeDescribesTheToolThatExists [
         "A DRIFT LAW, not good intentions: every verb the CLI's own
          usage line declares must appear in the README, and the §8
-         decision 45 consumer constraint must be there — parley exec is
+         decision 45 consumer constraint lives in the running-code guide
+         after Sprint 23's documentation move — parley exec is
          a faithful pass-through of the child's exit code and is not a
          CI pass/fail signal on its own. A verb added without
          documentation fails the suite rather than quietly shipping
          undocumented."
-        | verbs readme undocumented |
+        | verbs readme undocumented runningCode |
         verbs := PublishLayoutFixtures verbsIn: (GrammarFixtures
             verbsRowIn: (self runIn: (self freshDir: 's15-s15-work')
                 argv: #() runner: TrapRunner new) lines).
@@ -644,10 +645,15 @@ end-to-end loop that closes v1.0.'>
         self assert: undocumented isEmpty
             description: undocumented printString,
                 ' are verbs the CLI offers and the README does not name'.
+        runningCode := PublishLayoutFixtures runningCodeGuideSource.
+        self deny: runningCode isEmpty
+            description: 'docs/guide/running-code.md is missing or empty'.
         PublishLayoutFixtures execConstraintMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README dropped the exec constraint marker: ',
-                    marker printString]
+            self assert: (CommandLineFixtures does: runningCode include: marker)
+                description: 'the running-code guide dropped the exec constraint marker: ',
+                    marker printString].
+        self assert: (DocumentationFixtures execGuideFailuresIn: runningCode) isEmpty
+            description: 'the running-code guide lacks the fenced explicit-quit instruction'
     ]
 
     "---- S16: end to end, offline — the ecosystem loop closes ----"

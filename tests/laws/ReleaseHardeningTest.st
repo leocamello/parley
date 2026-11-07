@@ -260,27 +260,30 @@ guards.'>
     ]
 
     testTheReadmeCarriesTheExecConsumerConstraint [
-        "DECLARED PASS IN RED (issue #17): the README already carries
-         §8 decision 45's sentence. The law exists to keep it there —
-         parley exec is a faithful pass-through of the child's exit
-         code, and without an explicit quit it is not a CI pass/fail
-         signal."
-        | readme |
-        readme := PublishLayoutFixtures readmeSource.
+        "Sprint 23 declared mover: prove the CI sentence and explicit
+         failure instruction occur on the guide, the latter in code.
+         Presence does not prove the prose is true (decision 43)."
+        | guide failures |
+        guide := PublishLayoutFixtures runningCodeGuideSource.
+        self deny: guide isEmpty description: 'the running-code guide is absent'.
         PublishLayoutFixtures execConstraintMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README dropped the exec constraint marker: ',
-                    marker printString]
+            self assert: (CommandLineFixtures does: guide include: marker)
+                description: 'the guide dropped the exec constraint marker: ', marker printString].
+        failures := DocumentationFixtures execGuideFailuresIn: guide.
+        self assert: failures isEmpty description: failures printString
     ]
 
     testTheReadmeDocumentsPublishingIntoBothLayouts [
-        "A stranger has to be able to publish into either shape, which
-         means the flag and both of its values are documented."
-        | readme |
-        readme := PublishLayoutFixtures readmeSource.
+        "Sprint 23 declared mover: literal commands in shell fences
+         on the publishing page, not words elsewhere in the README."
+        | guide failures |
+        guide := PublishLayoutFixtures publishingGuideSource.
+        self deny: guide isEmpty description: 'the publishing guide is absent'.
         PublishLayoutFixtures layoutDocumentationMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README does not document ', marker printString]
+            self assert: (CommandLineFixtures does: guide include: marker)
+                description: 'the guide does not document ', marker printString].
+        failures := DocumentationFixtures publishingGuideFailuresIn: guide.
+        self assert: failures isEmpty description: failures printString
     ]
 
     "---- §8 decision 52: a best-effort read swallows only what it

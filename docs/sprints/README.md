@@ -9,6 +9,7 @@ count, and toolchain version the suite passed with.
 
 The law count is cumulative — the whole suite runs every sprint, so each
 number is the total axiomatic laws green at that sprint's close.
+Sprint 24 preceded the resumed Sprint 23; the final rows follow delivery order.
 
 | Sprint | Milestone | Issue | Commit | Laws |
 | --- | --- | --- | --- | --- |
@@ -36,6 +37,7 @@ number is the total axiomatic laws green at that sprint's close.
 | [21](sprint-21-notes.md) | Dependencies you are developing — `PathOverlay`, `PathDependency`, `--offline`, `--locked` | [#23](https://github.com/leocamello/parley/issues/23) | `3b299da` | 1091 |
 | [22](sprint-22-notes.md) | The release — v1.0.0: the machinery, the environment layer, the self-hosting showcase | [#24](https://github.com/leocamello/parley/issues/24) | `af53fa0` | 1140 |
 | [24](sprint-24-notes.md) | Command argument preservation — scripts, registration, publication and sources | [#26](https://github.com/leocamello/parley/issues/26) | `2ba1939` | 1169 |
+| [23](sprint-23-notes.md) | Documentation — seven guide pages, the decision index and four design diagrams | [#25](https://github.com/leocamello/parley/issues/25) | — | 1195 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a

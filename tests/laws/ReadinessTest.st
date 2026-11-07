@@ -728,19 +728,23 @@ update <pkg> with its over-narrowing guard on each.'>
 
     testTheReadmeDocumentsTheExecPrecondition [
         "The precondition and §8 decision 45's consumer constraint are
-         neighbours and are easy to confuse, so the README must carry
+         neighbours and are easy to confuse, so the running-code guide carries
          BOTH: Parley refuses a script that is not there, and Parley
          still makes no claim about a script that ran."
-        | readme |
-        readme := PublishLayoutFixtures readmeSource.
+        | runningCode |
+        runningCode := PublishLayoutFixtures runningCodeGuideSource.
+        self deny: runningCode isEmpty
+            description: 'docs/guide/running-code.md is missing or empty'.
         ReadinessFixtures execPreconditionMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README does not document ',
+            self assert: (CommandLineFixtures does: runningCode include: marker)
+                description: 'the running-code guide does not document ',
                     marker printString].
         PublishLayoutFixtures execConstraintMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README dropped the settled exec constraint marker: ',
-                    marker printString]
+            self assert: (CommandLineFixtures does: runningCode include: marker)
+                description: 'the running-code guide dropped the settled exec constraint marker: ',
+                    marker printString].
+        self assert: (DocumentationFixtures execGuideFailuresIn: runningCode) isEmpty
+            description: 'the running-code guide lacks the fenced explicit-quit instruction'
     ]
 
     testTheReadmeDocumentsEveryHelpSpelling [

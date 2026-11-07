@@ -508,20 +508,28 @@ stream close', SourceFixtures newline
     ]
 
     PublishLayoutFixtures class >> execConstraintMarkers [
-        "The §8 decision 45 consumer constraint, as the README must
-         carry it: parley exec is a faithful pass-through of the
-         child's exit code, so a script whose success matters to CI
-         ends with an explicit quit. A README that dropped this would
-         document a promise the tool does not make."
+        "Sprint 23 strengthens the instruction marker to an explicit
+         failure status. The guide law also checks its code-fence seat."
         <category: 'release hardening'>
-        ^Array with: 'ObjectMemory quit:' with: 'matters to CI'
+        ^Array with: 'ObjectMemory quit: 1' with: 'matters to CI'
     ]
 
     PublishLayoutFixtures class >> layoutDocumentationMarkers [
-        "What a stranger needs in order to publish into either layout:
-         the flag and both of its values."
+        "Commands an author can run, not layout names in marketing
+         prose. The guide law checks their shell-fence seat too."
         <category: 'release hardening'>
-        ^(Array with: '--layout' with: 'sparse') , (Array with: 'flat')
+        ^Array with: 'parley publish ../my-index --layout flat'
+            with: 'parley publish ../my-index --layout sparse'
+    ]
+
+    PublishLayoutFixtures class >> runningCodeGuideSource [
+        <category: 'release hardening'>
+        ^DocumentationFixtures sourceAt: 'docs/guide/running-code.md'
+    ]
+
+    PublishLayoutFixtures class >> publishingGuideSource [
+        <category: 'release hardening'>
+        ^DocumentationFixtures sourceAt: 'docs/guide/publishing.md'
     ]
 ]
 

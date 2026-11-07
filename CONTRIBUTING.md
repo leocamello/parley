@@ -4,7 +4,7 @@ Thanks for your interest in Parley! This project has an unusually strict enginee
 
 ## Ground rules
 
-The binding rules live in [AGENTS.md](AGENTS.md); the system blueprint is [docs/design/architecture.md](docs/design/architecture.md). The short version:
+[AGENTS.md](AGENTS.md) and [.github/copilot-instructions.md](.github/copilot-instructions.md) prescribe the workflow for coding agents; human contributors follow this page and the engineering constraints below. The system blueprint is [docs/design/architecture.md](docs/design/architecture.md).
 
 - **Target GNU Smalltalk 3.2.5.** Every change must execute cleanly against it (`gst --version` must report 3.2.5).
 - **No third-party dependencies, ever** — Parley depends only on the 3.2.5 kernel and the bundled `gst-package` tooling.

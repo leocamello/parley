@@ -627,8 +627,10 @@ end to end so it cannot regress.'>
          live from the running tool — and the two new behaviours are
          documented: the exec precondition BESIDE the settled §8
          decision 45 consumer constraint rather than instead of it, and
-         --help wherever --version appears."
-        | verbs readme undocumented |
+         --help wherever --version appears. Sprint 23 keeps the verbs
+         and help spellings in README; both exec claims move together
+         to the running-code guide."
+        | verbs readme undocumented runningCode |
         verbs := PublishLayoutFixtures verbsIn: (GrammarFixtures
             verbsRowIn: (self resultOf: #() in: (self freshDir: 's16-s15-work')
                 runner: TrapRunner new) lines).
@@ -640,13 +642,18 @@ end to end so it cannot regress.'>
         self assert: undocumented isEmpty
             description: undocumented printString,
                 ' are verbs the CLI offers and the README does not name'.
+        runningCode := PublishLayoutFixtures runningCodeGuideSource.
+        self deny: runningCode isEmpty
+            description: 'docs/guide/running-code.md is missing or empty'.
         PublishLayoutFixtures execConstraintMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README dropped the settled exec constraint marker: ',
+            self assert: (CommandLineFixtures does: runningCode include: marker)
+                description: 'the running-code guide dropped the settled exec constraint marker: ',
                     marker printString].
+        self assert: (DocumentationFixtures execGuideFailuresIn: runningCode) isEmpty
+            description: 'the running-code guide lacks the fenced explicit-quit instruction'.
         ReadinessFixtures execPreconditionMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README does not document the exec precondition: ',
+            self assert: (CommandLineFixtures does: runningCode include: marker)
+                description: 'the running-code guide does not document the exec precondition: ',
                     marker printString].
         ReadinessFixtures helpDocumentationMarkers do: [:marker |
             self assert: (CommandLineFixtures does: readme include: marker)

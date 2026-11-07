@@ -54,6 +54,42 @@ Path dependencies (Doc B §2, §8 decision 69) enter resolution as an **overlay 
 
 ## 2. The Snapshot & Purity Contract
 
+### Source composition at the snapshot boundary
+
+The wired source is wrapped by the path overlay even when the local path set is
+empty. The overlay reads explicitly selected siblings first, adds their dependency
+names to the source seeds, and obtains the base snapshot. With no base source, a
+path-only project composes over an empty index. The arrows below show composition
+and data flow, not inheritance.
+
+```mermaid
+flowchart TD
+    directory["DirectorySource<br/>Scan a local index"]
+    git["GitIndexSource<br/>Refresh a checkout and delegate its scan"]
+    sparse["SparseIndexSource<br/>Gather seeded metadata to closure"]
+    siblings["ManifestFile<br/>Read declared local siblings"]
+    overlay["PathOverlay<br/>Re-seed the base and compose local records"]
+    snapshot["IndexSnapshot<br/>Keep index and local provenance"]
+    held["IndexSnapshot<br/>Hold eligible index pins when requested"]
+    solver["Resolver<br/>Consume the sealed resolution view"]
+    reports["CLI<br/>Report the index view"]
+    git -.->|delegates scanning| directory
+    directory -->|selected base| overlay
+    git -->|selected base| overlay
+    sparse -->|selected base| overlay
+    siblings -->|local declarations| overlay
+    overlay --> snapshot
+    snapshot -->|optional narrowing| held
+    snapshot -->|ordinary resolution| solver
+    held --> solver
+    snapshot -->|index reporting accessors| reports
+```
+
+Retirement filtering and selective holding remain snapshot operations. Local path
+pins are excluded from the hold map, so a changed sibling never resolves against
+its old locked version. None of these choices adds an I/O callback or a source-kind
+branch to the solver.
+
 Before resolution begins, sources answer an **immutable index snapshot**: an in-memory value mapping package → available versions → dependency lists (constraints already parsed to `VersionConstraint`s). The `Resolver` is then a **pure function** of (root manifest, snapshot):
 
 - Zero live I/O mid-resolution.

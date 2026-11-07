@@ -236,6 +236,39 @@ The wrapper used to hold the wiring *and* the flag grammar *and* the error bound
   **The usage determination lives in `CLI`, and `CommandLine` asks it** (§8 decision 57, site ruled by the operator at the Sprint 16 RED review). Whether an argv is going to run a verb depends on the verb list and on which verbs require a source — both `CLI` knowledge — so `CommandLine` cannot make the determination without restating a grammar that must have one definition. The dispatch's own "is this argv going to run a verb?" test is therefore extracted into **one predicate on `CLI` that `CLI>>run:` itself consumes**, and `CommandLine` asks that predicate before creating anything. Three constraints keep it one definition rather than a relocated copy: the dispatch is *expressed in terms of* the predicate, so no verb can be recognized by one and not the other; the predicate is a **function of argv alone** and touches no filesystem, because a determination that read files would be doing the verb's work before the verb; and `cliWithSourceIn:` stays *after* `createStateDirectories`, since the `--git` and `--index` builders create `.parley/git` and `.parley/index` and 3.2.5's `Directory create:` is not recursive. The two rejected alternatives are recorded in §8 decision 57.
   - **Wiring:** store at `<aWorkingDir>/.parley/store`, target at `<aWorkingDir>/.parley/packages` (created when absent), the git cache at `<aWorkingDir>/.parley/git/<sha256 of the repo location>` (Sprint 9 — the settled `Sha256` keys it, so any repo string becomes one deterministic filesystem-safe name and no escaping layer is invented), the injected runner. Deriving both from the working directory rather than the process's cwd is what makes the wiring law-testable under `tmp/`.
 
+#### Source configuration precedence
+
+The source choice is made once. An explicit source flag skips the entire
+environment and file levels; one nonempty source variable skips the file.
+Question flags are answered before this chain, and conflicting source flags are a
+usage error before a choice is made. After the chain, usage and mode checks still
+run before the selected source is constructed.
+
+```mermaid
+flowchart TD
+    flags["CommandLine<br/>Inspect explicit source flags"]
+    environment["CommandLine<br/>Inspect nonempty source variables"]
+    config["Configuration<br/>Read parley.config.st at the project root"]
+    usage["CliResult<br/>Usage error at exit 2"]
+    choice["The selected source declaration<br/>Skip all lower precedence levels"]
+    absent["No source declaration<br/>The verb decides whether an index is needed"]
+    refusal["CliResult<br/>A configuration diagnosis at exit 1"]
+    flags -->|one source flag| choice
+    flags -->|conflicting source flags| usage
+    flags -->|no source flag| environment
+    environment -->|one set variable| choice
+    environment -->|none set or all empty| config
+    environment -->|two or more set| refusal
+    config -->|one source recorded| choice
+    config -->|absent file or all empty| absent
+    config -->|unreadable or malformed| refusal
+```
+
+The diagram illustrates [decisions 64](architecture.md#decision-64) and
+[85](architecture.md#decision-85). `CommandLine` owns precedence; `Configuration`
+only reads and validates values. The same selected transport reaches the
+`--offline` check regardless of which level supplied it.
+
 #### The diagnosis boundary
 
 **No Parley command ever answers a backtrace, and no failing command ever exits `0`.** `run:` maps every outcome onto exactly three shapes:

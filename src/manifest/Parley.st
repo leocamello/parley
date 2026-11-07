@@ -80,7 +80,8 @@ Parley namespace binding inside the namespace itself (issue #3).'>
             with: 'docs/design/installer.md'
             with: 'docs/design/execution-and-cli.md'
             with: 'docs/design/publish-and-sources.md'
-            with: 'docs/sprints/README.md')
+            with: 'docs/sprints/README.md'),
+        (Array with: 'docs/guide/README.md')
     ]
 
     Parley class >> define: aBlock [

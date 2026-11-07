@@ -670,8 +670,9 @@ README.'>
     "---- S14: the README documents both, and the drift law holds ----"
 
     testS14_TheReadmeDocumentsTheAuthoringDiagnosticsAndBothFragments [
-        "The README is guarded by a law rather than by good intentions
-         (Sprint 15). What a stranger must be able to read here: that a
+        "The documentation is guarded by a law rather than by good
+         intentions (Sprint 15). Sprint 23 moves these diagnoses to
+         the troubleshooting guide. A stranger must read there that a
          broken Package.st is answered by a line naming the file and the
          line, that several problems come as one batch naming the file,
          and — because §8 decision 62 states what it cannot capture
@@ -688,12 +689,14 @@ README.'>
          verify-sprint.sh greps the suite's own output for, so a failure
          description carrying it would make the gate refuse the run
          instead of reporting this law."
-        | readme |
-        readme := PublishLayoutFixtures readmeSource.
+        | troubleshooting |
+        troubleshooting := DocumentationFixtures sourceAt: 'docs/guide/troubleshooting.md'.
+        self deny: troubleshooting isEmpty
+            description: 'docs/guide/troubleshooting.md is missing or empty'.
         AuthoringFixtures readmeMarkers do: [:row |
-            self assert: (CommandLineFixtures does: readme
+            self assert: (CommandLineFixtures does: troubleshooting
                 include: (row at: 2))
-                description: 'the README does not document ',
+                description: 'the troubleshooting guide does not document ',
                     (row at: 1)]
     ]
 ]

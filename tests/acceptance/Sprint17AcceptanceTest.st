@@ -835,8 +835,10 @@ location contract.'>
          the CLI's OWN usage line declares appears in the README, read
          live from the running tool — and the two new subjects are
          documented: the permission diagnostics, and the installation
-         route, which was pointless to document while it was broken."
-        | verbs readme undocumented |
+         route, which was pointless to document while it was broken.
+         Sprint 23 moves the permission diagnoses to troubleshooting;
+         the installation route and live verbs remain in README."
+        | verbs readme undocumented troubleshooting |
         verbs := PublishLayoutFixtures verbsIn: (GrammarFixtures
             verbsRowIn: (self resultOf: #() in: (self freshDir: 's17-s17-work')
                 runner: TrapRunner new) lines).
@@ -848,9 +850,12 @@ location contract.'>
         self assert: undocumented isEmpty
             description: undocumented printString,
                 ' are verbs the CLI offers and the README does not name'.
+        troubleshooting := DocumentationFixtures sourceAt: 'docs/guide/troubleshooting.md'.
+        self deny: troubleshooting isEmpty
+            description: 'docs/guide/troubleshooting.md is missing or empty'.
         PathFixtures permissionDocumentationMarkers do: [:marker |
-            self assert: (CommandLineFixtures does: readme include: marker)
-                description: 'the README does not document the permission diagnostics: ',
+            self assert: (CommandLineFixtures does: troubleshooting include: marker)
+                description: 'the troubleshooting guide does not document the permission diagnostics: ',
                     marker printString].
         PathFixtures installationDocumentationMarkers do: [:marker |
             self assert: (CommandLineFixtures does: readme include: marker)
