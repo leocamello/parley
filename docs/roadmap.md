@@ -42,7 +42,8 @@ workaround; it does not change locked-command behavior.
 
 ### Recently delivered
 
-- **Sprint 23 — the documentation increment.** Issue #25, **1169 → 1195 laws**,
+- **Sprint 23 — the documentation increment.** Issue #25, commit `0dd6ce4`,
+  **1169 → 1195 laws**,
   resumed after the one recorded displacement by Sprint 24. The README is
   181 lines with its hero unchanged; seven guide pages carry the detailed
   workflows; architecture §8 has a 91-row index preserving every original

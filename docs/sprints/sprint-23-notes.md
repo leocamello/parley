@@ -100,6 +100,16 @@ hosting and Zsh completion were not exercised. The interactive runtime
 example was supplied through stdin, not a physical terminal. Final committed
 checkout and hosted verification evidence belongs on issue #25.
 
+The subsequent fresh-clone smoke at implementation commit
+`0dd6ce49ebe8c50f3354e22baf2f444ce875d1b4` passed all ten recorded steps:
+the symlink and explicit-root installation paths, the unchanged README hero
+and live sibling edit, and separate flat/sparse publication and consumption.
+Both consumers printed `Hello, world!`; the hero changed from
+`sixty seconds!` to `sixty seconds!!` after editing only the sibling source.
+The cloned checkout stayed clean and its documentation hashes unchanged.
+The remaining close-out edits name this commit and record this walk; they
+precede the independent final Gate B verification.
+
 ## Carried gap and close-out boundary
 
 Review prompted a real probe of a same-version dependency path change.
