@@ -28,18 +28,22 @@ staged documentation increment. The current runner announcement satisfies §6
 item 1's external trigger. The CI change follows the existing `chore(ci)`
 precedent and must pass both seeds locally and on the hosted runner.
 
-**Sprint 24 — command argument preservation, staged before resuming Sprint 23.**
-Architecture §8 decision 91 replaces the no-quoting premise: an existing script
-whose filename contains a space currently passes the precondition but is split
-by the shell, never runs, and exits 0. Apply the rule to all five composing
-classes, keeping the process seam, streaming output and resolver unchanged.
+**Sprint 24 is implemented; Sprint 23 is next.** Architecture §8 decision 91
+replaced the no-quoting premise across all five command-composing classes.
+The repair and pinned CI environment passed 1169 laws at both seeds locally;
+publication and hosted verification complete Gate B on issue #26.
 **Displacement:** Sprint 23's documentation increment is deferred 1×. Correct
 execution wins over documentation polish; the cost of delaying the docs is
-bounded. Its approved scope remains intact, but its test/decision/class counts
-must be refreshed after this repair. No historical sprint is renumbered.
+bounded. Its approved scope remains intact. The resumption baseline is 1169
+laws and 91 decisions; its class-name oracle remains namespace-local lookup,
+not a fixed census. Its pre-RED extraction-protocol ruling is still pending
+on issue #25. No historical sprint is renumbered.
 
 
-### Suspended documentation increment
+### Next: resume the documentation increment
+
+The following paragraph records the **2026-08-16 staging**, including the
+toolchain state and counts at that gate. The amendment above governs resumption.
 
 - **Sprint 23 — the documentation increment: the diagrams, the decision index, and the
   README a stranger actually meets.** Issue #25, staged at Gate C 2026-08-16 against
@@ -63,6 +67,14 @@ must be refreshed after this repair. No historical sprint is renumbered.
   relocated; it gains a lawed index).
 
 ### Recently delivered
+
+- **Sprint 24 — command argument preservation.** Implemented at `2ba1939`, issue
+  #26, **1140 → 1169 laws**, decision 91. Scripts, registration, publication,
+  cold/warm git and sparse retrieval preserve complete dynamic arguments.
+  Downstream gst-package filename/XML restrictions remain explicitly bounded.
+  CI continuity is the separate maintenance commit `42a4f74`; both changes
+  precede the resumed documentation sprint. See the [delivery record](sprints/sprint-24-notes.md)
+  and issue #26 for the final Gate B and hosted verification evidence.
 
 - **Sprint 22 — the release: v1.0.0.** ✅ **DELIVERED 2026-08-16**, issue #24 closed, commit
   `af53fa0`, **1091 → 1140 laws**, tag **`v1.0.0`** cut at Gate B (the operator's release
@@ -411,11 +423,14 @@ decisive. The sprint staged instead came from the operator's post-release docume
 proposal, under ranking rule §1.5 rather than by displacement. Item 1's external clock was
 probed rather than assumed and had not started.
 
-1. **⏱ CI's toolchain source.** Ubuntu 22.04 (`gnu-smalltalk` 3.2.5-1.3ubuntu1) is the only
-   distro release still packaging the baseline — dropped from Ubuntu 24.04+ and Debian bookworm+.
-   When GitHub retires the `ubuntu-22.04` runner label, CI needs a pinned container image on
-   `ghcr.io` or a cached source build. **The external clock is somebody else's support calendar**,
-   which is precisely what ⏱ marks. Trigger: *GitHub announces the label's deprecation.*
+1. **⏱ CI's toolchain source — trigger met; migration implemented 2026-11-07.**
+   Commit `42a4f74` moves the host to `ubuntu-24.04` and builds the GNU Smalltalk
+   3.2.5 environment from a digest-pinned Jammy image and dated Ubuntu snapshot.
+   Verification runs as a non-root user, without network access, at both seeds.
+   The host no longer depends on the `ubuntu-22.04` runner label. This preserves
+   the tested toolchain; it does not extend Jammy's support lifetime. Refresh
+   the pins deliberately and re-verify both seeds when the underlying support
+   or availability changes. Hosted delivery evidence is recorded on issue #26.
 2. **Color output.** §3. Trigger: the fixture set surviving one release unchanged.
 3. **`--json` / machine-readable output.** §3. Trigger: the first consuming tool; the
    `#'parley-report' 1` alternative stays noted.

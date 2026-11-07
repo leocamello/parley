@@ -110,3 +110,24 @@ historical sprint numbers are retained. Sprint 23 must refresh its discovered
 test count, decision count and namespace census before resuming. The CI
 migration is a separate maintenance change; a hosted run remains necessary
 after publication of the candidate commits.
+
+## Gate B review — 2026-11-07
+
+An independent read-only review of `62e3873..2ba1939` found no missing
+production composer or weakened assertion. It enumerated all five composing
+classes, including their cold/warm and input/output paths, and checked the
+acceptance fixtures against the actual command effects. Fixture setup does
+not use the production encoder as its oracle. The recorded logs corroborate
+122 loaded test files and 1169 passing tests at both seeds; wrap traceability
+and the audit agree.
+
+The sprint index now names implementation commit `2ba1939`, and the roadmap
+records delivery and Sprint 23's refreshed resumption baseline. These edits
+precede the final Gate B verification. The close-out comment on issue #26
+records that verification and the hosted run against the published candidate;
+the earlier local container runs alone do not establish hosted success.
+
+No additional product gap was found. The downstream filename/XML limitations
+remain the bounds of decision 91. No new method finding or tally change is
+claimed by this review. Sprint 23 remains open until its documentation,
+reviewed tests and stranger-walk are delivered.
