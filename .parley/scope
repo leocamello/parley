@@ -10,7 +10,7 @@
 # They were path-normalized when the repository layout was reorganized
 # (.parley_sprint_scope -> .parley/scope, SPRINT<N>-NOTES.md ->
 # docs/sprints/sprint-<NN>-notes.md, which the 'docs/' prefix already covers).
-sprint: 25
+sprint: 26
 phase: green
 scope-0: ^(src/compat/|src/domain/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
 scope-1: ^(src/compat/|src/domain/|src/manifest/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$)
@@ -528,3 +528,8 @@ scope-24: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/
 # Sprint 25 repairs issue #27 at the shared lock-write guard.
 # No new production directory or schema; the authorized scope is unchanged.
 scope-25: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)
+
+# Issue #28 explicitly authorizes repair of the verification harness itself.
+# Sprint 26 records the repair and its isolated regression fixtures; no
+# production Smalltalk class, package format or release version changes.
+scope-26: ^(src/compat/|src/domain/|src/manifest/|src/resolver/|src/source/|src/install/|src/exec/|src/publish/|bin/|tests/|scripts/|docs/|\.parley/|\.githooks/|\.github/|\.gitignore$|AGENTS\.md$|README\.md$|LICENSE$|CONTRIBUTING\.md$|CHANGELOG\.md$|SECURITY\.md$|CODE_OF_CONDUCT\.md$|Package\.st$|completions/)

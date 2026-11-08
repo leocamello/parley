@@ -39,6 +39,7 @@ Sprint 24 preceded the resumed Sprint 23; the final rows follow delivery order.
 | [24](sprint-24-notes.md) | Command argument preservation — scripts, registration, publication and sources | [#26](https://github.com/leocamello/parley/issues/26) | `2ba1939` | 1169 |
 | [23](sprint-23-notes.md) | Documentation — seven guide pages, the decision index and four design diagrams | [#25](https://github.com/leocamello/parley/issues/25) | `0dd6ce4` | 1195 |
 | [25](sprint-25-notes.md) | Locked pin provenance — complete tuple comparison at the shared write guard | [#27](https://github.com/leocamello/parley/issues/27) | `34eabfb` | 1216 |
+| [26](sprint-26-notes.md) | Verification load integrity — compiler diagnostics checked before RED/GREEN verdicts | [#28](https://github.com/leocamello/parley/issues/28) | pending | 1226 |
 
 **Phase exits reached.** Sprint 4 closed read-only package management (`parley
 resolve` in all but the CLI). Sprint 6 closed the orchestration bridge: a

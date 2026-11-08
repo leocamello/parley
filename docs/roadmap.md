@@ -39,14 +39,16 @@ unchanged. All **1216 tests** pass on GNU Smalltalk 3.2.5; the final audit,
 committed-checkout probe and hosted evidence belong to issue #27. No version
 or wire format changes. See the [delivery record](sprints/sprint-25-notes.md).
 
-**Carried gap — verifier load diagnostics ([#28](https://github.com/leocamello/parley/issues/28)), unscheduled.**
-The first RED run emitted nonthrowing compiler diagnostics and omitted 33
-planned tests while still reporting RED success. The independent count and
-diagnostic check caught it; corrected fixtures restored all 1216 tests.
-Rank this verification-reliability defect at the next Gate C and scope both
-phase coverage and legitimate diagnostic controls. Until repaired, reconcile
-expected selector totals and inspect compiler diagnostics as well as file
-markers and the sentinel. No harness repair is folded into issue #27.
+**Verifier load diagnostics ([#28](https://github.com/leocamello/parley/issues/28)), requested 2026-11-08.**
+The user's explicit repair request selects this carried gap next. Isolated
+probes reproduce both false RED and false GREEN acceptance. The repair
+requires a completed, diagnostic-free load phase before either verdict,
+while permitting intentional diagnostics from running tests. Ten acceptance
+scenarios cover compiler failures, file-in exceptions, runner failures,
+missing completion and ordinary outcomes through the actual verifier.
+Delivery record [26](sprints/sprint-26-notes.md) tracks this tooling repair;
+no product feature or release version is added. Final audit and hosted
+evidence belong to issue #28.
 
 ### Recently delivered
 

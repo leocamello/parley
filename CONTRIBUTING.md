@@ -22,7 +22,9 @@ There is exactly one verification gate:
 ./scripts/verify-sprint.sh --seed 42    # explicit seed for the randomized law suites
 ```
 
-Phase 1 runs deterministic lint guardrails (they enforce the hard rules above and fail with exit codes 101–104). Phase 2 runs the SUnit suite via `scripts/run-tests.st`; a pass requires the `PARLEY-VERIFY: PASS` sentinel. Do not invoke `gst` directly to run tests — gst 3.2.5 exits 0 even on parse errors, so the harness is the only trustworthy signal.
+Phase 1 runs deterministic lint guardrails (they enforce the hard rules above and fail with exit codes 101–104, plus the toolchain check at 105). Phase 2 runs the SUnit suite via `scripts/run-tests.st`. Both RED and GREEN require complete, silent loading before accepting the suite's result; GREEN additionally requires exit 0 and `PARLEY-VERIFY: PASS`. Do not invoke `gst` directly to run tests — gst 3.2.5 can report compiler errors and still return normally.
+
+The runner flushes stdout and stderr before `PARLEY-LOAD-END`. Before that boundary, only its seed/load/file protocol lines, blank lines and the kernel's initial `Loading package SUnit` notice are allowed; source and test files must not print while loading. Unexpected output is retained in the gate's failure report. `PARLEY-TESTFILE` records that file-in returned, not that compilation succeeded, so the gate checks both the load output and the test-file census. Tests may intentionally print diagnostics after loading; those messages do not invalidate load integrity. Missing or duplicate load completion always refuses the run.
 
 Repository hooks live in `.githooks/` and are activated with:
 

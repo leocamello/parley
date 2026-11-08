@@ -7,8 +7,13 @@
      tests/support, tests/laws, tests/acceptance
      (in that order; sorted within each dir). A flat tests/ dir is also loaded
      for backward compatibility.
-   - Emits 'PARLEY-TESTFILE: <path>' after each test file loads cleanly, so
-     the red-phase gate can verify test code itself is parse-clean.
+   - Emits 'PARLEY-TESTFILE: <path>' after each test file-in returns.
+     This is a coverage marker, NOT proof that compilation succeeded.
+   - Flushes both output streams and emits 'PARLEY-LOAD-END' after loading.
+     Source and test files must load silently: the shell gate rejects any
+     non-protocol output before this boundary, in either phase. Compiler
+     diagnostics bypass Transcript and fileIn can return despite errors.
+     Diagnostic output from running tests after the boundary is allowed.
    - Discovers every TestCase subclass defined by those file-ins.
    - Prints exactly one 'PARLEY-VERIFY: PASS|FAIL ...' sentinel line.
      gst 3.2.5 exits 0 even on parse errors and unhandled fileIn exceptions,
@@ -45,8 +50,14 @@ knownCases := TestCase allSubclasses asSet.
                 (path endsWith: '.st') ifTrue: [
                     Transcript showCr: 'PARLEY-LOAD: ', path.
                     FileStream fileIn: path.
+                    FileStream stdout flush.
+                    FileStream stderr flush.
                     isTestDir ifTrue: [
                         Transcript showCr: 'PARLEY-TESTFILE: ', path]]]]].
+
+FileStream stdout flush.
+FileStream stderr flush.
+Transcript showCr: 'PARLEY-LOAD-END'.
 
 newCases := (TestCase allSubclasses reject: [:c | knownCases includes: c])
     asSortedCollection: [:a :b | a name <= b name].

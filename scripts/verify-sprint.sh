@@ -9,13 +9,15 @@
 # human operator flips red -> green after reviewing the tests):
 #   green (default): the suite must PASS ('PARLEY-VERIFY: PASS' + exit 0).
 #   red:  the suite must FAIL for the right reasons — every test file loads
-#         (PARLEY-TESTFILE per file), no parse errors anywhere, tests actually
+#         (PARLEY-TESTFILE per file), loading completes without diagnostics,
+#         tests actually
 #         ran (run>0) and failed. MNU on a not-yet-implemented class counts
 #         as a valid red; a passing suite in red phase is a defect (the new
 #         tests test nothing).
 #
 # gst 3.2.5 exits 0 even on parse errors and unhandled fileIn exceptions,
-# so verdicts are based on the PARLEY-VERIFY sentinel, never exit codes alone.
+# so verdicts require load integrity AND the PARLEY-VERIFY sentinel, never
+# exit codes alone. Diagnostic text during test execution is legitimate.
 #
 # Circuit breaker: consecutive failures are counted in .parley/loop-state.
 # The counter is PROGRESS-AWARE: a failing run whose passed= count is higher
@@ -218,24 +220,33 @@ TEST_EXIT_CODE=$?
 set -e
 
 VERIFY_LINE=$(grep '^PARLEY-VERIFY:' <<< "$TEST_OUTPUT" | head -1 || true)
-PARSE_ERRORS=$(grep -c 'parse error' <<< "$TEST_OUTPUT" || true)
 
 verdict_pass=false
 red_reason=""
-# Load integrity — asserted in BOTH phases. A test file that fails to parse
-# does not fail: it VANISHES, taking its laws with it, and the surviving suite
-# passes. Green used to check only the sentinel and the exit code, so the gate
-# would report 🎉 PASS while tests silently disappeared — the same fail-wrong
-# disease as the Sprint 7 `publish` verb that answered a backtrace and exited
-# 0, one level up in the tooling. Found at the Sprint 10 close-out, where a raw
-# double-quote in a method comment derailed a file-in; it surfaced loudly there
-# (59 errors in unrelated settled suites), but a whole file failing to load is
-# silent, and silence is what a gate exists to break.
+# Load integrity is independent of SUnit outcomes in BOTH phases. GNU 3.2.5
+# fileIn returns even after compiler diagnostics and top-level exceptions;
+# the file marker alone cannot prove that its selectors compiled (#28).
+# Trusted source/test files must load silently. Match the load protocol,
+# not a list of diagnostic spellings: anything else before the flushed
+# completion boundary is evidence of an unclean load. Afterwards tests may
+# intentionally emit diagnostics, including the words "parse error".
+# Missing/duplicate completion fails closed, including a malformed runner.
+# The bundled PackageLoader announces SUnit before the runner's seed line;
+# this exact bootstrap notice is informational, not a project file-in.
+LOAD_COMPLETIONS=$(grep -cx 'PARLEY-LOAD-END' <<< "$TEST_OUTPUT" || true)
+LOAD_DIAGNOSTICS=$(awk '
+  !seed && /^Loading package SUnit$/ { next }
+  /^PARLEY-SEED: / { seed=1 }
+  /^PARLEY-LOAD-END$/ { complete=1; next }
+  !complete && NF && !/^PARLEY-(SEED|LOAD|TESTFILE): / { print }
+' <<< "$TEST_OUTPUT")
 EXPECTED_TESTFILES=$(find tests -name '*.st' 2>/dev/null | wc -l)
 LOADED_TESTFILES=$(grep -c '^PARLEY-TESTFILE:' <<< "$TEST_OUTPUT" || true)
 load_reason=""
-if [[ "$PARSE_ERRORS" -gt 0 ]]; then
-  load_reason="parse errors present — $PARSE_ERRORS reported; laws in a file that does not parse never run"
+if [[ "$LOAD_COMPLETIONS" -ne 1 ]]; then
+  load_reason="expected one load-completion marker, found $LOAD_COMPLETIONS — cannot verify that loading finished"
+elif [[ -n "$LOAD_DIAGNOSTICS" ]]; then
+  load_reason="unexpected output while loading — compiler or file-in diagnostics invalidate the suite"
 elif [[ "$LOADED_TESTFILES" -lt "$EXPECTED_TESTFILES" ]]; then
   load_reason="only $LOADED_TESTFILES of $EXPECTED_TESTFILES test files loaded cleanly — the missing file's laws did not run"
 fi
@@ -254,9 +265,7 @@ else
   ERRORS=$(sed -n 's/.* errors=\([0-9]*\).*/\1/p' <<< "$VERIFY_LINE")
   # Load integrity is checked above, for both phases; red states it in its own
   # terms because red must fail on MISSING BEHAVIOR, never on broken syntax.
-  if [[ "$PARSE_ERRORS" -gt 0 ]]; then
-    red_reason="parse errors present — red must fail on missing behavior, not broken syntax"
-  elif [[ -n "$load_reason" ]]; then
+  if [[ -n "$load_reason" ]]; then
     red_reason="$load_reason"
   elif [[ -z "$RUN" || "$RUN" -eq 0 ]]; then
     red_reason="no tests ran — red requires runnable failing tests"
@@ -299,9 +308,14 @@ write_state "$NEW_SPIN" "$FAILURE_HASH" "${PASSED_NOW:-$LAST_PASSED}"
 {
   echo "<execution_feedback status=\"FAILED\" phase=\"$PHASE\" exit_code=\"$TEST_EXIT_CODE\" spin=\"$NEW_SPIN\" max_spins=\"$MAX_SPINS\" seed=\"$SEED\">"
   [[ -n "$red_reason" ]] && echo "<red_gate_violation>$red_reason</red_gate_violation>"
+  if [[ -n "$LOAD_DIAGNOSTICS" ]]; then
+    echo '<load_diagnostics>'
+    sed -n '1,15p' <<< "$LOAD_DIAGNOSTICS"
+    echo '</load_diagnostics>'
+  fi
   # Reduce output: sentinel lines, per-test verdicts, and the first error
   # region (parse errors / MNU backtraces), truncated to protect attention.
-  grep -E '^PARLEY-(VERIFY|SEED|LOAD|TESTFILE|FAILURE|ERROR):' <<< "$TEST_OUTPUT" || true
+  grep -E '^PARLEY-(LOAD-END$|(VERIFY|SEED|LOAD|TESTFILE|FAILURE|ERROR):)' <<< "$TEST_OUTPUT" || true
   awk '
     /parse error|did not understand|error:/ { flag=1 }
     flag { print; if (++lines >= 15) { print "--- [trace truncated] ---"; exit } }
