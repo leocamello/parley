@@ -3,7 +3,7 @@
 Issue [#28](https://github.com/leocamello/parley/issues/28), explicitly
 requested after Sprint 25. This delivery number records a harness repair;
 it introduces no package-manager feature or architecture decision.
-Baseline `227328c`: **1216 tests / 132 files**. Ten new acceptance scenarios
+Implementation: `a0e318c`. Baseline `227328c`: **1216 tests / 132 files**. Ten new acceptance scenarios
 bring the inventory to **1226 tests / 134 files** on GNU Smalltalk 3.2.5.
 
 ## Behavior and scope

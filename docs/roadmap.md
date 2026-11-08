@@ -39,7 +39,7 @@ unchanged. All **1216 tests** pass on GNU Smalltalk 3.2.5; the final audit,
 committed-checkout probe and hosted evidence belong to issue #27. No version
 or wire format changes. See the [delivery record](sprints/sprint-25-notes.md).
 
-**Verifier load diagnostics ([#28](https://github.com/leocamello/parley/issues/28)), requested 2026-11-08.**
+**Verifier load diagnostics ([#28](https://github.com/leocamello/parley/issues/28)), implemented at `a0e318c`.**
 The user's explicit repair request selects this carried gap next. Isolated
 probes reproduce both false RED and false GREEN acceptance. The repair
 requires a completed, diagnostic-free load phase before either verdict,
@@ -47,8 +47,9 @@ while permitting intentional diagnostics from running tests. Ten acceptance
 scenarios cover compiler failures, file-in exceptions, runner failures,
 missing completion and ordinary outcomes through the actual verifier.
 Delivery record [26](sprints/sprint-26-notes.md) tracks this tooling repair;
-no product feature or release version is added. Final audit and hosted
-evidence belong to issue #28.
+no product feature or release version is added. The local GREEN and wrap
+audits pass all **1226 tests**. Final audit and hosted evidence belong to
+issue #28.
 
 ### Recently delivered
 
